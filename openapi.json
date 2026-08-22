@@ -1,0 +1,79 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "CryptoRisk API",
+    "version": "1.0.0",
+    "description": "Wallet and token risk scoring for EVM chains (Ethereum, Base). Returns a 0-100 risk score, verdict (PROCEED/CAUTION/BLOCK), and flags including OFAC sanctions matches, known scam/phishing addresses, and token honeypot/rug-pull signals. Built on free public data sources."
+  },
+  "servers": [
+    { "url": "https://cryptorisk-api.vercel.app" }
+  ],
+  "paths": {
+    "/api/risk": {
+      "get": {
+        "summary": "Risk score (free tier)",
+        "description": "Returns risk_score, risk_level, verdict, and flags for any EVM address. Free tier.",
+        "parameters": [
+          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "description": "0x EVM address (wallet or token contract)" },
+          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"], "default": "base" } },
+          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["wallet", "token"], "default": "wallet" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Risk assessment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "address": { "type": "string" },
+                    "chain": { "type": "string" },
+                    "type": { "type": "string" },
+                    "risk_score": { "type": "integer" },
+                    "risk_level": { "type": "string" },
+                    "verdict": { "type": "string" },
+                    "flags": { "type": "array", "items": { "type": "string" } }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid address or unsupported chain" }
+        }
+      }
+    },
+    "/api/risk/pro": {
+      "get": {
+        "summary": "Full risk report (pro tier)",
+        "description": "Returns the complete risk report including reasons, signals, and sources. Paid tier.",
+        "parameters": [
+          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "description": "0x EVM address (wallet or token contract)" },
+          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"], "default": "base" } },
+          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["wallet", "token"], "default": "wallet" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full risk report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "address": { "type": "string" },
+                    "risk_score": { "type": "integer" },
+                    "risk_level": { "type": "string" },
+                    "verdict": { "type": "string" },
+                    "flags": { "type": "array", "items": { "type": "string" } },
+                    "reasons": { "type": "array", "items": { "type": "object" } },
+                    "signals": { "type": "object" },
+                    "sources": { "type": "array", "items": { "type": "string" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+========================================================================
+CRYPTORISK API — COMPLETE LAUNCH SUBMISSION KIT
+Copy-paste these into each platform. All free. Do them in this order.
+========================================================================
+
+YOUR LIVE ENDPOINTS:
+  Free:  https://cryptorisk-api.vercel.app/api/risk
+  Pro:   https://cryptorisk-api.vercel.app/api/risk/pro   ($0.01 USDC on Base)
+  Manifest: https://cryptorisk-api.vercel.app/.well-known/x402.json
+  Landing:  https://cryptorisk-api.vercel.app
+
+========================================================================
+1. X402SCAN  (do first — the main explorer bots browse)
+========================================================================
+URL: https://www.x402scan.com/resources/register
+Paste this resource URL: https://cryptorisk-api.vercel.app/api/risk/pro
+(It auto-detects your x402 schema and lists you.)
+
+========================================================================
+2. X402-LIST.COM
+========================================================================
+URL: https://x402-list.com  (look for "Submit" / "Add")
+Name: CryptoRisk API
+Website: https://cryptorisk-api.vercel.app
+Description: Wallet & token risk scoring for EVM chains. 0-100 risk score,
+  verdict (PROCEED/CAUTION/BLOCK), OFAC sanctions + scam + honeypot detection.
+  $0.01 USDC on Base via x402.
+Networks: base
+
+========================================================================
+3. AWESOME-X402 (GitHub PR)
+========================================================================
+Repo: https://github.com/x402-foundation/x402  (README "Ecosystem" / awesome list)
+  or: https://github.com/xpaysh/awesome-x402
+Add this line under Services/APIs:
+- [CryptoRisk API](https://cryptorisk-api.vercel.app) — Wallet & token risk scoring (sanctions, scam, honeypot) for Ethereum & Base. $0.01/call via x402 on Base.
+
+========================================================================
+4. PAYAI  &  AGENT.MARKET  &  agent-tools.cloud
+========================================================================
+PayAI: https://payai.network (submit/list your x402 service)
+Agent.market: https://agent.market (Coinbase directory — Data category)
+agent-tools.cloud: auto-aggregates from x402scan+Bazaar; also has self-submit
+For each — Name: CryptoRisk API | Category: Data / Security |
+  URL: https://cryptorisk-api.vercel.app/api/risk/pro
+
+========================================================================
+5. RAPIDAPI  (human developers — recurring subscription revenue)
+========================================================================
+URL: https://rapidapi.com/studio  (Add New API)
+- Import the included openapi.json  (auto-fills endpoints)
+- Category: Data / Financial
+- Base URL: https://cryptorisk-api.vercel.app
+- Pricing tiers (suggested):
+    BASIC  (Free):  500 requests/mo
+    PRO    ($9.99): 10,000 requests/mo
+    ULTRA  ($29.99): 100,000 requests/mo
+    MEGA   ($99.99): 1,000,000 requests/mo
+- IMPORTANT server-side check: verify header X-RapidAPI-Proxy-Secret matches
+  your secret before serving (prevents bypassing RapidAPI billing).
+  (We add this as a follow-up — needs a small code change + RapidAPI's secret.)
+
+========================================================================
+6. FREE COMMUNITY POSTS (distribution)
+========================================================================
+- Reddit: r/ethdev, r/web3 — "Built a free wallet-risk API for agents (x402 on Base)"
+- Farcaster: /base, /x402, /dev channels — link + example
+- Product Hunt: launch "CryptoRisk API"
+- Your TikTok: "I built an AI-agent-paid API from nothing" demo clip
+- X/Twitter: post the live example + tag x402 / Base / agent builders
+
+========================================================================
+DONE = listed everywhere bots + humans look. Then it runs itself.
+========================================================================
