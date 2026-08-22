@@ -1,0 +1,33 @@
+{
+  "x402Version": 2,
+  "name": "CryptoRisk API",
+  "description": "Wallet & token risk scoring for EVM chains (Ethereum, Base). Returns a 0-100 risk score, verdict (PROCEED/CAUTION/BLOCK), and flags including OFAC sanctions matches, known scam/phishing addresses, and token honeypot/rug signals. Free data sources, sub-cent pricing.",
+  "resources": [
+    {
+      "resource": "https://cryptorisk-api.vercel.app/api/risk/pro",
+      "type": "http",
+      "method": "GET",
+      "description": "Full wallet/token risk report: risk_score, risk_level, verdict, flags, reasons, signals, sources.",
+      "pricing": [
+        { "amount": "0.01", "asset": "USDC", "network": "base" }
+      ],
+      "input": {
+        "query": {
+          "address": "0x EVM address to score (required)",
+          "chain": "ethereum | base (default base)",
+          "type": "wallet | token (default wallet)"
+        }
+      },
+      "output": "application/json"
+    },
+    {
+      "resource": "https://cryptorisk-api.vercel.app/api/risk",
+      "type": "http",
+      "method": "GET",
+      "description": "FREE demo: risk_score, risk_level, verdict, and flags (no detailed reasons/sources).",
+      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "output": "application/json"
+    }
+  ],
+  "contact": "https://cryptorisk-api.vercel.app"
+}

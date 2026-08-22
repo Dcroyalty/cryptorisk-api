@@ -1,0 +1,24 @@
+# CryptoRisk API
+
+> Wallet & token risk scoring for EVM chains (Ethereum, Base). Pay-per-call via x402 (USDC on Base) or free demo tier.
+
+## What it does
+Give it any 0x EVM address. Returns a 0-100 risk score, a risk level (low/medium/high/critical), a verdict (PROCEED/CAUTION/BLOCK), and flags: OFAC sanctions matches, known scam/phishing/drainer addresses, and (for tokens) honeypot/high-tax/mintable/hidden-owner signals.
+
+## Endpoints
+- GET https://cryptorisk-api.vercel.app/api/risk?address=0x...&chain=base&type=wallet
+  FREE. Returns score, level, verdict, flags.
+- GET https://cryptorisk-api.vercel.app/api/risk/pro?address=0x...&chain=base&type=wallet
+  $0.01 USDC on Base via x402. Returns the full report incl. reasons, signals, sources.
+
+## Parameters
+- address (required): a 0x EVM address (wallet or token contract)
+- chain: ethereum | base (default: base)
+- type: wallet | token (default: wallet)
+
+## Payment
+x402 protocol. Network: Base (eip155:8453). Asset: USDC. Price: $0.01 per pro call.
+
+## Example
+GET /api/risk/pro?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045&chain=ethereum
+-> { "risk_score": 0, "risk_level": "low", "verdict": "PROCEED", "flags": ["CLEAN"], ... }
