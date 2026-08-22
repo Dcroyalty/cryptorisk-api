@@ -19,4 +19,5 @@ export const middleware = paymentMiddleware(
 
 export const config = {
   matcher: ["/api/risk/pro"],
+  runtime: "nodejs",
 };
