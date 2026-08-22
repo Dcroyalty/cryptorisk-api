@@ -14,11 +14,9 @@ export const middleware = paymentMiddleware(
       },
     },
   },
-  facilitator,
-  { appName: "CryptoRisk API" }
+  facilitator as any
 );
 
 export const config = {
   matcher: ["/api/risk/pro"],
-  runtime: "nodejs",
 };
