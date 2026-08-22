@@ -15,16 +15,5 @@ export async function GET(req: NextRequest) {
   if (!chainId(chain)) return NextResponse.json({ error: "unsupported_chain", detail: `Supported: ${SUPPORTED_CHAINS.join(", ")}` }, { status: 400 });
 
   const full = await scoreAddress(raw.toLowerCase(), chain, type);
-  return NextResponse.json({
-    address: full.address,
-    chain: full.chain,
-    type: full.type,
-    risk_score: full.risk_score,
-    risk_level: full.risk_level,
-    verdict: full.verdict,
-    flags: full.flags,
-    tier: "free",
-    upgrade: "Call /api/risk/pro for full reasons, signals, and sources ($0.01/call via x402).",
-    checked_at: full.checked_at,
-  }, { status: 200 });
+  return NextResponse.json(full, { status: 200 });
 }
