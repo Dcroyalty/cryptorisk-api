@@ -1,0 +1,29 @@
+CRYPTORISK API - FILES INCLUDED
+================================
+lib/db.ts             - Neon database connection
+lib/scoring.ts        - the 0-100 risk scoring engine
+lib/sources.ts        - live wallet + token data fetchers (run on Vercel)
+app/api/risk/route.ts - the risk scoring endpoint
+scripts/schema.mjs    - creates the database tables (run once)
+scripts/ingest.mjs    - loads free bad-address lists into the DB (run to refresh)
+
+INSTALL STEPS (in your cryptorisk-api folder):
+1. Install the database driver:
+   npm install @neondatabase/serverless
+
+2. Create a file named  .env  (for the scripts) with this line:
+   DATABASE_URL=postgresql://neondb_owner:npg_Xj3wEzkc4ysg@ep-long-cell-axo65lpl-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+   AND create  .env.local  (for Next.js) with the SAME line.
+
+3. Create the tables:
+   node scripts/schema.mjs
+
+4. Load the bad-address lists:
+   node scripts/ingest.mjs
+
+5. Start the server and test:
+   npm run dev
+   Then open these in your browser:
+   http://localhost:3000/api/risk?address=0x0330070FD38Ec3bB94F58FA55D40368271E9e54A&chain=ethereum   (SANCTIONED - should score 100)
+   http://localhost:3000/api/risk?address=0x101ce0cedd142f199c9ef61739ae59b6611a0fc0&chain=ethereum   (SCAM - should score 90)

@@ -1,0 +1,5 @@
+# Add these to a file named .env.local in your cryptorisk-api folder:
+DATABASE_URL=postgresql://neondb_owner:npg_Xj3wEzkc4ysg@ep-long-cell-axo65lpl-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+# Optional (improves Ethereum-mainnet wallet data; get a free key at etherscan.io):
+# ETHERSCAN_API_KEY=your_free_key_here
