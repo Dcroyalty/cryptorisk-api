@@ -1,4 +1,4 @@
-ï»¿import { paymentMiddleware, Network } from "x402-next";
+import { paymentMiddleware, Network } from "x402-next";
 import { facilitator } from "@coinbase/x402";
 
 const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
