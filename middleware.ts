@@ -7,24 +7,19 @@ export const middleware = paymentMiddleware(
   PAY_TO,
   {
     "/api/risk/pro": {
-      price: "$0.01",
-      network: "base" as Network,
-      config: {
-        description: "CryptoRisk PRO: full wallet/token risk report (score, reasons, signals, sources).",
-      },
+      price: "$0.01", network: "base" as Network,
+      config: { description: "CryptoRisk PRO: full wallet/token risk report (score, reasons, signals, sources)." },
     },
     "/api/llm": {
-      price: "$0.01",
-      network: "base" as Network,
-      config: {
-        description: "LLM Gateway: pay-per-call AI inference. No API key, no account. POST {prompt} -> completion.",
-      },
+      price: "$0.01", network: "base" as Network,
+      config: { description: "LLM Gateway: pay-per-call AI inference. No API key, no account. POST {prompt} -> completion." },
+    },
+    "/api/scrape": {
+      price: "$0.01", network: "base" as Network,
+      config: { description: "Scrape Gateway: any URL -> clean markdown/text + title/description. No key, no account." },
     },
   },
   facilitator as any
 );
 
-export const config = {
-  matcher: ["/api/risk/pro", "/api/llm"],
-  runtime: "nodejs",
-};
+export const config = { matcher: ["/api/risk/pro", "/api/llm", "/api/scrape"], runtime: "nodejs" };
