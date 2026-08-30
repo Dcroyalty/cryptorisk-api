@@ -1,4 +1,4 @@
-# CryptoRisk Agent Services
+# UXUS — Agent Services
 
 > Pay-per-call primitives for AI agents. Inference, scraping, extraction, embeddings, search, and wallet risk scoring. Paid with USDC on Base via x402 — no accounts, no API keys, no signup.
 
@@ -6,7 +6,7 @@
 An agent with a USDC wallet can use every service here immediately. No provider accounts to create, no keys to rotate, no subscriptions. Payment is authentication.
 
 ## Storefront
-GET https://cryptorisk-api.vercel.app/api/catalog  (FREE)
+GET https://uxus.finance/api/catalog  (FREE)
 Returns every service, price, and parameter in one call.
 
 ## Services
@@ -46,5 +46,5 @@ GET /api/risk?address=0x...&chain=base
 
 ## Payment
 x402 protocol. Network: Base (eip155:8453). Asset: USDC.
-Discovery: https://cryptorisk-api.vercel.app/.well-known/x402.json
-MCP endpoint: https://cryptorisk-api.vercel.app/api/mcp
+Discovery: https://uxus.finance/.well-known/x402.json
+MCP endpoint: https://uxus.finance/api/mcp

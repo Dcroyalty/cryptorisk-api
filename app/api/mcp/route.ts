@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const BASE = "https://cryptorisk-api.vercel.app";
+const BASE = "https://uxus.finance";
 const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
 
 const TOOLS = [
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     return rpc(id, {
       protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
-      serverInfo: { name: "cryptorisk-agent-services", version: "1.0.0" },
+      serverInfo: { name: "uxus-agent-services", version: "1.0.0" },
       instructions: "Pay-per-call agent primitives on Base. Free tools run inline. Paid tools return an x402 endpoint you pay in USDC — no account or API key needed.",
     });
   }
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    server: "cryptorisk-agent-services",
+    server: "uxus-agent-services",
     transport: "MCP over HTTP (JSON-RPC 2.0)",
     endpoint: `${BASE}/api/mcp`,
     methods: ["initialize", "tools/list", "tools/call"],

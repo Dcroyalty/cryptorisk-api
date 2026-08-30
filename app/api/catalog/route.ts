@@ -3,11 +3,11 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const BASE = "https://cryptorisk-api.vercel.app";
+const BASE = "https://uxus.finance";
 
 export async function GET() {
   return NextResponse.json({
-    store: "CryptoRisk Agent Services",
+    store: "UXUS Agent Services",
     description: "Pay-per-call primitives for AI agents. No accounts, no API keys — just a USDC wallet on Base.",
     payment: { protocol: "x402", network: "base", asset: "USDC", pay_to: "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de" },
     services: [
