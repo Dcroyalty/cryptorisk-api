@@ -1,11 +1,20 @@
-{
+﻿{
   "openapi": "3.0.3",
   "info": {
     "title": "CryptoRisk Agent Services",
     "version": "1.0.0",
-    "description": "Pay-per-call primitives for AI agents. LLM inference, web scraping, structured extraction, embeddings, live search, and EVM wallet/token risk scoring. Paid in USDC on Base via the x402 protocol. No accounts, no API keys."
+    "description": "Pay-per-call primitives for AI agents. LLM inference, web scraping, structured extraction, embeddings, live search, and EVM wallet/token risk scoring. Paid in USDC on Base via the x402 protocol. No accounts, no API keys.",
+    "contact": {
+      "name": "CryptoRisk Agent Services",
+      "url": "https://cryptorisk-api.vercel.app",
+      "email": "butterballslaw@gmail.com"
+    }
   },
-  "servers": [{ "url": "https://cryptorisk-api.vercel.app" }],
+  "servers": [
+    {
+      "url": "https://cryptorisk-api.vercel.app"
+    }
+  ],
   "components": {
     "securitySchemes": {
       "x402": {
@@ -21,75 +30,220 @@
         "operationId": "llmInference",
         "summary": "LLM inference ($0.01 USDC on Base)",
         "description": "Send a prompt, get a completion. No API key required.",
-        "security": [{ "x402": [] }],
+        "security": [
+          {
+            "x402": []
+          }
+        ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": {
-            "type": "object", "required": ["prompt"],
-            "properties": {
-              "prompt": { "type": "string", "example": "Summarize x402 in one sentence." },
-              "model": { "type": "string" },
-              "max_tokens": { "type": "integer", "maximum": 2000 }
-            } } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "prompt"
+                ],
+                "properties": {
+                  "prompt": {
+                    "type": "string",
+                    "example": "Summarize x402 in one sentence."
+                  },
+                  "model": {
+                    "type": "string"
+                  },
+                  "max_tokens": {
+                    "type": "integer",
+                    "maximum": 2000
+                  }
+                }
+              }
+            }
+          }
         },
-        "responses": { "200": { "description": "Completion" }, "402": { "description": "Payment required" } }
+        "responses": {
+          "200": {
+            "description": "Completion"
+          },
+          "402": {
+            "description": "Payment required"
+          }
+        }
       }
     },
     "/api/scrape": {
       "get": {
         "operationId": "scrapeUrl",
         "summary": "Scrape any URL to clean markdown ($0.01 USDC on Base)",
-        "security": [{ "x402": [] }],
-        "parameters": [
-          { "name": "url", "in": "query", "required": true, "schema": { "type": "string" }, "example": "https://example.com" },
-          { "name": "format", "in": "query", "required": false, "schema": { "type": "string", "enum": ["markdown", "text", "html"] } },
-          { "name": "max_chars", "in": "query", "required": false, "schema": { "type": "integer" } }
+        "security": [
+          {
+            "x402": []
+          }
         ],
-        "responses": { "200": { "description": "Page content" }, "402": { "description": "Payment required" } }
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "https://example.com"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "text",
+                "html"
+              ]
+            }
+          },
+          {
+            "name": "max_chars",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page content"
+          },
+          "402": {
+            "description": "Payment required"
+          }
+        }
       }
     },
     "/api/extract": {
       "post": {
         "operationId": "extractStructured",
         "summary": "Text or URL to structured JSON ($0.02 USDC on Base)",
-        "security": [{ "x402": [] }],
+        "security": [
+          {
+            "x402": []
+          }
+        ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": {
-            "type": "object", "required": ["schema"],
-            "properties": {
-              "schema": { "type": "object", "example": { "title": "string", "price": "number" } },
-              "text": { "type": "string" },
-              "url": { "type": "string" }
-            } } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "schema"
+                ],
+                "properties": {
+                  "schema": {
+                    "type": "object",
+                    "example": {
+                      "title": "string",
+                      "price": "number"
+                    }
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
         },
-        "responses": { "200": { "description": "Structured data" }, "402": { "description": "Payment required" } }
+        "responses": {
+          "200": {
+            "description": "Structured data"
+          },
+          "402": {
+            "description": "Payment required"
+          }
+        }
       }
     },
     "/api/embed": {
       "post": {
         "operationId": "createEmbeddings",
         "summary": "Text to embedding vectors ($0.01 USDC on Base)",
-        "security": [{ "x402": [] }],
+        "security": [
+          {
+            "x402": []
+          }
+        ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": {
-            "type": "object", "required": ["input"],
-            "properties": { "input": { "type": "string", "example": "hello world" } } } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "input"
+                ],
+                "properties": {
+                  "input": {
+                    "type": "string",
+                    "example": "hello world"
+                  }
+                }
+              }
+            }
+          }
         },
-        "responses": { "200": { "description": "Embeddings" }, "402": { "description": "Payment required" } }
+        "responses": {
+          "200": {
+            "description": "Embeddings"
+          },
+          "402": {
+            "description": "Payment required"
+          }
+        }
       }
     },
     "/api/search": {
       "get": {
         "operationId": "webSearch",
         "summary": "Live web search ($0.02 USDC on Base)",
-        "security": [{ "x402": [] }],
-        "parameters": [
-          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "example": "x402 protocol" },
-          { "name": "count", "in": "query", "required": false, "schema": { "type": "integer", "maximum": 20 } }
+        "security": [
+          {
+            "x402": []
+          }
         ],
-        "responses": { "200": { "description": "Search results" }, "402": { "description": "Payment required" } }
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "x402 protocol"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results"
+          },
+          "402": {
+            "description": "Payment required"
+          }
+        }
       }
     },
     "/api/risk/pro": {
@@ -97,13 +251,54 @@
         "operationId": "walletRiskFull",
         "summary": "Full EVM wallet/token risk report ($0.01 USDC on Base)",
         "description": "OFAC sanctions, scam/phishing lists, honeypot and rug signals. 0-100 score with PROCEED/CAUTION/BLOCK verdict.",
-        "security": [{ "x402": [] }],
-        "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A" },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"] } },
-          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["wallet", "token"] } }
+        "security": [
+          {
+            "x402": []
+          }
         ],
-        "responses": { "200": { "description": "Risk report" }, "402": { "description": "Payment required" } }
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ethereum",
+                "base"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "wallet",
+                "token"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Risk report"
+          },
+          "402": {
+            "description": "Payment required"
+          }
+        }
       }
     },
     "/api/risk": {
@@ -112,10 +307,28 @@
         "summary": "FREE risk demo",
         "security": [],
         "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" } },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string" } }
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
-        "responses": { "200": { "description": "Risk summary" } }
+        "responses": {
+          "200": {
+            "description": "Risk summary"
+          }
+        }
       }
     },
     "/api/catalog": {
@@ -123,7 +336,11 @@
         "operationId": "catalog",
         "summary": "FREE storefront index",
         "security": [],
-        "responses": { "200": { "description": "All services with prices" } }
+        "responses": {
+          "200": {
+            "description": "All services with prices"
+          }
+        }
       }
     },
     "/api/mcp": {
@@ -131,7 +348,11 @@
         "operationId": "mcpInfo",
         "summary": "FREE MCP server info",
         "security": [],
-        "responses": { "200": { "description": "MCP server metadata" } }
+        "responses": {
+          "200": {
+            "description": "MCP server metadata"
+          }
+        }
       }
     }
   }
