@@ -13,12 +13,11 @@ export const middleware = paymentMiddleware(
         description: "CryptoRisk PRO: full wallet/token risk report (score, reasons, signals, sources).",
       },
     },
-    "/api/risk/live/pro": {
-      price: "$0.005",
+    "/api/llm": {
+      price: "$0.01",
       network: "base" as Network,
       config: {
-        description:
-          "CryptoRisk LIVE: mutable-risk analysis - can this token's owner turn hostile while you hold it? Full owner powers, upgradeable-proxy detection, pause state, and time-to-rug. The check snapshot scanners don't do.",
+        description: "LLM Gateway: pay-per-call AI inference. No API key, no account. POST {prompt} -> completion.",
       },
     },
   },
@@ -26,6 +25,6 @@ export const middleware = paymentMiddleware(
 );
 
 export const config = {
-  matcher: ["/api/risk/pro", "/api/risk/live/pro"],
+  matcher: ["/api/risk/pro", "/api/llm"],
   runtime: "nodejs",
 };
