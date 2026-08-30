@@ -1,142 +1,127 @@
-// app/api/mcp/route.ts â€” CryptoRisk MCP server (Streamable HTTP, zero-dependency)
-//
-// Exposes CryptoRisk as agent-callable MCP tools so ANY MCP-capable agent
-// (Claude, Cursor, etc.) can DISCOVER and CALL it automatically. Implements the
-// MCP Streamable HTTP transport by hand (JSON-RPC 2.0) â€” no SDK, no new deps,
-// nothing to break the build.
-
-import { NextResponse } from "next/server";
+// app/api/mcp/route.ts — FREE MCP server. Discovery layer for the store.
+// Agents connect, list tools, and get told exactly what to call and what it costs.
+// Free tools execute inline; paid tools return the x402 endpoint + price.
+import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_URL || "https://cryptorisk-api.vercel.app";
-const PROTOCOL_VERSION = "2025-06-18";
-const SERVER_INFO = { name: "cryptorisk", version: "1.0.0" };
+const BASE = "https://cryptorisk-api.vercel.app";
+const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
 
 const TOOLS = [
-  {
-    name: "check_live_risk",
-    description:
-      "Before buying or holding ANY Base or Ethereum token, call this to check whether the token's OWNER can turn it hostile WHILE YOU HOLD â€” swap the contract logic (upgradeable proxy), pause/block sells, or exploit un-renounced ownership. Unlike honeypot scanners that only report the CURRENT state, this checks whether the token can BECOME a trap in a future block. Returns a verdict from SAFE_TO_HOLD to DO_NOT_HOLD, a mutable_risk_score (0-100), time_to_rug, and the exact owner powers.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        address: { type: "string", description: "The 0x EVM token contract address." },
-        chain: { type: "string", enum: ["base", "ethereum"], description: "Chain (default: base)." },
-      },
-      required: ["address"],
-    },
-  },
-  {
-    name: "check_token_risk",
-    description:
-      "Get an overall risk score (0-100), verdict (PROCEED/CAUTION/BLOCK), and risk flags for a Base or Ethereum wallet or token address. General safety read.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        address: { type: "string", description: "The 0x EVM address (wallet or token)." },
-        chain: { type: "string", enum: ["base", "ethereum"], description: "Chain (default: base)." },
-      },
-      required: ["address"],
-    },
-  },
-  {
-    name: "list_new_launches",
-    description:
-      "List the NEWEST DEX token pairs on Base or Ethereum (fresh launches) with liquidity, age, and risk flags. Use to find new tokens the moment they appear. Each result includes the token address so you can then call check_live_risk on it.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        chain: { type: "string", enum: ["base", "ethereum"], description: "Chain (default: base)." },
-        limit: { type: "number", description: "Max results, 1-30 (default 15)." },
-      },
-    },
-  },
+  { name: "catalog", price: "0.00", endpoint: `${BASE}/api/catalog`, method: "GET",
+    description: "FREE. List every service in the store with prices and parameters.",
+    inputSchema: { type: "object", properties: {} } },
+  { name: "risk_check_free", price: "0.00", endpoint: `${BASE}/api/risk`, method: "GET",
+    description: "FREE. Quick risk verdict for an EVM address: score, level, PROCEED/CAUTION/BLOCK.",
+    inputSchema: { type: "object", properties: {
+      address: { type: "string", description: "0x EVM address" },
+      chain: { type: "string", description: "ethereum or base" } }, required: ["address"] } },
+  { name: "llm", price: "0.01", endpoint: `${BASE}/api/llm`, method: "POST",
+    description: "LLM inference without an API key. $0.01 USDC on Base per call.",
+    inputSchema: { type: "object", properties: {
+      prompt: { type: "string" }, model: { type: "string" }, max_tokens: { type: "number" } }, required: ["prompt"] } },
+  { name: "scrape", price: "0.01", endpoint: `${BASE}/api/scrape`, method: "GET",
+    description: "Fetch any URL as clean markdown or text. Gets past common bot-blocking. $0.01 USDC on Base.",
+    inputSchema: { type: "object", properties: {
+      url: { type: "string" }, format: { type: "string", enum: ["markdown","text","html"] },
+      max_chars: { type: "number" } }, required: ["url"] } },
+  { name: "extract", price: "0.02", endpoint: `${BASE}/api/extract`, method: "POST",
+    description: "Messy text or a web page into structured JSON matching your schema. $0.02 USDC on Base.",
+    inputSchema: { type: "object", properties: {
+      schema: { type: "object" }, text: { type: "string" }, url: { type: "string" } }, required: ["schema"] } },
+  { name: "embed", price: "0.01", endpoint: `${BASE}/api/embed`, method: "POST",
+    description: "Text to embedding vectors (1024 dims). Batch up to 64. $0.01 USDC on Base.",
+    inputSchema: { type: "object", properties: { input: {} }, required: ["input"] } },
+  { name: "search", price: "0.02", endpoint: `${BASE}/api/search`, method: "GET",
+    description: "Live web search as clean JSON. $0.02 USDC on Base.",
+    inputSchema: { type: "object", properties: {
+      q: { type: "string" }, count: { type: "number" } }, required: ["q"] } },
+  { name: "risk_check", price: "0.01", endpoint: `${BASE}/api/risk/pro`, method: "GET",
+    description: "Full EVM wallet/token risk report: sanctions, scam lists, honeypot signals, reasons and sources. $0.01 USDC on Base.",
+    inputSchema: { type: "object", properties: {
+      address: { type: "string" }, chain: { type: "string" }, type: { type: "string" } }, required: ["address"] } },
 ];
 
-async function callTool(name: string, args: Record<string, unknown>): Promise<string> {
-  const chain = args.chain === "ethereum" ? "ethereum" : "base";
-  if (name === "check_live_risk") {
-    const r = await fetch(`${BASE}/api/risk/live?address=${encodeURIComponent(String(args.address ?? ""))}&chain=${chain}`);
-    return await r.text();
-  }
-  if (name === "check_token_risk") {
-    const r = await fetch(`${BASE}/api/risk?address=${encodeURIComponent(String(args.address ?? ""))}&chain=${chain}`);
-    return await r.text();
-  }
-  if (name === "list_new_launches") {
-    const limit = Math.min(Math.max(Number(args.limit) || 15, 1), 30);
-    const r = await fetch(`${BASE}/api/launches?chain=${chain}&limit=${limit}`);
-    return await r.text();
-  }
-  throw new Error(`Unknown tool: ${name}`);
+function rpc(id: any, result: any) { return NextResponse.json({ jsonrpc: "2.0", id, result }); }
+function rpcErr(id: any, code: number, message: string) {
+  return NextResponse.json({ jsonrpc: "2.0", id, error: { code, message } });
+}
+function textResult(obj: any) {
+  return { content: [{ type: "text", text: typeof obj === "string" ? obj : JSON.stringify(obj, null, 2) }] };
 }
 
-function cors(): Record<string, string> {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Mcp-Session-Id, Mcp-Protocol-Version, Authorization",
-  };
-}
+export async function POST(req: NextRequest) {
+  let body: any = {};
+  try { body = await req.json(); } catch { return rpcErr(null, -32700, "Parse error"); }
+  const { id, method, params } = body ?? {};
 
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: cors() });
+  if (method === "initialize") {
+    return rpc(id, {
+      protocolVersion: "2024-11-05",
+      capabilities: { tools: {} },
+      serverInfo: { name: "cryptorisk-agent-services", version: "1.0.0" },
+      instructions: "Pay-per-call agent primitives on Base. Free tools run inline. Paid tools return an x402 endpoint you pay in USDC — no account or API key needed.",
+    });
+  }
+
+  if (method === "notifications/initialized") return NextResponse.json({ jsonrpc: "2.0" });
+
+  if (method === "tools/list") {
+    return rpc(id, {
+      tools: TOOLS.map(t => ({
+        name: t.name,
+        description: t.price === "0.00" ? t.description : `${t.description}`,
+        inputSchema: t.inputSchema,
+      })),
+    });
+  }
+
+  if (method === "tools/call") {
+    const name = params?.name;
+    const args = params?.arguments ?? {};
+    const tool = TOOLS.find(t => t.name === name);
+    if (!tool) return rpcErr(id, -32602, `Unknown tool: ${name}`);
+
+    // Free tools run inline.
+    if (tool.price === "0.00") {
+      try {
+        const url = new URL(tool.endpoint);
+        for (const [k, v] of Object.entries(args)) url.searchParams.set(k, String(v));
+        const r = await fetch(url.toString());
+        return rpc(id, textResult(await r.json()));
+      } catch (e: any) {
+        return rpc(id, textResult({ error: String(e?.message ?? e) }));
+      }
+    }
+
+    // Paid tools: hand back exactly how to pay.
+    return rpc(id, textResult({
+      payment_required: true,
+      price_usdc: tool.price,
+      network: "base",
+      pay_to: PAY_TO,
+      protocol: "x402",
+      endpoint: tool.endpoint,
+      http_method: tool.method,
+      arguments: args,
+      how: tool.method === "GET"
+        ? `GET ${tool.endpoint} with these query params, using an x402-capable client. You will receive a 402 with payment requirements, pay ${tool.price} USDC on Base, and retry.`
+        : `POST ${tool.endpoint} with this JSON body, using an x402-capable client. You will receive a 402 with payment requirements, pay ${tool.price} USDC on Base, and retry.`,
+    }));
+  }
+
+  return rpcErr(id, -32601, `Method not found: ${method}`);
 }
 
 export async function GET() {
-  return new NextResponse("Method Not Allowed", { status: 405, headers: cors() });
-}
-
-interface RpcMsg { id?: unknown; method?: string; params?: Record<string, unknown> }
-
-export async function POST(req: Request) {
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } }, { headers: cors() });
-  }
-
-  const single = !Array.isArray(body);
-  const messages: RpcMsg[] = (single ? [body] : body) as RpcMsg[];
-  const responses: unknown[] = [];
-
-  for (const msg of messages) {
-    const id = msg?.id;
-    const method = msg?.method;
-    const params = msg?.params ?? {};
-    const isNotification = id === undefined || id === null;
-
-    if (method === "initialize") {
-      const clientVersion = params.protocolVersion;
-      responses.push({
-        jsonrpc: "2.0", id,
-        result: {
-          protocolVersion: typeof clientVersion === "string" ? clientVersion : PROTOCOL_VERSION,
-          capabilities: { tools: { listChanged: false } },
-          serverInfo: SERVER_INFO,
-        },
-      });
-    } else if (method === "notifications/initialized" || method === "notifications/cancelled") {
-      // notification: no response
-    } else if (method === "ping") {
-      responses.push({ jsonrpc: "2.0", id, result: {} });
-    } else if (method === "tools/list") {
-      responses.push({ jsonrpc: "2.0", id, result: { tools: TOOLS } });
-    } else if (method === "tools/call") {
-      const name = String(params.name ?? "");
-      const args = (params.arguments ?? {}) as Record<string, unknown>;
-      try {
-        const text = await callTool(name, args);
-        responses.push({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text }] } });
-      } catch (e) {
-        responses.push({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: `Error: ${e instanceof Error ? e.message : "tool failed"}` }], isError: true } });
-      }
-    } else if (!isNotification) {
-      responses.push({ jsonrpc: "2.0", id, error: { code: -32601, message: `Method not found: ${method}` } });
-    }
-  }
-
-  if (responses.length === 0) return new NextResponse(null, { status: 202, headers: cors() });
-  return NextResponse.json(single ? responses[0] : responses, { headers: cors() });
+  return NextResponse.json({
+    server: "cryptorisk-agent-services",
+    transport: "MCP over HTTP (JSON-RPC 2.0)",
+    endpoint: `${BASE}/api/mcp`,
+    methods: ["initialize", "tools/list", "tools/call"],
+    tools: TOOLS.map(t => ({ name: t.name, price_usdc: t.price, endpoint: t.endpoint })),
+    payment: { protocol: "x402", network: "base", asset: "USDC", pay_to: PAY_TO },
+  });
 }

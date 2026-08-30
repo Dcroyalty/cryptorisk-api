@@ -1,33 +1,70 @@
 {
   "x402Version": 2,
-  "name": "CryptoRisk API",
-  "description": "Wallet & token risk scoring for EVM chains (Ethereum, Base). Returns a 0-100 risk score, verdict (PROCEED/CAUTION/BLOCK), and flags including OFAC sanctions matches, known scam/phishing addresses, and token honeypot/rug signals. Free data sources, sub-cent pricing.",
+  "name": "CryptoRisk Agent Services",
+  "description": "Pay-per-call primitives for AI agents on Base. Inference, scraping, extraction, embeddings, search, and wallet risk scoring. No accounts, no API keys — just a USDC wallet.",
+  "contact": "https://cryptorisk-api.vercel.app",
   "resources": [
     {
+      "resource": "https://cryptorisk-api.vercel.app/api/llm",
+      "type": "http", "method": "POST",
+      "description": "LLM inference. POST {prompt} or {messages[]} and get a completion. No API key needed.",
+      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
+      "input": { "body": { "prompt": "string", "messages": "array (optional)", "model": "string (optional)", "max_tokens": "number (optional, max 2000)" } },
+      "output": "application/json"
+    },
+    {
+      "resource": "https://cryptorisk-api.vercel.app/api/scrape",
+      "type": "http", "method": "GET",
+      "description": "Fetch any URL and return clean markdown or text plus title and description. Gets past common bot-blocking.",
+      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "url": "required", "format": "markdown|text|html", "max_chars": "number" } },
+      "output": "application/json"
+    },
+    {
+      "resource": "https://cryptorisk-api.vercel.app/api/extract",
+      "type": "http", "method": "POST",
+      "description": "Turn messy text or a web page into structured JSON matching a schema you supply.",
+      "pricing": [{ "amount": "0.02", "asset": "USDC", "network": "base" }],
+      "input": { "body": { "schema": "object (required)", "text": "string", "url": "string" } },
+      "output": "application/json"
+    },
+    {
+      "resource": "https://cryptorisk-api.vercel.app/api/embed",
+      "type": "http", "method": "POST",
+      "description": "Text to embedding vectors (jina-embeddings-v3, 1024 dims). Batch up to 64 strings.",
+      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
+      "input": { "body": { "input": "string or string[]" } },
+      "output": "application/json"
+    },
+    {
+      "resource": "https://cryptorisk-api.vercel.app/api/search",
+      "type": "http", "method": "GET",
+      "description": "Live web search returning clean JSON results (title, url, description).",
+      "pricing": [{ "amount": "0.02", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "q": "required", "count": "number, max 20" } },
+      "output": "application/json"
+    },
+    {
       "resource": "https://cryptorisk-api.vercel.app/api/risk/pro",
-      "type": "http",
-      "method": "GET",
-      "description": "Full wallet/token risk report: risk_score, risk_level, verdict, flags, reasons, signals, sources.",
-      "pricing": [
-        { "amount": "0.01", "asset": "USDC", "network": "base" }
-      ],
-      "input": {
-        "query": {
-          "address": "0x EVM address to score (required)",
-          "chain": "ethereum | base (default base)",
-          "type": "wallet | token (default wallet)"
-        }
-      },
+      "type": "http", "method": "GET",
+      "description": "EVM wallet/token risk report: OFAC sanctions, scam/phishing lists, honeypot and rug signals, 0-100 score with PROCEED/CAUTION/BLOCK verdict.",
+      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "address": "required 0x address", "chain": "ethereum|base", "type": "wallet|token" } },
       "output": "application/json"
     },
     {
       "resource": "https://cryptorisk-api.vercel.app/api/risk",
-      "type": "http",
-      "method": "GET",
-      "description": "FREE demo: risk_score, risk_level, verdict, and flags (no detailed reasons/sources).",
+      "type": "http", "method": "GET",
+      "description": "FREE demo of risk scoring: score, level, verdict, flags.",
+      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "output": "application/json"
+    },
+    {
+      "resource": "https://cryptorisk-api.vercel.app/api/catalog",
+      "type": "http", "method": "GET",
+      "description": "FREE storefront index. Lists every service, price, and parameter in one call.",
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "output": "application/json"
     }
-  ],
-  "contact": "https://cryptorisk-api.vercel.app"
+  ]
 }

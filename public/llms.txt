@@ -1,24 +1,50 @@
-# CryptoRisk API
+# CryptoRisk Agent Services
 
-> Wallet & token risk scoring for EVM chains (Ethereum, Base). Pay-per-call via x402 (USDC on Base) or free demo tier.
+> Pay-per-call primitives for AI agents. Inference, scraping, extraction, embeddings, search, and wallet risk scoring. Paid with USDC on Base via x402 — no accounts, no API keys, no signup.
 
-## What it does
-Give it any 0x EVM address. Returns a 0-100 risk score, a risk level (low/medium/high/critical), a verdict (PROCEED/CAUTION/BLOCK), and flags: OFAC sanctions matches, known scam/phishing/drainer addresses, and (for tokens) honeypot/high-tax/mintable/hidden-owner signals.
+## Why
+An agent with a USDC wallet can use every service here immediately. No provider accounts to create, no keys to rotate, no subscriptions. Payment is authentication.
 
-## Endpoints
-- GET https://cryptorisk-api.vercel.app/api/risk?address=0x...&chain=base&type=wallet
-  FREE. Returns score, level, verdict, flags.
-- GET https://cryptorisk-api.vercel.app/api/risk/pro?address=0x...&chain=base&type=wallet
-  $0.01 USDC on Base via x402. Returns the full report incl. reasons, signals, sources.
+## Storefront
+GET https://cryptorisk-api.vercel.app/api/catalog  (FREE)
+Returns every service, price, and parameter in one call.
 
-## Parameters
-- address (required): a 0x EVM address (wallet or token contract)
-- chain: ethereum | base (default: base)
-- type: wallet | token (default: wallet)
+## Services
+
+### LLM inference — $0.01
+POST /api/llm
+Body: { "prompt": "..." }  or  { "messages": [...] }
+Optional: model, max_tokens (max 2000)
+Returns: { model, content, usage, latency_ms }
+
+### Scrape — $0.01
+GET /api/scrape?url=https://example.com&format=markdown
+format: markdown | text | html. Optional max_chars.
+Returns: { url, title, description, content, chars }
+
+### Extract — $0.02
+POST /api/extract
+Body: { "schema": { "title": "string", "price": "number" }, "url": "..." }  (or "text")
+Returns: { data, model }
+
+### Embeddings — $0.01
+POST /api/embed
+Body: { "input": "text" }  or  { "input": ["a","b"] }  (max 64)
+Returns: { embeddings, dimensions, count }
+
+### Search — $0.02
+GET /api/search?q=your+query&count=10
+Returns: { query, results: [{title, url, description}], provider }
+
+### Wallet & token risk — $0.01
+GET /api/risk/pro?address=0x...&chain=base&type=wallet
+Checks OFAC sanctions, 3,000+ scam/phishing addresses, honeypot and rug signals.
+Returns: { risk_score, risk_level, verdict, flags, reasons, signals, sources }
+
+### Risk (free demo) — $0.00
+GET /api/risk?address=0x...&chain=base
 
 ## Payment
-x402 protocol. Network: Base (eip155:8453). Asset: USDC. Price: $0.01 per pro call.
-
-## Example
-GET /api/risk/pro?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045&chain=ethereum
--> { "risk_score": 0, "risk_level": "low", "verdict": "PROCEED", "flags": ["CLEAN"], ... }
+x402 protocol. Network: Base (eip155:8453). Asset: USDC.
+Discovery: https://cryptorisk-api.vercel.app/.well-known/x402.json
+MCP endpoint: https://cryptorisk-api.vercel.app/api/mcp
