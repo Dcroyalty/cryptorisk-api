@@ -354,6 +354,87 @@
           }
         }
       }
+    },
+    "/api/risk/live": {
+      "get": {
+        "operationId": "riskLiveFree",
+        "summary": "FREE mutable-risk demo",
+        "description": "Can the token owner turn hostile while you hold? Free tier: verdict, mutable_risk_score, time_to_rug.",
+        "security": [],
+        "parameters": [
+          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"] } }
+        ],
+        "responses": {
+          "200": { "description": "Mutable-risk summary" }
+        }
+      }
+    },
+    "/api/risk/live/pro": {
+      "get": {
+        "operationId": "riskLiveFull",
+        "summary": "Full mutable-risk report ($0.005 USDC on Base)",
+        "description": "Every owner power (upgradeable proxy, pause, un-renounced ownership, pending transfer) plus raw on-chain controls and methodology.",
+        "security": [{ "x402": [] }],
+        "parameters": [
+          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"] } }
+        ],
+        "responses": {
+          "200": { "description": "Full mutable-risk report" },
+          "402": { "description": "Payment required" }
+        }
+      }
+    },
+    "/api/risk/bazaar": {
+      "get": {
+        "operationId": "walletRiskBazaar",
+        "summary": "Wallet/token risk score via x402 Bazaar ($0.01 USDC on Base)",
+        "description": "Same score as /api/risk/pro, served through the x402 Bazaar resource-server flow (eip155:8453). Returns the free summary when no payment is presented.",
+        "security": [{ "x402": [] }],
+        "parameters": [
+          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"] } },
+          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["wallet", "token"] } }
+        ],
+        "responses": {
+          "200": { "description": "Risk score" },
+          "402": { "description": "Payment required" }
+        }
+      }
+    },
+    "/api/risk/rapidapi": {
+      "get": {
+        "operationId": "walletRiskRapidApi",
+        "summary": "Wallet/token risk score for RapidAPI subscribers",
+        "description": "Same report as /api/risk/pro, billed through RapidAPI. Requires the X-RapidAPI-Proxy-Secret header; returns 403 otherwise. Use /api/risk/pro to pay per call via x402 instead.",
+        "security": [],
+        "parameters": [
+          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"] } },
+          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["wallet", "token"] } }
+        ],
+        "responses": {
+          "200": { "description": "Full risk report" },
+          "403": { "description": "Not a RapidAPI subscriber" }
+        }
+      }
+    },
+    "/api/launches": {
+      "get": {
+        "operationId": "launches",
+        "summary": "FREE fresh DEX pool feed",
+        "description": "Newest DEX pools on Base/Ethereum (GeckoTerminal). Each row cross-links to /api/risk/live.",
+        "security": [],
+        "parameters": [
+          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"], "default": "base" } },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "maximum": 30, "default": 20 } },
+          { "name": "minLiquidityUsd", "in": "query", "required": false, "schema": { "type": "number" } }
+        ],
+        "responses": {
+          "200": { "description": "Fresh pools" }
+        }
+      }
     }
   }
 }

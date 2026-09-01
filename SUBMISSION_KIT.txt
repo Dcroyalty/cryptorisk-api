@@ -4,16 +4,16 @@ Copy-paste these into each platform. All free. Do them in this order.
 ========================================================================
 
 YOUR LIVE ENDPOINTS:
-  Free:  https://cryptorisk-api.vercel.app/api/risk
-  Pro:   https://cryptorisk-api.vercel.app/api/risk/pro   ($0.01 USDC on Base)
-  Manifest: https://cryptorisk-api.vercel.app/.well-known/x402.json
-  Landing:  https://cryptorisk-api.vercel.app
+  Free:  https://uxus.finance/api/risk
+  Pro:   https://uxus.finance/api/risk/pro   ($0.01 USDC on Base)
+  Manifest: https://uxus.finance/.well-known/x402.json
+  Landing:  https://uxus.finance
 
 ========================================================================
 1. X402SCAN  (do first — the main explorer bots browse)
 ========================================================================
 URL: https://www.x402scan.com/resources/register
-Paste this resource URL: https://cryptorisk-api.vercel.app/api/risk/pro
+Paste this resource URL: https://uxus.finance/api/risk/pro
 (It auto-detects your x402 schema and lists you.)
 
 ========================================================================
@@ -21,7 +21,7 @@ Paste this resource URL: https://cryptorisk-api.vercel.app/api/risk/pro
 ========================================================================
 URL: https://x402-list.com  (look for "Submit" / "Add")
 Name: CryptoRisk API
-Website: https://cryptorisk-api.vercel.app
+Website: https://uxus.finance
 Description: Wallet & token risk scoring for EVM chains. 0-100 risk score,
   verdict (PROCEED/CAUTION/BLOCK), OFAC sanctions + scam + honeypot detection.
   $0.01 USDC on Base via x402.
@@ -33,7 +33,7 @@ Networks: base
 Repo: https://github.com/x402-foundation/x402  (README "Ecosystem" / awesome list)
   or: https://github.com/xpaysh/awesome-x402
 Add this line under Services/APIs:
-- [CryptoRisk API](https://cryptorisk-api.vercel.app) — Wallet & token risk scoring (sanctions, scam, honeypot) for Ethereum & Base. $0.01/call via x402 on Base.
+- [CryptoRisk API](https://uxus.finance) — Wallet & token risk scoring (sanctions, scam, honeypot) for Ethereum & Base. $0.01/call via x402 on Base.
 
 ========================================================================
 4. PAYAI  &  AGENT.MARKET  &  agent-tools.cloud
@@ -42,7 +42,7 @@ PayAI: https://payai.network (submit/list your x402 service)
 Agent.market: https://agent.market (Coinbase directory — Data category)
 agent-tools.cloud: auto-aggregates from x402scan+Bazaar; also has self-submit
 For each — Name: CryptoRisk API | Category: Data / Security |
-  URL: https://cryptorisk-api.vercel.app/api/risk/pro
+  URL: https://uxus.finance/api/risk/pro
 
 ========================================================================
 5. RAPIDAPI  (human developers — recurring subscription revenue)
@@ -50,7 +50,7 @@ For each — Name: CryptoRisk API | Category: Data / Security |
 URL: https://rapidapi.com/studio  (Add New API)
 - Import the included openapi.json  (auto-fills endpoints)
 - Category: Data / Financial
-- Base URL: https://cryptorisk-api.vercel.app
+- Base URL: https://uxus.finance
 - Pricing tiers (suggested):
     BASIC  (Free):  500 requests/mo
     PRO    ($9.99): 10,000 requests/mo

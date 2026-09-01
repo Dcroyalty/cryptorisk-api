@@ -101,7 +101,7 @@ export default function Home() {
 
         <div className="exchange">
           <div className="row">
-            <span className="dim">$</span> curl https://agents.xrplhub.com/api/scrape?url=https://example.com
+            <span className="dim">$</span> curl https://uxus.finance/api/scrape?url=https://example.com
           </div>
           <div className="row">
             <span className="code402">402 Payment Required</span><br />

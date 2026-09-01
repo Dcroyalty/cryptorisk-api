@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
-const RESOURCE_URL = "https://cryptorisk-api.vercel.app/api/risk/bazaar";
+const RESOURCE_URL = "https://uxus.finance/api/risk/bazaar";
 
 const facilitatorConfig = createFacilitatorConfig(process.env.CDP_API_KEY_ID, process.env.CDP_API_KEY_SECRET);
 const facilitatorClient = new HTTPFacilitatorClient(facilitatorConfig);

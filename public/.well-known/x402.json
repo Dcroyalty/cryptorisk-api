@@ -65,6 +65,45 @@
       "description": "FREE storefront index. Lists every service, price, and parameter in one call.",
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "output": "application/json"
+    },
+    {
+      "resource": "https://uxus.finance/api/mcp",
+      "type": "http", "method": "POST",
+      "description": "FREE MCP server (JSON-RPC 2.0 over HTTP): initialize, tools/list, tools/call. Free tools run inline; paid tools return their x402 endpoint and price. GET returns server metadata.",
+      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "output": "application/json"
+    },
+    {
+      "resource": "https://uxus.finance/api/risk/live",
+      "type": "http", "method": "GET",
+      "description": "FREE mutable-risk demo: can the token owner turn hostile while you hold? Returns verdict, mutable_risk_score, time_to_rug.",
+      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "address": "required 0x address", "chain": "ethereum|base" } },
+      "output": "application/json"
+    },
+    {
+      "resource": "https://uxus.finance/api/risk/live/pro",
+      "type": "http", "method": "GET",
+      "description": "Full mutable-risk report: every owner power (upgradeable proxy, pause, un-renounced ownership, pending transfer) plus raw on-chain controls and methodology.",
+      "pricing": [{ "amount": "0.005", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "address": "required 0x address", "chain": "ethereum|base" } },
+      "output": "application/json"
+    },
+    {
+      "resource": "https://uxus.finance/api/risk/bazaar",
+      "type": "http", "method": "GET",
+      "description": "Wallet/token risk score served through the x402 Bazaar resource-server flow. Same data as /api/risk/pro; returns the free summary when no payment is presented.",
+      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "address": "required 0x address", "chain": "ethereum|base", "type": "wallet|token" } },
+      "output": "application/json"
+    },
+    {
+      "resource": "https://uxus.finance/api/launches",
+      "type": "http", "method": "GET",
+      "description": "FREE feed of the newest DEX pools on Base/Ethereum (GeckoTerminal). Each row cross-links to /api/risk/live.",
+      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "chain": "ethereum|base", "limit": "number, max 30", "minLiquidityUsd": "number" } },
+      "output": "application/json"
     }
   ]
 }

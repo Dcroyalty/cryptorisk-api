@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json",
-                   "HTTP-Referer": "https://cryptorisk-api.vercel.app", "X-Title": "x402 Extract Gateway" },
+                   "HTTP-Referer": "https://uxus.finance", "X-Title": "x402 Extract Gateway" },
         body: JSON.stringify({ model, max_tokens: 1500,
           messages: [{ role: "system", content: sys }, { role: "user", content: user }] }),
       });

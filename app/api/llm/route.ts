@@ -21,7 +21,7 @@ async function callModel(key: string, model: string, msgs: any[], max_tokens: nu
     headers: {
       "Authorization": `Bearer ${key}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://cryptorisk-api.vercel.app",
+      "HTTP-Referer": "https://uxus.finance",
       "X-Title": "x402 LLM Gateway",
     },
     body: JSON.stringify({ model, messages: msgs, max_tokens }),
