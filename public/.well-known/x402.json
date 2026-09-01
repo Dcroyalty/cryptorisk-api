@@ -1,5 +1,5 @@
 {
-  "x402Version": 2,
+  "x402Version": 1,
   "name": "UXUS Agent Services",
   "description": "Pay-per-call primitives for AI agents on Base. Inference, scraping, extraction, embeddings, search, and wallet risk scoring. No accounts, no API keys — just a USDC wallet.",
   "contact": "https://uxus.finance",
