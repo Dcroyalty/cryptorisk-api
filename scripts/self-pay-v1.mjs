@@ -39,6 +39,17 @@ const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
 const TARGET =
   process.env.TARGET_URL ||
   "https://uxus.finance/api/risk/pro?address=0x0000000000000000000000000000000000000000";
+const METHOD = (process.env.TARGET_METHOD || "GET").toUpperCase();
+const BODY = process.env.TARGET_BODY || null; // JSON string for POST routes
+
+function req(extraHeaders = {}) {
+  const init = { method: METHOD, headers: { ...extraHeaders } };
+  if (BODY != null) {
+    init.headers["content-type"] = "application/json";
+    init.body = BODY;
+  }
+  return fetch(TARGET, init);
+}
 
 function b64json(s) {
   if (!s) return null;
@@ -52,14 +63,14 @@ function b64json(s) {
 const signer = await createSigner("base", PK);
 const payer = signer.account?.address ?? signer.address;
 console.log(`payer:  ${payer}`);
-console.log(`target: GET ${TARGET}\n`);
+console.log(`target: ${METHOD} ${TARGET}\n`);
 if (payer && payer.toLowerCase() === PAY_TO.toLowerCase()) {
   console.error("Payer is the PAY_TO address — use a different wallet.");
   process.exit(1);
 }
 
 // 1 — unpaid request. A v1 challenge lives in the JSON BODY (no PAYMENT-REQUIRED header).
-const unpaid = await fetch(TARGET);
+const unpaid = await req();
 console.log(`unpaid  -> ${unpaid.status}`);
 if (unpaid.status !== 402) {
   console.log(await unpaid.text());
@@ -92,7 +103,7 @@ if (decoded && typeof decoded === "object") {
 }
 
 // 3 — retry with X-PAYMENT. The middleware verifies + settles via the CDP facilitator.
-const paid = await fetch(TARGET, { headers: { "X-PAYMENT": header } });
+const paid = await req({ "X-PAYMENT": header });
 console.log(`\npaid    -> ${paid.status}`);
 
 const settlement = b64json(
