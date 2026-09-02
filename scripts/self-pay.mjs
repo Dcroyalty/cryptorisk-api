@@ -112,6 +112,13 @@ console.log();
 const paid = await call(payHeaders);
 console.log(`paid    -> ${paid.status}`);
 
+// On a rejected payment the server echoes a fresh PAYMENT-REQUIRED header whose
+// `error` field carries the facilitator's failure reason — that's the signal.
+const paidChallenge = decodeMaybeB64Json(paid.headers.get("payment-required"));
+if (paidChallenge && typeof paidChallenge === "object" && paidChallenge.error) {
+  console.log(`\nreject reason (PAYMENT-REQUIRED.error):\n  ${paidChallenge.error}\n`);
+}
+
 let settlement = null;
 try {
   settlement = http.getPaymentSettleResponse((name) => paid.headers.get(name));
