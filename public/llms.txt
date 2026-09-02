@@ -58,6 +58,14 @@ Returns: { address, chain, is_known, label, category }
 category: sanctioned | mixer | exchange | bridge | dex_router | scam | drainer | phishing | token_contract | protocol | unknown
 Sources: OFAC, ScamSniffer, MEW darklist, eth-labels, curated Base/Tornado sets. Never guesses.
 
+### Name resolution (free) — $0.00
+GET /api/resolve?q=<name or address>
+Bidirectional. ENS (name.eth) and Basenames (name.base.eth), forward and reverse,
+via public RPC + the resolver contracts directly. Reverse records are forward-verified
+against the input address (anti-spoofing). Auto-detects direction from the query.
+Returns: { query, kind, namespace, chain, resolved, address, name, sources, lookup }
+XRPL .xrp names are detected but return resolved:false — no canonical registry.
+
 ## Payment
 x402 protocol. Network: Base (eip155:8453). Asset: USDC.
 Discovery: https://uxus.finance/.well-known/x402.json

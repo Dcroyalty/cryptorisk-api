@@ -28,6 +28,10 @@ const TOOLS = [
     inputSchema: { type: "object", properties: {
       address: { type: "string", description: "0x EVM address" },
       chain: { type: "string", description: "base (default) or ethereum" } }, required: ["address"] } },
+  { name: "resolve", price: "0.00", endpoint: `${BASE}/api/resolve`, method: "GET",
+    description: "FREE. Bidirectional name <-> address resolution. Forward and reverse for ENS (name.eth) and Basenames (name.base.eth) via public RPC + the resolver contracts directly (no third-party API). Reverse records are forward-verified against the input address to stop name spoofing. Returns { query, kind, namespace, chain, resolved, address, name, sources, lookup }. XRPL .xrp names are detected but resolved:false (no canonical registry).",
+    inputSchema: { type: "object", properties: {
+      q: { type: "string", description: "an ENS/Basename name, an EVM 0x address, or an XRPL classic r-address" } }, required: ["q"] } },
   { name: "llm", price: "0.01", endpoint: `${BASE}/api/llm`, method: "POST",
     description: "LLM inference without an API key. $0.01 USDC on Base per call.",
     inputSchema: { type: "object", properties: {

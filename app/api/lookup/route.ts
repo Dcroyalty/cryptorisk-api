@@ -7,6 +7,7 @@ import { detectAddress } from "@/lib/address-detect";
 import { scoreAddress } from "@/lib/score-address";
 import { evmAccountState } from "@/lib/evm-account";
 import { lookupEntity } from "@/lib/entity";
+import { primaryName } from "@/lib/resolve";
 import { xrplLookup } from "@/lib/xrpl-lookup";
 
 export const runtime = "nodejs";
@@ -55,10 +56,11 @@ export async function GET(req: NextRequest) {
     const evmChain = hint === "ethereum" ? "ethereum" : "base";
     const addr = raw.toLowerCase();
 
-    const [full, acct, ent] = await Promise.all([
+    const [full, acct, ent, pname] = await Promise.all([
       scoreAddress(addr, evmChain, "wallet"),
       evmAccountState(evmChain, addr),
       lookupEntity(addr, evmChain).catch(() => null),
+      primaryName(addr).catch(() => null),
     ]);
 
     // Sanctions/scam lists are address-based and chain-agnostic; only tx_count
@@ -87,6 +89,7 @@ export async function GET(req: NextRequest) {
         entity: ent
           ? { is_known: ent.is_known, label: ent.label, category: ent.category }
           : { is_known: false, label: null, category: "unknown" },
+        name: pname ? pname.name : null,
         upgrade:
           "GET /api/risk/pro?address=0x...&chain=ethereum|base for reasons, signals, and sources ($0.01/call via x402).",
       },
@@ -117,6 +120,7 @@ export async function GET(req: NextRequest) {
       verdict: r.verdict,
       flags: r.flags,
       entity: { is_known: false, label: null, category: "unknown" },
+      name: null,
       upgrade: null,
     },
     { status: 200, headers: { "Cache-Control": "public, max-age=30" } },

@@ -120,6 +120,14 @@
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "input": { "query": { "address": "required 0x EVM address", "chain": "base (default) | ethereum" } },
       "output": "application/json"
+    },
+    {
+      "resource": "https://uxus.finance/api/resolve",
+      "type": "http", "method": "GET",
+      "description": "Bidirectional name <-> address resolution for ENS (name.eth) and Basenames (name.base.eth) via public RPC + the resolver contracts directly. Reverse records are forward-verified against the input address (anti-spoofing). Auto-detects direction. Returns { query, kind, namespace, chain, resolved, address, name, sources, lookup }. XRPL .xrp names are detected but return resolved:false (no canonical registry).",
+      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "q": "required — an ENS/Basename name, an EVM 0x address, or an XRPL classic r-address" } },
+      "output": "application/json"
     }
   ]
 }

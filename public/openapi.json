@@ -305,7 +305,7 @@
       },
       "LookupResult": {
         "type": "object",
-        "required": ["address", "chain", "chain_detected", "exists", "risk_score", "risk_level", "verdict", "flags", "entity"],
+        "required": ["address", "chain", "chain_detected", "exists", "risk_score", "risk_level", "verdict", "flags", "entity", "name"],
         "properties": {
           "address": { "type": "string" },
           "chain": { "type": "string", "enum": ["evm", "xrpl"] },
@@ -316,7 +316,24 @@
           "verdict": { "type": "string", "enum": ["PROCEED", "CAUTION", "BLOCK"] },
           "flags": { "type": "array", "items": { "type": "string" } },
           "entity": { "$ref": "#/components/schemas/Entity" },
+          "name": { "type": "string", "nullable": true, "description": "primary ENS/Basename for an EVM address, forward-verified; null if none" },
           "upgrade": { "type": "string", "nullable": true, "description": "points at /api/risk/pro for EVM; null for XRPL" }
+        }
+      },
+      "ResolveResult": {
+        "type": "object",
+        "required": ["query", "kind", "resolved", "address", "name", "sources"],
+        "properties": {
+          "query": { "type": "string" },
+          "kind": { "type": "string", "enum": ["name", "address"] },
+          "namespace": { "type": "string", "nullable": true, "enum": ["ens", "basename", "evm", "xrpl", null] },
+          "chain": { "type": "string", "nullable": true, "enum": ["ethereum", "base", "xrpl", null] },
+          "resolved": { "type": "boolean" },
+          "address": { "type": "string", "nullable": true },
+          "name": { "type": "string", "nullable": true },
+          "sources": { "type": "array", "items": { "type": "string" } },
+          "lookup": { "type": "string", "nullable": true, "description": "cross-link into /api/lookup for the resolved address" },
+          "note": { "type": "string", "description": "present when resolution is intentionally not attempted (e.g. .xrp)" }
         }
       },
       "Entity": {
@@ -554,6 +571,21 @@
         ],
         "responses": {
           "200": { "description": "Normalized lookup result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LookupResult" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/resolve": {
+      "get": {
+        "operationId": "resolveName",
+        "summary": "FREE name <-> address resolution",
+        "description": "Bidirectional. ENS (name.eth) and Basenames (name.base.eth), forward and reverse, via public RPC + the resolver contracts directly (no third-party API key). Reverse records are forward-verified against the input address to stop name spoofing. Direction is auto-detected from the query. XRPL .xrp names are detected but return resolved:false with a note (no canonical registry).",
+        "security": [],
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "example": "vitalik.eth" }
+        ],
+        "responses": {
+          "200": { "description": "Resolution result (resolved:false when a name/address has no record)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ResolveResult" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }
         }
       }
