@@ -104,6 +104,14 @@
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "input": { "query": { "chain": "ethereum|base", "limit": "number, max 30", "minLiquidityUsd": "number" } },
       "output": "application/json"
+    },
+    {
+      "resource": "https://uxus.finance/api/lookup",
+      "type": "http", "method": "GET",
+      "description": "FREE universal reverse lookup — any address on any chain (EVM + XRPL), chain auto-detected from the address format, no chain parameter. Returns one normalized envelope: exists, risk_score, risk_level, verdict, flags.",
+      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "address": "required — EVM 0x address or XRPL classic r-address", "chain": "optional EVM hint: base (default) | ethereum" } },
+      "output": "application/json"
     }
   ]
 }

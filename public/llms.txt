@@ -44,6 +44,13 @@ Returns: { risk_score, risk_level, verdict, flags, reasons, signals, sources }
 ### Risk (free demo) — $0.00
 GET /api/risk?address=0x...&chain=base
 
+### Universal lookup (free) — $0.00
+GET /api/lookup?address=<any address, any chain>
+No chain parameter — EVM and XRPL are auto-detected from the address format.
+Optional ?chain=ethereum hint (EVM only; default base).
+Returns: { address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, upgrade }
+Same field names for every chain.
+
 ## Payment
 x402 protocol. Network: Base (eip155:8453). Asset: USDC.
 Discovery: https://uxus.finance/.well-known/x402.json

@@ -302,6 +302,21 @@
           "source": { "type": "string", "example": "geckoterminal" },
           "checked_at": { "type": "string", "format": "date-time" }
         }
+      },
+      "LookupResult": {
+        "type": "object",
+        "required": ["address", "chain", "chain_detected", "exists", "risk_score", "risk_level", "verdict", "flags"],
+        "properties": {
+          "address": { "type": "string" },
+          "chain": { "type": "string", "enum": ["evm", "xrpl"] },
+          "chain_detected": { "type": "boolean" },
+          "exists": { "type": "boolean", "nullable": true, "description": "null when on-chain state could not be verified" },
+          "risk_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "risk_level": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+          "verdict": { "type": "string", "enum": ["PROCEED", "CAUTION", "BLOCK"] },
+          "flags": { "type": "array", "items": { "type": "string" } },
+          "upgrade": { "type": "string", "nullable": true, "description": "points at /api/risk/pro for EVM; null for XRPL" }
+        }
       }
     },
     "responses": {
@@ -496,6 +511,22 @@
         ],
         "responses": {
           "200": { "description": "Risk summary", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RiskFree" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/lookup": {
+      "get": {
+        "operationId": "universalLookup",
+        "summary": "FREE universal reverse lookup — any address, any chain",
+        "description": "Auto-detects the chain from the address format (EVM 0x address or XRPL classic r-address) — no chain parameter. One normalized envelope for every chain. EVM screening defaults to Base; ?chain=ethereum moves the wallet-history signal only (sanctions/scam lists are chain-agnostic). XRPL X-addresses are recognized but return 400 asking for the classic form.",
+        "security": [],
+        "parameters": [
+          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" },
+          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["base", "ethereum"], "default": "base" }, "description": "Optional EVM history-signal hint. Ignored for XRPL." }
+        ],
+        "responses": {
+          "200": { "description": "Normalized lookup result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LookupResult" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }
         }
       }
