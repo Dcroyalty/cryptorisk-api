@@ -27,15 +27,15 @@ const TOOLS = [
     inputSchema: { type: "object", properties: {
       url: { type: "string" }, format: { type: "string", enum: ["markdown","text","html"] },
       max_chars: { type: "number" } }, required: ["url"] } },
-  { name: "extract", price: "0.02", endpoint: `${BASE}/api/extract`, method: "POST",
-    description: "Messy text or a web page into structured JSON matching your schema. $0.02 USDC on Base.",
+  { name: "extract", price: "0.01", endpoint: `${BASE}/api/extract`, method: "POST",
+    description: "Messy text or a web page into structured JSON matching your schema. $0.01 USDC on Base.",
     inputSchema: { type: "object", properties: {
       schema: { type: "object" }, text: { type: "string" }, url: { type: "string" } }, required: ["schema"] } },
   { name: "embed", price: "0.01", endpoint: `${BASE}/api/embed`, method: "POST",
     description: "Text to embedding vectors (1024 dims). Batch up to 64. $0.01 USDC on Base.",
     inputSchema: { type: "object", properties: { input: {} }, required: ["input"] } },
-  { name: "search", price: "0.02", endpoint: `${BASE}/api/search`, method: "GET",
-    description: "Live web search as clean JSON. $0.02 USDC on Base.",
+  { name: "search", price: "0.01", endpoint: `${BASE}/api/search`, method: "GET",
+    description: "Live web search as clean JSON. $0.01 USDC on Base.",
     inputSchema: { type: "object", properties: {
       q: { type: "string" }, count: { type: "number" } }, required: ["q"] } },
   { name: "risk_check", price: "0.01", endpoint: `${BASE}/api/risk/pro`, method: "GET",

@@ -1,4 +1,4 @@
-// app/api/search/route.ts — x402 Search Gateway. $0.02 USDC/call on Base.
+// app/api/search/route.ts — x402 Search Gateway. $0.01 USDC/call on Base.
 // Providers tried in order: Serper (2,500 free, no card) -> Brave -> DuckDuckGo (keyless, $0).
 // Works with NO keys at all thanks to the DDG fallback.
 import { NextRequest, NextResponse } from "next/server";
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
   const q = (searchParams.get("q") || "").trim();
   const count = Math.min(Number(searchParams.get("count")) || 10, 20);
   if (!q) return NextResponse.json({ service: "x402 Search Gateway",
-    usage: "GET /api/search?q=your+query&count=10", price: "$0.02 USDC on Base per call" }, { status: 400 });
+    usage: "GET /api/search?q=your+query&count=10", price: "$0.01 USDC on Base per call" }, { status: 400 });
 
   const started = Date.now();
   const serper = process.env.SERPER_API_KEY;

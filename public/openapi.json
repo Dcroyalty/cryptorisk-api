@@ -384,7 +384,7 @@
     "/api/extract": {
       "post": {
         "operationId": "extractStructured",
-        "summary": "Text or URL to structured JSON ($0.02 USDC on Base)",
+        "summary": "Text or URL to structured JSON ($0.01 USDC on Base)",
         "description": "Return a JSON object shaped to the schema you supply, extracted from raw text or a fetched page. The unpaid GET on this path returns only an example.",
         "security": [{ "x402": [] }],
         "requestBody": {
@@ -450,7 +450,7 @@
     "/api/search": {
       "get": {
         "operationId": "webSearch",
-        "summary": "Live web search ($0.02 USDC on Base)",
+        "summary": "Live web search ($0.01 USDC on Base)",
         "description": "Return a ranked list of {title, url, description} results plus the provider that answered.",
         "security": [{ "x402": [] }],
         "parameters": [
@@ -555,7 +555,7 @@
     "/api/risk/live/pro": {
       "get": {
         "operationId": "riskLiveFull",
-        "summary": "Full mutable-risk report ($0.005 USDC on Base)",
+        "summary": "Full mutable-risk report ($0.01 USDC on Base)",
         "description": "Every owner power with a plain-English explanation, the raw controls object (owner, EIP-1967 implementation + admin slots, pause state, pending owner), and the on-chain read methodology. Free /api/risk/live returns verdict, score, time_to_rug only.",
         "security": [{ "x402": [] }],
         "parameters": [

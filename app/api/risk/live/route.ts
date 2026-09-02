@@ -50,7 +50,7 @@ export async function GET(req: Request) {
         powers_count: r.powers.length,
         tier: "free",
         upgrade:
-          "GET /api/risk/live/pro for the full powers[] + controls{} breakdown ($0.005/call via x402).",
+          "GET /api/risk/live/pro for the full powers[] + controls{} breakdown ($0.01/call via x402).",
         note:
           "Snapshot scanners tell you if a token is safe now. This tells you whether the owner can make it unsafe in the next block.",
         rpc_ok: r.rpc_ok,

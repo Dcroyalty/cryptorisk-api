@@ -22,7 +22,7 @@ GET /api/scrape?url=https://example.com&format=markdown
 format: markdown | text | html. Optional max_chars.
 Returns: { url, title, description, content, chars }
 
-### Extract — $0.02
+### Extract — $0.01
 POST /api/extract
 Body: { "schema": { "title": "string", "price": "number" }, "url": "..." }  (or "text")
 Returns: { data, model }
@@ -32,7 +32,7 @@ POST /api/embed
 Body: { "input": "text" }  or  { "input": ["a","b"] }  (max 64)
 Returns: { embeddings, dimensions, count }
 
-### Search — $0.02
+### Search — $0.01
 GET /api/search?q=your+query&count=10
 Returns: { query, results: [{title, url, description}], provider }
 

@@ -1,4 +1,4 @@
-// app/api/extract/route.ts — x402 Extract Gateway. $0.02 USDC/call on Base.
+// app/api/extract/route.ts — x402 Extract Gateway. $0.01 USDC/call on Base.
 // Messy HTML/text/URL -> structured JSON matching the caller's schema.
 import { NextRequest, NextResponse } from "next/server";
 
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    service: "x402 Extract Gateway", method: "POST", price: "$0.02 USDC on Base per call",
+    service: "x402 Extract Gateway", method: "POST", price: "$0.01 USDC on Base per call",
     body: { schema: "JSON object of fields you want", text: "raw text (or)", url: "page to fetch" },
     example: { schema: { title: "string", price: "number", in_stock: "boolean" }, url: "https://example.com/product" },
   }, { status: 200 });

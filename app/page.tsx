@@ -4,9 +4,9 @@ import { useState } from "react";
 const SERVICES = [
   { id: "llm",     send: "prompt",           get: "completion",              price: "0.01", note: "any model, no key" },
   { id: "scrape",  send: "url",              get: "markdown + title",        price: "0.01", note: "handles bot-blocking" },
-  { id: "extract", send: "schema + url/text",get: "JSON in your shape",      price: "0.02", note: "" },
+  { id: "extract", send: "schema + url/text",get: "JSON in your shape",      price: "0.01", note: "" },
   { id: "embed",   send: "text or text[]",   get: "1024-dim vectors",        price: "0.01", note: "batch to 64" },
-  { id: "search",  send: "query",            get: "ranked results",          price: "0.02", note: "" },
+  { id: "search",  send: "query",            get: "ranked results",          price: "0.01", note: "" },
   { id: "risk/pro",send: "0x address",       get: "0–100 score + verdict",   price: "0.01", note: "sanctions, scam, honeypot" },
 ];
 

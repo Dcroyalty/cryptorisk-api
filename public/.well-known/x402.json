@@ -24,7 +24,7 @@
       "resource": "https://uxus.finance/api/extract",
       "type": "http", "method": "POST",
       "description": "Turn messy text or a web page into structured JSON matching a schema you supply.",
-      "pricing": [{ "amount": "0.02", "asset": "USDC", "network": "base" }],
+      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
       "input": { "body": { "schema": "object (required)", "text": "string", "url": "string" } },
       "output": "application/json"
     },
@@ -40,7 +40,7 @@
       "resource": "https://uxus.finance/api/search",
       "type": "http", "method": "GET",
       "description": "Live web search returning clean JSON results (title, url, description).",
-      "pricing": [{ "amount": "0.02", "asset": "USDC", "network": "base" }],
+      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
       "input": { "query": { "q": "required", "count": "number, max 20" } },
       "output": "application/json"
     },
@@ -85,7 +85,7 @@
       "resource": "https://uxus.finance/api/risk/live/pro",
       "type": "http", "method": "GET",
       "description": "Full mutable-risk report: every owner power (upgradeable proxy, pause, un-renounced ownership, pending transfer) plus raw on-chain controls and methodology.",
-      "pricing": [{ "amount": "0.005", "asset": "USDC", "network": "base" }],
+      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
       "input": { "query": { "address": "required 0x address", "chain": "ethereum|base" } },
       "output": "application/json"
     },

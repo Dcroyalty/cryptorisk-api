@@ -1,4 +1,4 @@
-// app/api/risk/live/pro/route.ts â€” CryptoRisk LIVE PRO ($0.005 via x402)
+// app/api/risk/live/pro/route.ts — CryptoRisk LIVE PRO ($0.01 via x402)
 // Gated by middleware.ts (same paymentMiddleware as /api/risk/pro).
 // Returns the FULL mutable-risk breakdown: every owner power + raw controls.
 
