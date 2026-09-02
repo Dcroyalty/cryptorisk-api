@@ -1,10 +1,11 @@
+import { NextRequest, NextResponse } from "next/server";
 import { paymentMiddleware, Network } from "x402-next";
 import { facilitator } from "@coinbase/x402";
 
 const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
 const N = "base" as Network;
 
-export const middleware = paymentMiddleware(
+const inner = paymentMiddleware(
   PAY_TO,
   {
     "/api/risk/pro": { price: "$0.01", network: N,
@@ -24,6 +25,24 @@ export const middleware = paymentMiddleware(
   },
   facilitator as any
 );
+
+// x402-next's paymentMiddleware exposes no response hook. Wrap it: on a 402,
+// add a PAYMENT-REQUIRED header carrying the base64-encoded v1 challenge that
+// already lives in the JSON body. Additive only — the body is written back
+// byte-for-byte, so v1 clients (which read the body) are unaffected. Directory
+// probes (402 Index, x402scan) classify x402 on response-header presence and
+// never read the body.
+export async function middleware(req: NextRequest): Promise<NextResponse> {
+  const res = await inner(req);
+  if (res.status !== 402) return res;
+
+  const body = await res.text();
+  const headers = new Headers(res.headers);
+  headers.set("PAYMENT-REQUIRED", Buffer.from(body, "utf8").toString("base64"));
+  headers.delete("content-length"); // recomputed from the (identical) body
+
+  return new NextResponse(body, { status: 402, statusText: res.statusText, headers });
+}
 
 export const config = {
   matcher: ["/api/risk/pro", "/api/risk/live/pro", "/api/llm", "/api/scrape", "/api/extract", "/api/embed", "/api/search"],
