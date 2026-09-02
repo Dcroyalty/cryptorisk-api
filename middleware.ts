@@ -9,8 +9,6 @@ export const middleware = paymentMiddleware(
   {
     "/api/risk/pro": { price: "$0.01", network: N,
       config: { description: "Risk: wallet/token risk report (OFAC sanctions, scam lists, honeypot signals)." } },
-    "/api/risk/live/pro": { price: "$0.005", network: N,
-      config: { description: "Risk LIVE PRO: full mutable-risk breakdown - every owner power + raw on-chain controls." } },
     "/api/llm":      { price: "$0.01", network: N,
       config: { description: "LLM: pay-per-call AI inference. No API key, no account. POST {prompt} -> completion." } },
     "/api/scrape":   { price: "$0.01", network: N,
@@ -26,6 +24,6 @@ export const middleware = paymentMiddleware(
 );
 
 export const config = {
-  matcher: ["/api/risk/pro", "/api/risk/live/pro", "/api/llm", "/api/scrape", "/api/extract", "/api/embed", "/api/search"],
+  matcher: ["/api/risk/pro", "/api/llm", "/api/scrape", "/api/extract", "/api/embed", "/api/search"],
   runtime: "nodejs",
 };

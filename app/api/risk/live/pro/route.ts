@@ -1,10 +1,11 @@
-// app/api/risk/live/pro/route.ts â€” CryptoRisk LIVE PRO ($0.005 via x402)
-// Gated by middleware.ts (same paymentMiddleware as /api/risk/pro).
+// app/api/risk/live/pro/route.ts — CryptoRisk LIVE PRO ($0.005 via x402 v2)
+// Gated by lib/x402.ts (@x402/core resource server + CDP facilitator).
 // Returns the FULL mutable-risk breakdown: every owner power + raw controls.
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { analyzeLiveRisk, type Chain } from "@/lib/live-risk";
 import { isEvmAddress } from "@/lib/sources";
+import { withX402 } from "@/lib/x402";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ const EXPLAIN: Record<string, string> = {
     "Chain was unreachable. Treat as UNKNOWN, not safe. Retry before acting.",
 };
 
-export async function GET(req: Request) {
+async function handler(req: NextRequest): Promise<NextResponse> {
   const url = new URL(req.url);
   const address = (url.searchParams.get("address") || "").trim();
   const chain = ((url.searchParams.get("chain") || "base").toLowerCase() as Chain);
@@ -47,7 +48,7 @@ export async function GET(req: Request) {
         powers_explained: r.powers.map((p) => ({ code: p, meaning: EXPLAIN[p] ?? p })),
         tier: "pro",
         methodology:
-          "Direct on-chain reads: eth_getCode, owner()/getOwner(), pendingOwner(), paused(), implementation(), and EIP-1967 proxy slots. No third-party security API â€” nothing to rate-limit or go stale.",
+          "Direct on-chain reads: eth_getCode, owner()/getOwner(), pendingOwner(), paused(), implementation(), and EIP-1967 proxy slots. No third-party security API - nothing to rate-limit or go stale.",
       },
       { headers: { "Cache-Control": "no-store" } }
     );
@@ -56,3 +57,16 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "analysis_failed", message }, { status: 500 });
   }
 }
+
+export const GET = withX402(
+  {
+    path: "/api/risk/live/pro",
+    method: "GET",
+    price: "$0.005",
+    description:
+      "Free /api/risk/live returns verdict, mutable_risk_score, time_to_rug. Paid adds every owner power with a plain-English explanation, the raw controls object (owner address, EIP-1967 implementation + admin slots, pause state, pending owner), and the on-chain reads to reproduce the score.",
+    serviceName: "UXUS Agent Services",
+    tags: ["risk", "security", "token", "rug", "base", "ethereum"],
+  },
+  handler,
+);
