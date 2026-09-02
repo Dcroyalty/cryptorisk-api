@@ -108,9 +108,17 @@
     {
       "resource": "https://uxus.finance/api/lookup",
       "type": "http", "method": "GET",
-      "description": "Returns one normalized envelope — address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, upgrade — for any EVM 0x or XRPL classic r-address, chain auto-detected from the format.",
+      "description": "Returns one normalized envelope — address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, entity, upgrade — for any EVM 0x or XRPL classic r-address, chain auto-detected from the format.",
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "input": { "query": { "address": "required — EVM 0x address or XRPL classic r-address", "chain": "optional EVM hint: base (default) | ethereum" } },
+      "output": "application/json"
+    },
+    {
+      "resource": "https://uxus.finance/api/entity",
+      "type": "http", "method": "GET",
+      "description": "Returns { is_known, label, category } for an EVM address — what it IS (not who owns it). category is one of sanctioned, mixer, exchange, bridge, dex_router, scam, drainer, phishing, token_contract, protocol, unknown. Sourced from OFAC, ScamSniffer, MEW, eth-labels and curated Base/Tornado sets. Never guesses.",
+      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "address": "required 0x EVM address", "chain": "base (default) | ethereum" } },
       "output": "application/json"
     }
   ]

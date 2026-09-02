@@ -48,8 +48,15 @@ GET /api/risk?address=0x...&chain=base
 GET /api/lookup?address=<any address, any chain>
 No chain parameter — EVM and XRPL are auto-detected from the address format.
 Optional ?chain=ethereum hint (EVM only; default base).
-Returns: { address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, upgrade }
+Returns: { address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, entity, upgrade }
 Same field names for every chain.
+
+### Entity attribution (free) — $0.00
+GET /api/entity?address=0x...&chain=base|ethereum   (default base)
+What IS this address — not who owns it.
+Returns: { address, chain, is_known, label, category }
+category: sanctioned | mixer | exchange | bridge | dex_router | scam | drainer | phishing | token_contract | protocol | unknown
+Sources: OFAC, ScamSniffer, MEW darklist, eth-labels, curated Base/Tornado sets. Never guesses.
 
 ## Payment
 x402 protocol. Network: Base (eip155:8453). Asset: USDC.

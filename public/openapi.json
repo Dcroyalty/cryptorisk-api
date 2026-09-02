@@ -305,7 +305,7 @@
       },
       "LookupResult": {
         "type": "object",
-        "required": ["address", "chain", "chain_detected", "exists", "risk_score", "risk_level", "verdict", "flags"],
+        "required": ["address", "chain", "chain_detected", "exists", "risk_score", "risk_level", "verdict", "flags", "entity"],
         "properties": {
           "address": { "type": "string" },
           "chain": { "type": "string", "enum": ["evm", "xrpl"] },
@@ -315,7 +315,34 @@
           "risk_level": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
           "verdict": { "type": "string", "enum": ["PROCEED", "CAUTION", "BLOCK"] },
           "flags": { "type": "array", "items": { "type": "string" } },
+          "entity": { "$ref": "#/components/schemas/Entity" },
           "upgrade": { "type": "string", "nullable": true, "description": "points at /api/risk/pro for EVM; null for XRPL" }
+        }
+      },
+      "Entity": {
+        "type": "object",
+        "required": ["is_known", "label", "category"],
+        "properties": {
+          "is_known": { "type": "boolean" },
+          "label": { "type": "string", "nullable": true, "description": "human name, e.g. \"Tornado.Cash: 1 ETH\"; null when unknown" },
+          "category": {
+            "type": "string",
+            "enum": ["sanctioned", "mixer", "exchange", "bridge", "dex_router", "scam", "drainer", "phishing", "token_contract", "protocol", "unknown"]
+          }
+        }
+      },
+      "EntityResult": {
+        "type": "object",
+        "required": ["address", "chain", "is_known", "label", "category"],
+        "properties": {
+          "address": { "type": "string" },
+          "chain": { "type": "string", "enum": ["ethereum", "base"] },
+          "is_known": { "type": "boolean" },
+          "label": { "type": "string", "nullable": true },
+          "category": {
+            "type": "string",
+            "enum": ["sanctioned", "mixer", "exchange", "bridge", "dex_router", "scam", "drainer", "phishing", "token_contract", "protocol", "unknown"]
+          }
         }
       }
     },
@@ -527,6 +554,22 @@
         ],
         "responses": {
           "200": { "description": "Normalized lookup result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LookupResult" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/entity": {
+      "get": {
+        "operationId": "entityAttribution",
+        "summary": "FREE entity attribution — what IS this address",
+        "description": "Answers what an address is (not who owns it) from OFAC, ScamSniffer, MEW, eth-labels and curated Base/Tornado sets. is_known:false / category:\"unknown\" when nothing matches — never inferred from address shape.",
+        "security": [],
+        "parameters": [
+          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0x47CE0C6eD5B0Ce3d3A51fdb1C52DC66a7c3c2936" },
+          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["base", "ethereum"], "default": "base" } }
+        ],
+        "responses": {
+          "200": { "description": "Entity attribution", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EntityResult" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }
         }
       }

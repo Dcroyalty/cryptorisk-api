@@ -19,10 +19,15 @@ const TOOLS = [
       address: { type: "string", description: "0x EVM address" },
       chain: { type: "string", description: "ethereum or base" } }, required: ["address"] } },
   { name: "lookup", price: "0.00", endpoint: `${BASE}/api/lookup`, method: "GET",
-    description: "FREE. Universal reverse lookup for any address on any chain (EVM + XRPL) — chain auto-detected from the address format, no chain parameter. Returns { address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, upgrade }.",
+    description: "FREE. Universal reverse lookup for any address on any chain (EVM + XRPL) — chain auto-detected from the address format, no chain parameter. Returns { address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, entity, upgrade }.",
     inputSchema: { type: "object", properties: {
       address: { type: "string", description: "EVM 0x address or XRPL classic r-address" },
       chain: { type: "string", description: "optional EVM history hint: base (default) or ethereum" } }, required: ["address"] } },
+  { name: "entity", price: "0.00", endpoint: `${BASE}/api/entity`, method: "GET",
+    description: "FREE. Entity attribution — what IS this address (not who owns it). Returns { is_known, label, category } where category is one of sanctioned, mixer, exchange, bridge, dex_router, scam, drainer, phishing, token_contract, protocol, unknown. Sourced from OFAC, ScamSniffer, MEW, eth-labels and curated Base/Tornado sets. Never guesses.",
+    inputSchema: { type: "object", properties: {
+      address: { type: "string", description: "0x EVM address" },
+      chain: { type: "string", description: "base (default) or ethereum" } }, required: ["address"] } },
   { name: "llm", price: "0.01", endpoint: `${BASE}/api/llm`, method: "POST",
     description: "LLM inference without an API key. $0.01 USDC on Base per call.",
     inputSchema: { type: "object", properties: {
