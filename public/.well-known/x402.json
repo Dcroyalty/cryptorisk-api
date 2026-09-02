@@ -7,7 +7,7 @@
     {
       "resource": "https://uxus.finance/api/llm",
       "type": "http", "method": "POST",
-      "description": "LLM inference. POST {prompt} or {messages[]} and get a completion. No API key needed.",
+      "description": "Returns the completion text, the model that produced it (from a 5-model fallback chain), token usage, and latency_ms.",
       "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
       "input": { "body": { "prompt": "string", "messages": "array (optional)", "model": "string (optional)", "max_tokens": "number (optional, max 2000)" } },
       "output": "application/json"
@@ -15,7 +15,7 @@
     {
       "resource": "https://uxus.finance/api/scrape",
       "type": "http", "method": "GET",
-      "description": "Fetch any URL and return clean markdown or text plus title and description. Gets past common bot-blocking.",
+      "description": "Returns the fetched page past bot-blocking: title, meta description, body as markdown/text/html, a character count, and a truncation flag.",
       "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
       "input": { "query": { "url": "required", "format": "markdown|text|html", "max_chars": "number" } },
       "output": "application/json"
@@ -23,7 +23,7 @@
     {
       "resource": "https://uxus.finance/api/extract",
       "type": "http", "method": "POST",
-      "description": "Turn messy text or a web page into structured JSON matching a schema you supply.",
+      "description": "Returns a JSON object populated to the schema you post, extracted from your text or URL, plus the model that produced it.",
       "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
       "input": { "body": { "schema": "object (required)", "text": "string", "url": "string" } },
       "output": "application/json"
@@ -31,7 +31,7 @@
     {
       "resource": "https://uxus.finance/api/embed",
       "type": "http", "method": "POST",
-      "description": "Text to embedding vectors (jina-embeddings-v3, 1024 dims). Batch up to 64 strings.",
+      "description": "Returns one 1024-dim jina-embeddings-v3 vector per input string (up to 64), with the dimension count and token usage.",
       "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
       "input": { "body": { "input": "string or string[]" } },
       "output": "application/json"
@@ -39,7 +39,7 @@
     {
       "resource": "https://uxus.finance/api/search",
       "type": "http", "method": "GET",
-      "description": "Live web search returning clean JSON results (title, url, description).",
+      "description": "Returns a ranked list of {title, url, description} results plus which provider (Serper, Brave, or DuckDuckGo) served them.",
       "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
       "input": { "query": { "q": "required", "count": "number, max 20" } },
       "output": "application/json"
@@ -47,7 +47,7 @@
     {
       "resource": "https://uxus.finance/api/risk/pro",
       "type": "http", "method": "GET",
-      "description": "EVM wallet/token risk report: OFAC sanctions, scam/phishing lists, honeypot and rug signals, 0-100 score with PROCEED/CAUTION/BLOCK verdict.",
+      "description": "Adds to the free /api/risk (score, level, verdict, flags): per-signal reasons with severity, the raw signals object (token tax/mint/proxy/hidden-owner flags, or wallet age + tx counts), and the sources behind every flag.",
       "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
       "input": { "query": { "address": "required 0x address", "chain": "ethereum|base", "type": "wallet|token" } },
       "output": "application/json"
@@ -55,28 +55,28 @@
     {
       "resource": "https://uxus.finance/api/risk",
       "type": "http", "method": "GET",
-      "description": "FREE demo of risk scoring: score, level, verdict, flags.",
+      "description": "Returns risk_score (0-100), risk_level, a PROCEED/CAUTION/BLOCK verdict, and flags for any EVM wallet or token. No reasons, signals, or sources — /api/risk/pro adds those.",
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/catalog",
       "type": "http", "method": "GET",
-      "description": "FREE storefront index. Lists every service, price, and parameter in one call.",
+      "description": "Returns every service with its id, method, URL, price, and parameter list in one JSON call — the machine-readable storefront index.",
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/mcp",
       "type": "http", "method": "POST",
-      "description": "FREE MCP server (JSON-RPC 2.0 over HTTP): initialize, tools/list, tools/call. Free tools run inline; paid tools return their x402 endpoint and price. GET returns server metadata.",
+      "description": "MCP server over JSON-RPC 2.0. Returns tool results inline for free tools; for paid tools returns the x402 endpoint, price, and pay-to address. GET returns server metadata.",
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/risk/live",
       "type": "http", "method": "GET",
-      "description": "FREE mutable-risk demo: can the token owner turn hostile while you hold? Returns verdict, mutable_risk_score, time_to_rug.",
+      "description": "Returns the mutable-risk verdict, mutable_risk_score (0-100), can_turn_hostile, and time_to_rug for a token. /api/risk/live/pro adds the per-power breakdown and raw controls.",
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "input": { "query": { "address": "required 0x address", "chain": "ethereum|base" } },
       "output": "application/json"
@@ -84,7 +84,7 @@
     {
       "resource": "https://uxus.finance/api/risk/live/pro",
       "type": "http", "method": "GET",
-      "description": "Full mutable-risk report: every owner power (upgradeable proxy, pause, un-renounced ownership, pending transfer) plus raw on-chain controls and methodology.",
+      "description": "Adds to the free /api/risk/live (verdict, mutable_risk_score, time_to_rug): every owner power explained in plain English, the raw controls object (owner, EIP-1967 implementation + admin slots, pause state, pending owner), and the on-chain reads to reproduce the score.",
       "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
       "input": { "query": { "address": "required 0x address", "chain": "ethereum|base" } },
       "output": "application/json"
@@ -92,7 +92,7 @@
     {
       "resource": "https://uxus.finance/api/risk/bazaar",
       "type": "http", "method": "GET",
-      "description": "Wallet/token risk score served through the x402 Bazaar resource-server flow. Same data as /api/risk/pro; returns the free summary when no payment is presented.",
+      "description": "The same full report as /api/risk/pro (reasons, signals, sources), settled through the x402 Bazaar / CDP resource-server flow. Returns the free score/verdict/flags summary when no payment is presented.",
       "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
       "input": { "query": { "address": "required 0x address", "chain": "ethereum|base", "type": "wallet|token" } },
       "output": "application/json"
@@ -100,7 +100,7 @@
     {
       "resource": "https://uxus.finance/api/launches",
       "type": "http", "method": "GET",
-      "description": "FREE feed of the newest DEX pools on Base/Ethereum (GeckoTerminal). Each row cross-links to /api/risk/live.",
+      "description": "Returns the newest DEX pools on Base/Ethereum (pair, token address, liquidity, FDV, 24h volume, age, flags), each with a riskCheck link into /api/risk/live.",
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "input": { "query": { "chain": "ethereum|base", "limit": "number, max 30", "minLiquidityUsd": "number" } },
       "output": "application/json"
@@ -108,7 +108,7 @@
     {
       "resource": "https://uxus.finance/api/lookup",
       "type": "http", "method": "GET",
-      "description": "FREE universal reverse lookup — any address on any chain (EVM + XRPL), chain auto-detected from the address format, no chain parameter. Returns one normalized envelope: exists, risk_score, risk_level, verdict, flags.",
+      "description": "Returns one normalized envelope — address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, upgrade — for any EVM 0x or XRPL classic r-address, chain auto-detected from the format.",
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "input": { "query": { "address": "required — EVM 0x address or XRPL classic r-address", "chain": "optional EVM hint: base (default) | ethereum" } },
       "output": "application/json"
