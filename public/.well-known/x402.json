@@ -39,9 +39,9 @@
     {
       "resource": "https://uxus.finance/api/search",
       "type": "http", "method": "GET",
-      "description": "Returns a ranked list of {title, url, description} results plus which provider (Serper, Brave, or DuckDuckGo) served them.",
+      "description": "Live web search with no API key, no account, no signup. Returns { query, results: [{ title, url, description, score }], provider, latency_ms }; score is 1.0 for the top result descending toward 0.1, so you can rank or threshold. Multiple search backends with automatic failover.",
       "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "q": "required", "count": "number, max 20" } },
+      "input": { "query": { "q": "Search query. Required.", "count": "Number of results, 1-20. Default 10." } },
       "output": "application/json"
     },
     {

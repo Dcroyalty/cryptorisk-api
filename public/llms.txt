@@ -34,7 +34,8 @@ Returns: { embeddings, dimensions, count }
 
 ### Search — $0.01
 GET /api/search?q=your+query&count=10
-Returns: { query, results: [{title, url, description}], provider }
+Returns: { query, results: [{title, url, description, score}], provider }
+score: 1.0 for the top result, descending toward 0.1 — rank or threshold on it.
 
 ### Wallet & token risk — $0.01
 GET /api/risk/pro?address=0x...&chain=base&type=wallet

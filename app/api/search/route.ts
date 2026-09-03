@@ -15,6 +15,12 @@ function decode(s: string) {
 }
 function strip(s: string) { return decode(s.replace(/<[^>]+>/g, "")).replace(/\s{2,}/g, " ").trim(); }
 
+// Normalize provider rank to a 0-1 descending score: rank 1 of N -> 1.0, rank N -> 1/N.
+function withScores<T>(results: T[]): (T & { score: number })[] {
+  const n = results.length || 1;
+  return results.map((r, i) => ({ ...r, score: Math.round(((n - i) / n) * 1000) / 1000 }));
+}
+
 async function ddg(q: string, count: number) {
   const r = await fetch("https://html.duckduckgo.com/html/", {
     method: "POST",
@@ -54,7 +60,7 @@ export async function GET(req: NextRequest) {
       if (r.ok) {
         const d = await r.json();
         const results = (d?.organic ?? []).map((x: any) => ({ title: x.title, url: x.link, description: x.snippet }));
-        if (results.length) return NextResponse.json({ query: q, results, provider: "serper",
+        if (results.length) return NextResponse.json({ query: q, results: withScores(results), provider: "serper",
           latency_ms: Date.now() - started, served_by: "x402-search-gateway" }, { status: 200 });
       }
     } catch {}
@@ -67,7 +73,7 @@ export async function GET(req: NextRequest) {
       if (r.ok) {
         const d = await r.json();
         const results = (d?.web?.results ?? []).map((x: any) => ({ title: x.title, url: x.url, description: x.description }));
-        if (results.length) return NextResponse.json({ query: q, results, provider: "brave",
+        if (results.length) return NextResponse.json({ query: q, results: withScores(results), provider: "brave",
           latency_ms: Date.now() - started, served_by: "x402-search-gateway" }, { status: 200 });
       }
     } catch {}
@@ -75,7 +81,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const results = await ddg(q, count);
-    if (results) return NextResponse.json({ query: q, results, provider: "duckduckgo",
+    if (results) return NextResponse.json({ query: q, results: withScores(results), provider: "duckduckgo",
       latency_ms: Date.now() - started, served_by: "x402-search-gateway" }, { status: 200 });
   } catch {}
 

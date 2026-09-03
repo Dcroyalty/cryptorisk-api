@@ -208,7 +208,8 @@
         "properties": {
           "title": { "type": "string" },
           "url": { "type": "string" },
-          "description": { "type": "string" }
+          "description": { "type": "string" },
+          "score": { "type": "number", "minimum": 0, "maximum": 1, "description": "Relevance score from provider rank: 1.0 for the top result, descending toward 0.1. Rank or threshold on it." }
         }
       },
       "SearchResponse": {
@@ -562,7 +563,7 @@
       "get": {
         "operationId": "webSearch",
         "summary": "Live web search ($0.01 USDC on Base)",
-        "description": "Return a ranked list of {title, url, description} results plus the provider that answered.",
+        "description": "Live web search — no API key, no account, no signup. Returns { query, results: [{ title, url, description, score }], provider, latency_ms }. score is 1.0 for the top result descending toward 0.1, so an agent can rank or threshold. Multiple search backends with automatic failover.",
         "security": [{ "x402": [] }],
         "parameters": [
           { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "example": "x402 protocol" },
