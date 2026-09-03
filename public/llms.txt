@@ -66,6 +66,17 @@ against the input address (anti-spoofing). Auto-detects direction from the query
 Returns: { query, kind, namespace, chain, resolved, address, name, sources, lookup }
 XRPL .xrp names are detected but return resolved:false — no canonical registry.
 
+### Wallet caller ID (free) — $0.00
+GET /api/callerid?address=0x...&chain=base|ethereum   (default base)
+Should this wallet be answered? Wallet messaging (XMTP, Push) has no spam filter.
+Composes entity attribution + risk score + on-chain history + verified name into one answer.
+Returns: { address, chain, name, entity, exists, risk_score, risk_level, verdict, recommendation, confidence, reasons, checked_at }
+recommendation: ANSWER | SCREEN | BLOCK
+confidence: high (entity + risk both checked) | low (an input degraded — treat as "unchecked", not "clean")
+reasons[] names exactly what drove the call. SCREEN is the default for unknown addresses, not a failure.
+BLOCK: sanctioned | drainer | phishing | scam | mixer, or risk verdict BLOCK.
+ANSWER: known exchange/dex_router/protocol, or a forward-verified ENS/Basename — each with risk verdict PROCEED.
+
 ## Payment
 x402 protocol. Network: Base (eip155:8453). Asset: USDC.
 Discovery: https://uxus.finance/.well-known/x402.json

@@ -128,6 +128,14 @@
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "input": { "query": { "q": "required — an ENS/Basename name, an EVM 0x address, or an XRPL classic r-address" } },
       "output": "application/json"
+    },
+    {
+      "resource": "https://uxus.finance/api/callerid",
+      "type": "http", "method": "GET",
+      "description": "Wallet caller ID for wallet messaging (XMTP, Push): should this wallet be answered. Composes entity attribution + risk score + on-chain history + forward-verified name into ANSWER | SCREEN | BLOCK with reasons[] and a confidence flag. BLOCK on sanctioned/drainer/phishing/scam/mixer or risk verdict BLOCK; ANSWER on a known exchange/dex_router/protocol or a verified ENS/Basename with risk PROCEED; SCREEN is the default for unknown addresses. confidence 'low' means an input could not be checked — degrades to SCREEN, never guesses.",
+      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "address": "required 0x EVM address", "chain": "base (default) | ethereum" } },
+      "output": "application/json"
     }
   ]
 }

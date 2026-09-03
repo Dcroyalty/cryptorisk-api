@@ -361,6 +361,24 @@
             "enum": ["sanctioned", "mixer", "exchange", "bridge", "dex_router", "scam", "drainer", "phishing", "token_contract", "protocol", "unknown"]
           }
         }
+      },
+      "CallerIdResult": {
+        "type": "object",
+        "required": ["address", "chain", "name", "entity", "exists", "risk_score", "risk_level", "verdict", "recommendation", "confidence", "reasons", "checked_at"],
+        "properties": {
+          "address": { "type": "string" },
+          "chain": { "type": "string", "enum": ["ethereum", "base"] },
+          "name": { "type": "string", "nullable": true, "description": "forward-verified primary ENS/Basename, or null" },
+          "entity": { "$ref": "#/components/schemas/Entity" },
+          "exists": { "type": "boolean", "nullable": true, "description": "null when on-chain state could not be checked" },
+          "risk_score": { "type": "integer", "nullable": true, "minimum": 0, "maximum": 100 },
+          "risk_level": { "type": "string", "nullable": true, "enum": ["low", "medium", "high", "critical"] },
+          "verdict": { "type": "string", "nullable": true, "enum": ["PROCEED", "CAUTION", "BLOCK"] },
+          "recommendation": { "type": "string", "enum": ["ANSWER", "SCREEN", "BLOCK"] },
+          "confidence": { "type": "string", "enum": ["high", "low"], "description": "high = entity and risk both resolved; low = an input degraded to null (treat as unchecked, not clean)" },
+          "reasons": { "type": "array", "items": { "type": "string" }, "description": "short strings naming exactly what drove the recommendation" },
+          "checked_at": { "type": "string", "format": "date-time" }
+        }
       }
     },
     "responses": {
@@ -571,6 +589,22 @@
         ],
         "responses": {
           "200": { "description": "Normalized lookup result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LookupResult" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/callerid": {
+      "get": {
+        "operationId": "callerId",
+        "summary": "FREE wallet caller ID — should this wallet be answered",
+        "description": "For wallet messaging (XMTP, Push), which has no spam filter. Composes entity attribution + risk score + on-chain history + forward-verified name into ANSWER | SCREEN | BLOCK with reasons[]. BLOCK on entity category sanctioned/drainer/phishing/scam/mixer or risk verdict BLOCK. ANSWER on a known exchange/dex_router/protocol OR a forward-verified ENS/Basename, each with risk verdict PROCEED. SCREEN is the default for unknown addresses. confidence is 'low' when entity or risk could not be checked — degrades to SCREEN, never guesses.",
+        "security": [],
+        "parameters": [
+          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0x47CE0C6eD5B0Ce3d3A51fdb1C52DC66a7c3c2936" },
+          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["base", "ethereum"], "default": "base" } }
+        ],
+        "responses": {
+          "200": { "description": "Caller-ID recommendation", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CallerIdResult" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }
         }
       }

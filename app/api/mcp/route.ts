@@ -32,6 +32,11 @@ const TOOLS = [
     description: "FREE. Bidirectional name <-> address resolution. Forward and reverse for ENS (name.eth) and Basenames (name.base.eth) via public RPC + the resolver contracts directly (no third-party API). Reverse records are forward-verified against the input address to stop name spoofing. Returns { query, kind, namespace, chain, resolved, address, name, sources, lookup }. XRPL .xrp names are detected but resolved:false (no canonical registry).",
     inputSchema: { type: "object", properties: {
       q: { type: "string", description: "an ENS/Basename name, an EVM 0x address, or an XRPL classic r-address" } }, required: ["q"] } },
+  { name: "callerid", price: "0.00", endpoint: `${BASE}/api/callerid`, method: "GET",
+    description: "FREE. Wallet caller ID for wallet messaging (XMTP, Push), which has no spam filter. Should this wallet be answered? Returns { recommendation: ANSWER|SCREEN|BLOCK, confidence: high|low, reasons[], name, entity, exists, risk_score, risk_level, verdict, checked_at }. BLOCK on entity category sanctioned/drainer/phishing/scam/mixer or risk verdict BLOCK. ANSWER on a known exchange/dex_router/protocol OR a forward-verified ENS/Basename, both with risk verdict PROCEED. SCREEN is the default for unknown addresses (not a failure). confidence is 'low' when entity or risk could not be checked — it degrades to SCREEN, never guesses.",
+    inputSchema: { type: "object", properties: {
+      address: { type: "string", description: "0x EVM address" },
+      chain: { type: "string", description: "base (default) or ethereum" } }, required: ["address"] } },
   { name: "llm", price: "0.01", endpoint: `${BASE}/api/llm`, method: "POST",
     description: "LLM inference without an API key. $0.01 USDC on Base per call.",
     inputSchema: { type: "object", properties: {
