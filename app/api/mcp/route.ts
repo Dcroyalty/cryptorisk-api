@@ -37,6 +37,11 @@ const TOOLS = [
     inputSchema: { type: "object", properties: {
       address: { type: "string", description: "0x EVM address" },
       chain: { type: "string", description: "base (default) or ethereum" } }, required: ["address"] } },
+  { name: "shield", price: "0.00", endpoint: `${BASE}/api/shield/check`, method: "GET",
+    description: "FREE. Per-user private wallet blocklist with signature-proved ownership. Multi-step: GET /api/shield/nonce?owner=0x..., sign the returned message (EIP-191, EOA only in v1 — no ERC-1271/Safe yet), POST /api/shield/session { owner, signature } for a 60-min bearer token, then use it for GET /api/shield/check?address=0x...&chain=base (returns { blocked, source, recommendation, reasons[] } — an explicit block wins, a sanctioned address can never be allowlisted, otherwise falls through to ANSWER|SCREEN|BLOCK), GET /api/shield/list, GET /api/shield/stats (7d/30d/90d). Writes (POST /api/shield/block|unblock|allow|unallow { owner, signature, address }) take a fresh nonce+signature each. Private lists only — no shared reputation. Events kept 90 days.",
+    inputSchema: { type: "object", properties: {
+      address: { type: "string", description: "0x EVM address to check against your list" },
+      chain: { type: "string", description: "base (default) or ethereum" } }, required: ["address"] } },
   { name: "llm", price: "0.01", endpoint: `${BASE}/api/llm`, method: "POST",
     description: "LLM inference without an API key. $0.01 USDC on Base per call.",
     inputSchema: { type: "object", properties: {

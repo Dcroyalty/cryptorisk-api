@@ -77,6 +77,31 @@ reasons[] names exactly what drove the call. SCREEN is the default for unknown a
 BLOCK: sanctioned | drainer | phishing | scam | mixer, or risk verdict BLOCK.
 ANSWER: known exchange/dex_router/protocol, or a forward-verified ENS/Basename — each with risk verdict PROCEED.
 
+### Wallet blocklist — Shield (free) — $0.00
+Per-user PRIVATE blocklist. Your block never affects anyone else's results — no shared
+reputation, no aggregate scoring. First stateful product in the store.
+
+Ownership is proved by signature, not an API key:
+1. GET /api/shield/nonce?owner=0x...            -> { nonce, expires_at }  (10 min, single-use)
+2. Sign the returned message with the owner key (EIP-191 / personal_sign).
+   v1 verifies EOA (ECDSA) signatures only — ERC-1271 / Safe wallets are not supported yet.
+3. POST /api/shield/session { owner, signature } -> { token }   (bearer, 60 min, for reads)
+
+Writes (fresh nonce + signature each, the message binds the action and target):
+POST /api/shield/block   { owner, signature, address, chain?, reason? }
+POST /api/shield/unblock { owner, signature, address }
+POST /api/shield/allow   { owner, signature, address, reason? }   ("I vouch for this address")
+POST /api/shield/unallow { owner, signature, address }
+
+Reads (Authorization: Bearer <token>):
+GET /api/shield/list                              -> { blocks[], allows[] }
+GET /api/shield/check?address=0x...&chain=base    -> { blocked, source, recommendation, reasons[], entity, name }
+GET /api/shield/stats                             -> 7d / 30d / 90d counts by action and entity category
+
+/check precedence: sanctioned entity (hard stop, cannot be allowlisted) > your allowlist >
+your manual block > auto-BLOCK from caller ID > the caller-ID recommendation (ANSWER|SCREEN|BLOCK).
+Every /check is logged so /stats is real. shield_events are pruned at 90 days — 90-day retention, stated not buried.
+
 ## Payment
 x402 protocol. Network: Base (eip155:8453). Asset: USDC.
 Discovery: https://uxus.finance/.well-known/x402.json

@@ -6,6 +6,11 @@
 // addresses — that is not a failure. When an input is unavailable the logic
 // degrades toward SCREEN, never toward ANSWER.
 
+import { lookupEntity } from "@/lib/entity";
+import { scoreAddress } from "@/lib/score-address";
+import { evmAccountState } from "@/lib/evm-account";
+import { primaryName } from "@/lib/resolve";
+
 const BLOCK_CATEGORIES = new Set(["sanctioned", "drainer", "phishing", "scam", "mixer"]);
 // categories that can plausibly originate a message (run a notification service)
 const ANSWER_CATEGORIES = new Set(["exchange", "dex_router", "protocol"]);
@@ -78,4 +83,47 @@ export function recommend(input: CallerIdInput): CallerIdResult {
   else reasons.push(`risk verdict: ${risk.verdict}`);
 
   return { recommendation: "SCREEN", confidence, reasons };
+}
+
+// ---- Composition: the I/O half. Shared by /api/callerid and /api/shield/check. ----
+
+export interface ComposedCallerId {
+  entity: { is_known: boolean; label: string | null; category: string } | null;
+  risk: { score: number; level: string; verdict: "PROCEED" | "CAUTION" | "BLOCK" } | null;
+  name: string | null;
+  exists: boolean | null;
+  result: CallerIdResult;
+}
+
+// Gathers every input in parallel, tolerating per-source failure (allSettled),
+// then runs recommend(). A failed lookup becomes null and the reasoning says so —
+// it never silently reads as "clean".
+export async function composeCallerId(
+  address: string,
+  chain: "base" | "ethereum",
+): Promise<ComposedCallerId> {
+  const addr = address.toLowerCase();
+  const [entR, riskR, acctR, nameR] = await Promise.allSettled([
+    lookupEntity(addr, chain),
+    scoreAddress(addr, chain, "wallet"),
+    evmAccountState(chain, addr),
+    primaryName(addr),
+  ]);
+
+  const e = entR.status === "fulfilled" ? entR.value : null;
+  const s = riskR.status === "fulfilled" ? riskR.value : null;
+  const a = acctR.status === "fulfilled" ? acctR.value : null;
+  const name = nameR.status === "fulfilled" && nameR.value ? nameR.value.name : null;
+
+  const entity = e ? { is_known: e.is_known, label: e.label, category: e.category } : null;
+  const risk = s ? { score: s.risk_score, level: s.risk_level, verdict: s.verdict } : null;
+  const exists = a
+    ? a.has_code || a.nonce > 0 || a.balance_wei > BigInt(0)
+      ? true
+      : a.fully_checked
+        ? false
+        : null
+    : null;
+
+  return { entity, risk, name, exists, result: recommend({ entity, risk, name }) };
 }

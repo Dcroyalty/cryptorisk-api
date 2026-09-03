@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "UXUS — Agent Services",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Pay-per-call primitives for AI agents. LLM inference, web scraping, structured extraction, embeddings, live search, and EVM wallet/token risk scoring. Paid in USDC on Base via the x402 protocol (v2). No accounts, no API keys.",
     "contact": { "name": "UXUS", "url": "https://uxus.finance" }
   },
@@ -379,6 +379,40 @@
           "reasons": { "type": "array", "items": { "type": "string" }, "description": "short strings naming exactly what drove the recommendation" },
           "checked_at": { "type": "string", "format": "date-time" }
         }
+      },
+      "ShieldNonce": {
+        "type": "object",
+        "required": ["owner", "nonce", "expires_at"],
+        "properties": {
+          "owner": { "type": "string" },
+          "nonce": { "type": "string", "description": "32-byte hex challenge. Single-use, 10-minute TTL. Sign the message the API tells you to build (EIP-191 / personal_sign)." },
+          "expires_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ShieldSession": {
+        "type": "object",
+        "required": ["token", "owner", "expires_at"],
+        "properties": {
+          "token": { "type": "string", "description": "64-hex bearer token. Send as 'Authorization: Bearer <token>' on all read endpoints. 60-minute TTL." },
+          "owner": { "type": "string" },
+          "expires_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ShieldCheck": {
+        "type": "object",
+        "required": ["address", "owner", "blocked", "source", "recommendation", "confidence", "reasons", "entity", "name", "checked_at"],
+        "properties": {
+          "address": { "type": "string" },
+          "owner": { "type": "string" },
+          "blocked": { "type": "boolean", "description": "true if this address should not be answered for you" },
+          "source": { "type": "string", "nullable": true, "enum": ["sanctioned", "allow", "manual", "auto", null], "description": "which rule decided: sanctioned (hard stop) > allow (your allowlist) > manual (your block) > auto (caller-ID BLOCK) > null (fell through to the caller-ID recommendation)" },
+          "recommendation": { "type": "string", "enum": ["ANSWER", "SCREEN", "BLOCK"] },
+          "confidence": { "type": "string", "enum": ["high", "low"] },
+          "reasons": { "type": "array", "items": { "type": "string" } },
+          "entity": { "$ref": "#/components/schemas/Entity" },
+          "name": { "type": "string", "nullable": true },
+          "checked_at": { "type": "string", "format": "date-time" }
+        }
       }
     },
     "responses": {
@@ -606,6 +640,97 @@
         "responses": {
           "200": { "description": "Caller-ID recommendation", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CallerIdResult" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/shield/nonce": {
+      "get": {
+        "operationId": "shieldNonce",
+        "summary": "FREE — get a signing challenge for a Shield owner",
+        "description": "Step 1 of every Shield interaction. Returns a single-use nonce (10-minute TTL) that also sweeps expired nonces, sessions, and shield_events older than 90 days (90-day retention, stated not buried). Build the message the docs specify and sign it with the owner key (EIP-191 / personal_sign). v1 verifies EOA (ECDSA) signatures only — ERC-1271 / Safe wallets are not supported yet; a signature failure names that as a possible cause.",
+        "security": [],
+        "parameters": [
+          { "name": "owner", "in": "query", "required": true, "schema": { "type": "string" }, "description": "0x EVM address that will own the list" }
+        ],
+        "responses": {
+          "200": { "description": "Challenge", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShieldNonce" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/shield/session": {
+      "post": {
+        "operationId": "shieldSession",
+        "summary": "FREE — exchange a signed nonce for a read bearer token",
+        "description": "Step 2 for reads. POST { owner, signature } where signature is over the 'session' message built from the current nonce. Consumes the nonce and returns a 60-minute bearer token used by /list, /check, and /stats. A blocklist is private data — reads are authenticated, not open.",
+        "security": [],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["owner", "signature"], "properties": { "owner": { "type": "string" }, "signature": { "type": "string" } } } } } },
+        "responses": {
+          "200": { "description": "Session token", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShieldSession" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "description": "Signature did not recover to owner (see detail — names ERC-1271/Safe as a possible cause), or nonce missing/expired.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/shield/block": {
+      "post": {
+        "operationId": "shieldBlock",
+        "summary": "FREE — add an address to your private blocklist",
+        "description": "POST { owner, signature, address, chain?, reason? }. Needs a fresh nonce and signature; the signed message binds the action ('block') and the target address, so a signature cannot be replayed onto a different operation. Idempotent — re-blocking updates the reason. PRIVATE: this never affects any other user's results. /unblock, /allow, /unallow have the identical shape (/allow and /unallow omit chain).",
+        "security": [],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["owner", "signature", "address"], "properties": { "owner": { "type": "string" }, "signature": { "type": "string" }, "address": { "type": "string" }, "chain": { "type": "string", "default": "evm" }, "reason": { "type": "string" } } } } } },
+        "responses": {
+          "200": { "description": "Applied", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "description": "Signature or nonce invalid.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/shield/list": {
+      "get": {
+        "operationId": "shieldList",
+        "summary": "FREE — your blocklist and allowlist",
+        "description": "Requires 'Authorization: Bearer <token>' from /api/shield/session. Returns { owner, blocks[], allows[], counts }.",
+        "security": [],
+        "parameters": [
+          { "name": "Authorization", "in": "header", "required": true, "schema": { "type": "string" }, "description": "Bearer <session token>" }
+        ],
+        "responses": {
+          "200": { "description": "Lists", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "401": { "description": "Missing or expired session.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/shield/check": {
+      "get": {
+        "operationId": "shieldCheck",
+        "summary": "FREE — should this address be answered, given your list",
+        "description": "Requires a bearer token from /api/shield/session. Composes your private list with the caller-ID recommendation. Precedence: sanctioned entity (hard stop — cannot be allowlisted) > your allowlist > your manual block > auto-BLOCK from caller ID > the caller-ID recommendation (ANSWER | SCREEN | BLOCK). Every call is logged to shield_events for /stats; those rows are pruned at 90 days — 90-day retention, stated not buried.",
+        "security": [],
+        "parameters": [
+          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "description": "0x EVM address to check against your list" },
+          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["base", "ethereum"], "default": "base" } },
+          { "name": "Authorization", "in": "header", "required": true, "schema": { "type": "string" }, "description": "Bearer <session token>" }
+        ],
+        "responses": {
+          "200": { "description": "Decision", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShieldCheck" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "description": "Missing or expired session.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/shield/stats": {
+      "get": {
+        "operationId": "shieldStats",
+        "summary": "FREE — your Shield activity, 7d / 30d / 90d",
+        "description": "Requires a bearer token. Counts every /check by action (blocked | screened | allowed) and blocked calls by entity category, over 7-day, 30-day, and 90-day windows. There is no all-time window — shield_events are pruned at 90 days. 90-day retention, stated not buried.",
+        "security": [],
+        "parameters": [
+          { "name": "Authorization", "in": "header", "required": true, "schema": { "type": "string" }, "description": "Bearer <session token>" }
+        ],
+        "responses": {
+          "200": { "description": "Stats", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "401": { "description": "Missing or expired session.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
         }
       }
     },

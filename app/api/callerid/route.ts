@@ -4,11 +4,7 @@
 // name — into one recommendation with the reasoning. Not in the middleware matcher.
 import { NextRequest, NextResponse } from "next/server";
 import { isEvmAddress } from "@/lib/sources";
-import { lookupEntity } from "@/lib/entity";
-import { scoreAddress } from "@/lib/score-address";
-import { evmAccountState } from "@/lib/evm-account";
-import { primaryName } from "@/lib/resolve";
-import { recommend } from "@/lib/callerid";
+import { composeCallerId } from "@/lib/callerid";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,51 +28,21 @@ export async function GET(req: NextRequest) {
   }
   const addr = raw.toLowerCase();
 
-  const [entR, riskR, acctR, nameR] = await Promise.allSettled([
-    lookupEntity(addr, chain),
-    scoreAddress(addr, chain, "wallet"),
-    evmAccountState(chain, addr),
-    primaryName(addr),
-  ]);
-
-  const entity = entR.status === "fulfilled" ? entR.value : null;
-  const score = riskR.status === "fulfilled" ? riskR.value : null;
-  const acct = acctR.status === "fulfilled" ? acctR.value : null;
-  const name = nameR.status === "fulfilled" && nameR.value ? nameR.value.name : null;
-
-  const risk = score
-    ? { score: score.risk_score, level: score.risk_level, verdict: score.verdict }
-    : null;
-
-  const { recommendation, confidence, reasons } = recommend({
-    entity: entity ? { is_known: entity.is_known, label: entity.label, category: entity.category } : null,
-    risk,
-    name,
-  });
-
-  const exists = acct
-    ? acct.has_code || acct.nonce > 0 || acct.balance_wei > BigInt(0)
-      ? true
-      : acct.fully_checked
-        ? false
-        : null
-    : null;
+  const { entity, risk, name, exists, result } = await composeCallerId(addr, chain as "base" | "ethereum");
 
   return NextResponse.json(
     {
       address: addr,
       chain,
       name,
-      entity: entity
-        ? { is_known: entity.is_known, label: entity.label, category: entity.category }
-        : { is_known: false, label: null, category: "unknown" },
+      entity: entity ?? { is_known: false, label: null, category: "unknown" },
       exists,
       risk_score: risk ? risk.score : null,
       risk_level: risk ? risk.level : null,
       verdict: risk ? risk.verdict : null,
-      recommendation,
-      confidence,
-      reasons,
+      recommendation: result.recommendation,
+      confidence: result.confidence,
+      reasons: result.reasons,
       checked_at: new Date().toISOString(),
     },
     { status: 200, headers: { "Cache-Control": "public, max-age=60" } },

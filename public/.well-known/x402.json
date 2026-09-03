@@ -136,6 +136,14 @@
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "input": { "query": { "address": "required 0x EVM address", "chain": "base (default) | ethereum" } },
       "output": "application/json"
+    },
+    {
+      "resource": "https://uxus.finance/api/shield/check",
+      "type": "http", "method": "GET",
+      "description": "Per-user PRIVATE wallet blocklist — the first stateful product in the store. Your block never affects another user's results (no shared reputation, no aggregate scoring). Ownership is proved by signature, not an API key: GET /api/shield/nonce?owner=0x..., sign the returned message (EIP-191; v1 verifies EOA/ECDSA only — no ERC-1271/Safe yet), POST /api/shield/session { owner, signature } for a 60-minute bearer token. Then GET /api/shield/check?address=0x...&chain=base with that token returns { blocked, source, recommendation, reasons[], entity, name }: precedence is sanctioned entity (hard stop — cannot be allowlisted) > your allowlist > your manual block > auto-BLOCK from caller ID > the caller-ID recommendation. Writes: POST /api/shield/block|unblock|allow|unallow { owner, signature, address } (fresh nonce + signature each; the message binds the action and target). GET /api/shield/list and GET /api/shield/stats (7d / 30d / 90d, by action and entity category) also take the bearer token. Every /check is logged; shield_events are pruned at 90 days — 90-day retention, stated not buried. Free in v1.",
+      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "input": { "query": { "address": "required 0x EVM address to check against your list", "chain": "base (default) | ethereum" }, "headers": { "Authorization": "Bearer <session token from POST /api/shield/session>" } },
+      "output": "application/json"
     }
   ]
 }
