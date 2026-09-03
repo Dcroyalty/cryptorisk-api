@@ -1,0 +1,48 @@
+{
+  "name": "uxus-mcp",
+  "version": "1.0.0",
+  "description": "Zero-config MCP server for UXUS Agent Services — free web search, page scraping, universal wallet lookup, ENS/Basename resolution, entity attribution, and wallet caller ID. No API key, no account, no signup.",
+  "type": "module",
+  "bin": {
+    "uxus-mcp": "index.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  },
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "model-context-protocol",
+    "web-search",
+    "search",
+    "scraping",
+    "scrape",
+    "web-scraping",
+    "markdown",
+    "crypto",
+    "wallet",
+    "ethereum",
+    "base",
+    "ens",
+    "basenames",
+    "x402",
+    "ai-agents"
+  ],
+  "license": "MIT",
+  "homepage": "https://uxus.finance",
+  "bugs": {
+    "url": "https://github.com/Dcroyalty/cryptorisk-api/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dcroyalty/cryptorisk-api.git",
+    "directory": "mcp-server"
+  }
+}
