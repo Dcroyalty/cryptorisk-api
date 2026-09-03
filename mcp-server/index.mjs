@@ -57,5 +57,8 @@ server.setRequestHandler(ReadResourceRequestSchema, (req) => rpc("resources/read
 server.setRequestHandler(ListPromptsRequestSchema, () => rpc("prompts/list"));
 
 const transport = new StdioServerTransport();
+// Exit cleanly when the client disconnects. The SDK transport fires onclose
+// after draining buffered messages, so this does not race an in-flight request.
+transport.onclose = () => process.exit(0);
 await server.connect(transport);
 process.stderr.write(`uxus-mcp ready — proxying to ${ENDPOINT}\n`);
