@@ -15,13 +15,55 @@ const inner = paymentMiddleware(
     "/api/llm":      { price: "$0.01", network: N,
       config: { description: "Returns the completion text, the model that produced it (from a 5-model fallback chain), token usage, and latency_ms." } },
     "/api/scrape":   { price: "$0.01", network: N,
-      config: { description: "Returns the fetched page past bot-blocking: title, meta description, body as markdown/text/html, a character count, and a truncation flag." } },
+      config: {
+        description: "Fetch any URL and get clean, LLM-ready page content — no API key, no account, no signup; pay per call in USDC on Base. Sends a real browser User-Agent to get past common bot-blocking. GET /api/scrape?url=https://... (required) with optional format=markdown|text|html (default markdown) and max_chars=N (default 40000, max 120000). Returns { url, status, title, description, format, content, truncated, chars, latency_ms }; non-HTML URLs come back as raw content. For agents that need to read an article, doc page, or listing as text before summarising or extracting from it.",
+        inputSchema: {
+          queryParams: {
+            url: "Absolute URL to fetch. Required.",
+            format: "markdown | text | html. Default markdown.",
+            max_chars: "Truncation limit, default 40000, max 120000.",
+          },
+        },
+        outputSchema: {
+          type: "json",
+          example: {
+            url: "https://example.com/article",
+            status: 200,
+            title: "Example Article",
+            description: "A one-line summary from the page's meta description.",
+            format: "markdown",
+            content: "# Example Article\n\nClean body text as markdown...",
+            truncated: false,
+            chars: 1840,
+            latency_ms: 620,
+          },
+        },
+      } },
     "/api/extract":  { price: "$0.01", network: N,
       config: { description: "Returns a JSON object populated to the schema you POST, extracted from your text or URL, plus the model that produced it." } },
     "/api/embed":    { price: "$0.01", network: N,
       config: { description: "Returns one 1024-dim jina-embeddings-v3 vector per input string (up to 64), with the dimension count and token usage." } },
     "/api/search":   { price: "$0.01", network: N,
-      config: { description: "Returns a ranked list of {title, url, description} results plus which provider (Serper, Brave, or DuckDuckGo) served them." } },
+      config: {
+        description: "Live web search for AI agents — no API key, no account, no signup; pay per call in USDC on Base. GET /api/search?q=YOUR+QUERY (required) with optional count=N (1–20, default 10). Returns { query, results: [{ title, url, description }], provider, latency_ms }. Multiple search backends with automatic failover, so a transient upstream outage doesn't fail your call. Use it to ground an answer in current web data, check a fact, or gather source URLs to scrape.",
+        inputSchema: {
+          queryParams: {
+            q: "Search query. Required.",
+            count: "Number of results, 1-20. Default 10.",
+          },
+        },
+        outputSchema: {
+          type: "json",
+          example: {
+            query: "x402 payment protocol",
+            results: [
+              { title: "x402 — Payment Required", url: "https://x402.org/", description: "An open standard for paying for HTTP requests with stablecoins." },
+            ],
+            provider: "duckduckgo",
+            latency_ms: 480,
+          },
+        },
+      } },
   },
   facilitator as any
 );
