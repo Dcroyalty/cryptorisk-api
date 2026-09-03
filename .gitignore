@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local analysis dumps (scripts/market-scan.mjs, scripts/competitor-teardown.mjs)
+.market-scan.json
+.teardown.json
