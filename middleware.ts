@@ -16,7 +16,7 @@ const inner = paymentMiddleware(
       config: { description: "Returns the completion text, the model that produced it (from a 5-model fallback chain), token usage, and latency_ms." } },
     "/api/scrape":   { price: "$0.01", network: N,
       config: {
-        description: "Fetch any URL and get clean, LLM-ready page content — no API key, no account, no signup; pay per call in USDC on Base. Sends a real browser User-Agent to get past common bot-blocking. GET /api/scrape?url=https://... (required) with optional format=markdown|text|html (default markdown) and max_chars=N (default 40000, max 120000). Returns { url, status, title, description, format, content, truncated, chars, latency_ms }; non-HTML URLs come back as raw content. For agents that need to read an article, doc page, or listing as text before summarising or extracting from it.",
+        description: "Fetch any URL and get clean, LLM-ready page content — no API key, no account, no signup; pay per call in USDC on Base. Gets past common bot-blocking. Params: ?url=... (required), format=markdown|text|html (default markdown), max_chars=N (default 40000, max 120000). Returns { url, status, title, description, format, content, truncated, chars, latency_ms }; non-HTML URLs return raw content. For agents that need a page as text before summarising or extracting.",
         inputSchema: {
           queryParams: {
             url: "Absolute URL to fetch. Required.",
@@ -30,9 +30,9 @@ const inner = paymentMiddleware(
             url: "https://example.com/article",
             status: 200,
             title: "Example Article",
-            description: "A one-line summary from the page's meta description.",
+            description: "meta description text",
             format: "markdown",
-            content: "# Example Article\n\nClean body text as markdown...",
+            content: "# Example Article ...clean markdown...",
             truncated: false,
             chars: 1840,
             latency_ms: 620,
