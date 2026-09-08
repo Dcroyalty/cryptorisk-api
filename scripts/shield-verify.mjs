@@ -63,9 +63,12 @@ async function get(path) {
 const ok = (label, cond, extra = "") =>
   console.log(`${cond ? "PASS" : "FAIL"}  ${label}${extra ? "  — " + extra : ""}`);
 
-// pick real fixtures from the live label set
+// pick real fixtures from the live data.
+// scam: any entity_labels scam row. sanctioned: the OFAC SDN list in
+// bad_addresses — the single source of truth (entity_labels no longer carries
+// category='sanctioned').
 const [scamRow] = await sql`SELECT address FROM entity_labels WHERE category = 'scam' AND chain IN ('evm','ethereum','base') LIMIT 1`;
-const [sancRow] = await sql`SELECT address FROM entity_labels WHERE category = 'sanctioned' AND chain IN ('evm','ethereum') LIMIT 1`;
+const [sancRow] = await sql`SELECT address FROM bad_addresses WHERE source = 'ofac' LIMIT 1`;
 const SCAM = scamRow.address.toLowerCase();
 const SANCTIONED = sancRow.address.toLowerCase();
 const RANDOM = "0x1111111111111111111111111111111111111111";

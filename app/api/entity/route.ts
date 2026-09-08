@@ -28,7 +28,15 @@ export async function GET(req: NextRequest) {
 
   const e = await lookupEntity(raw.toLowerCase(), chain);
   return NextResponse.json(
-    { address: e.address, chain: e.chain, is_known: e.is_known, label: e.label, category: e.category },
+    {
+      address: e.address,
+      chain: e.chain,
+      is_known: e.is_known,
+      label: e.label,
+      category: e.category,
+      // present only when category === "sanctioned": the list that designated it
+      ...(e.sanctions_source ? { sanctions_source: e.sanctions_source } : {}),
+    },
     { status: 200, headers: { "Cache-Control": "public, max-age=300" } },
   );
 }

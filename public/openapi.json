@@ -364,7 +364,8 @@
           "category": {
             "type": "string",
             "enum": ["sanctioned", "mixer", "exchange", "bridge", "dex_router", "scam", "drainer", "phishing", "flagged", "token_contract", "protocol", "unknown"]
-          }
+          },
+          "sanctions_source": { "type": "string", "description": "present only when category is \"sanctioned\": the list that designated it (currently always \"ofac\", from the OFAC SDN list in bad_addresses)" }
         }
       },
       "CallerIdResult": {

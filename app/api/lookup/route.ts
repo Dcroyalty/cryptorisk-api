@@ -87,7 +87,12 @@ export async function GET(req: NextRequest) {
         verdict: full.verdict,
         flags: full.flags,
         entity: ent
-          ? { is_known: ent.is_known, label: ent.label, category: ent.category }
+          ? {
+              is_known: ent.is_known,
+              label: ent.label,
+              category: ent.category,
+              ...(ent.sanctions_source ? { sanctions_source: ent.sanctions_source } : {}),
+            }
           : { is_known: false, label: null, category: "unknown" },
         name: pname ? pname.name : null,
         upgrade:
