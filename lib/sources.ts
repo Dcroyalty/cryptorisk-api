@@ -39,21 +39,35 @@ export async function getWalletSignals(
   }
 }
 
+async function fetchSignals(url: string): Promise<WalletSignals> {
+  try {
+    const r = await fetch(url, { headers: { "user-agent": "uxus-risk" } });
+    if (!r.ok) return { ...FAILED };
+    return signalsFromExplorer(await r.json());
+  } catch {
+    return { ...FAILED };
+  }
+}
+
 async function ethSignals(address: string): Promise<WalletSignals> {
   const key = process.env.ETHERSCAN_API_KEY || "";
-  const base = "https://api.etherscan.io/v2/api";
-  const txUrl = `${base}?chainid=1&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10000&sort=asc${key ? `&apikey=${key}` : ""}`;
-  const r = await fetch(txUrl);
-  if (!r.ok) return { ...FAILED };
-  return signalsFromExplorer(await r.json());
+  // Etherscan V2 now REQUIRES a key. Try it when we have one, then fall back to
+  // Blockscout's Ethereum instance (Etherscan-compatible, keyless).
+  if (key) {
+    const url = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10000&sort=asc&apikey=${key}`;
+    const s = await fetchSignals(url);
+    if (s.signals_ok) return s;
+  }
+  return fetchSignals(
+    `https://eth.blockscout.com/api?module=account&action=txlist&address=${address}&sort=asc&page=1&offset=10000`,
+  );
 }
 
 async function baseSignals(address: string): Promise<WalletSignals> {
-  // Blockscout Base (Etherscan-compatible), free
-  const url = `https://base.blockscout.com/api?module=account&action=txlist&address=${address}&sort=asc`;
-  const r = await fetch(url);
-  if (!r.ok) return { ...FAILED };
-  return signalsFromExplorer(await r.json());
+  // Blockscout Base (Etherscan-compatible), keyless
+  return fetchSignals(
+    `https://base.blockscout.com/api?module=account&action=txlist&address=${address}&sort=asc&page=1&offset=10000`,
+  );
 }
 
 // Etherscan/Blockscout return `result: [...]` on success (an empty array = a
