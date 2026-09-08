@@ -1,10 +1,11 @@
-// app/api/risk/live/pro/route.ts — CryptoRisk LIVE PRO ($0.01 via x402)
+// app/api/risk/live/pro/route.ts — UXUS LIVE PRO ($0.01 via x402)
 // Gated by middleware.ts (same paymentMiddleware as /api/risk/pro).
 // Returns the FULL mutable-risk breakdown: every owner power + raw controls.
 
 import { NextResponse } from "next/server";
 import { analyzeLiveRisk, type Chain } from "@/lib/live-risk";
 import { isEvmAddress } from "@/lib/sources";
+import { RISK_DISCLAIMER } from "@/lib/disclaimer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,6 +51,7 @@ export async function GET(req: Request) {
         tier: "pro",
         methodology:
           "Direct on-chain reads: eth_getCode, owner()/getOwner(), pendingOwner(), paused(), implementation(), and EIP-1967 proxy slots. No third-party security API â€” nothing to rate-limit or go stale.",
+        disclaimer: RISK_DISCLAIMER,
       },
       { headers: { "Cache-Control": "no-store" } }
     );

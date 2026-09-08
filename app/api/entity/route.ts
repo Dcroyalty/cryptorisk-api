@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isEvmAddress } from "@/lib/sources";
 import { lookupEntity } from "@/lib/entity";
+import { ENTITY_DISCLAIMER } from "@/lib/disclaimer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest) {
       category: e.category,
       // present only when category === "sanctioned": the list that designated it
       ...(e.sanctions_source ? { sanctions_source: e.sanctions_source } : {}),
+      disclaimer: ENTITY_DISCLAIMER,
     },
     { status: 200, headers: { "Cache-Control": "public, max-age=300" } },
   );

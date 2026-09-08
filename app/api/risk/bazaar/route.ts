@@ -38,9 +38,9 @@ const routes = {
     accepts: [{ scheme: "exact", price: "$0.01", network: "eip155:8453", payTo: PAY_TO }],
     resource: {
       url: RESOURCE_URL,
-      description: "Wallet & token risk score: sanctions, scam, honeypot detection for Ethereum & Base.",
+      description: "Wallet & token risk score: OFAC sanctions, scam/phishing lists, honeypot detection for Ethereum & Base.",
       mimeType: "application/json",
-      serviceName: "CryptoRisk API",
+      serviceName: "UXUS — Wallet & Token Risk",
       tags: ["risk", "security", "wallet", "sanctions", "defi"],
     },
     extensions: { ...discovery },

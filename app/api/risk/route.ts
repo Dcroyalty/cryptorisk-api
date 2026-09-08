@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
     degraded: full.degraded,
     tier: "free",
     upgrade: "Call /api/risk/pro for full reasons, signals, and sources ($0.01/call via x402).",
+    disclaimer: full.disclaimer,
     checked_at: full.checked_at,
   }, { status: 200 });
 }

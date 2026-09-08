@@ -9,6 +9,7 @@ import { evmAccountState } from "@/lib/evm-account";
 import { lookupEntity } from "@/lib/entity";
 import { primaryName } from "@/lib/resolve";
 import { xrplLookup } from "@/lib/xrpl-lookup";
+import { RISK_DISCLAIMER } from "@/lib/disclaimer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -98,6 +99,7 @@ export async function GET(req: NextRequest) {
         // true = the risk verdict could not be fully assessed (history lookup
         // failed) — it is CAUTION, not PROCEED. null means "not checked".
         degraded: full.degraded,
+        disclaimer: RISK_DISCLAIMER,
         upgrade:
           "GET /api/risk/pro?address=0x...&chain=ethereum|base for reasons, signals, and sources ($0.01/call via x402).",
       },
@@ -140,6 +142,7 @@ export async function GET(req: NextRequest) {
       ...(degraded
         ? { note: "Could not reach an XRPL node — exists and risk are unknown, not clean. Retry before acting." }
         : {}),
+      disclaimer: RISK_DISCLAIMER,
       upgrade: null,
     },
     {

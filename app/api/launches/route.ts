@@ -1,4 +1,4 @@
-// app/api/launches/route.ts â€” CryptoRisk LAUNCHES (fresh token feed)
+// app/api/launches/route.ts — UXUS token launch feed (fresh DEX pools)
 //
 // The top-of-funnel magnet. Sniper bots poll this constantly for the newest DEX
 // pools on Base/ETH the moment they appear. Every row cross-links to

@@ -1,5 +1,6 @@
 ﻿import { sql } from "@/lib/db";
 import { getWalletSignals, getTokenRisk } from "@/lib/sources";
+import { RISK_DISCLAIMER } from "@/lib/disclaimer";
 import {
   scoreFromBadHits, applyWalletSignals, levelFromScore, verdictFromLevel,
   type RiskResult, type Reason,
@@ -38,12 +39,12 @@ export async function scoreAddress(address: string, chain: string, type: "wallet
       if (hiddenOwner) { score += 20; flags.push("HIDDEN_OWNER"); reasons.push({ code: "HIDDEN_OWNER", severity: 7, detail: "Contract has a hidden owner", source: "goplus" }); }
       if (notOpen) { score += 10; flags.push("UNVERIFIED_CONTRACT"); reasons.push({ code: "UNVERIFIED_CONTRACT", severity: 4, detail: "Contract source is not verified/open", source: "goplus" }); }
       signals = { holder_count: t.holder_count, buy_tax: t.buy_tax, sell_tax: t.sell_tax, is_open_source: t.is_open_source, is_proxy: t.is_proxy, owner_address: t.owner_address };
-      if (bad.score === 0 && !honeypot && score === 0) { flags.push("CLEAN"); reasons.push({ code: "CLEAN", severity: 0, detail: "No major token-risk flags found", source: "cryptorisk" }); }
+      if (bad.score === 0 && !honeypot && score === 0) { flags.push("CLEAN"); reasons.push({ code: "CLEAN", severity: 0, detail: "No major token-risk flags found", source: "uxus" }); }
     }
     if (!t && bad.score === 0) {
       degraded = true;
       flags.push("TOKEN_CHECK_UNAVAILABLE");
-      reasons.push({ code: "TOKEN_CHECK_UNAVAILABLE", severity: 3, detail: "Token-security provider (GoPlus) did not return data — token-risk signals were NOT checked. Absence of flags is not a clean result.", source: "cryptorisk" });
+      reasons.push({ code: "TOKEN_CHECK_UNAVAILABLE", severity: 3, detail: "Token-security provider (GoPlus) did not return data — token-risk signals were NOT checked. Absence of flags is not a clean result.", source: "uxus" });
     }
   } else {
     const ws = await getWalletSignals(address, chain as "ethereum" | "base");
@@ -72,6 +73,7 @@ export async function scoreAddress(address: string, chain: string, type: "wallet
     signals,
     sources: [...sources],
     degraded,
+    disclaimer: RISK_DISCLAIMER,
     checked_at: new Date().toISOString(),
     cache_ttl: 3600,
   };

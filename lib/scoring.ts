@@ -27,6 +27,7 @@ export interface RiskResult {
   // history lookup failed, or the token-security provider returned nothing).
   // The verdict is then "not fully assessed" (CAUTION), never PROCEED/CLEAN.
   degraded: boolean;
+  disclaimer: string;
   checked_at: string;
   cache_ttl: number;
 }
@@ -79,7 +80,7 @@ export function scoreFromBadHits(hits: { source: string; category: string }[]) {
 // verdict unavailable, not safe.
 export function applyWalletSignals(
   base: { score: number; flags: string[]; reasons: Reason[] },
-  signals: { wallet_age_days?: number | null; tx_count?: number | null; is_contract?: boolean; signals_ok?: boolean }
+  signals: { wallet_age_days?: number | null; tx_count?: number | null; signals_ok?: boolean }
 ) {
   let { score } = base;
   const flags = new Set(base.flags);
@@ -110,11 +111,11 @@ export function applyWalletSignals(
       severity: 3,
       detail:
         "Block-explorer history lookup failed (rate-limited or unavailable). No sanctions or scam-list match was found, but wallet-behavior signals were NOT checked — treat this as unassessed, not clean.",
-      source: "cryptorisk",
+      source: "uxus",
     });
   } else if (base.score === 0 && flags.size === 0) {
     flags.add("CLEAN");
-    reasons.push({ code: "CLEAN", severity: 0, detail: "No sanctions or scam-list matches found", source: "cryptorisk" });
+    reasons.push({ code: "CLEAN", severity: 0, detail: "No sanctions or scam-list matches found", source: "uxus" });
   }
 
   return { score: Math.min(100, Math.max(0, score)), flags: [...flags], reasons, degraded };

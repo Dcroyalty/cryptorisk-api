@@ -1,30 +1,47 @@
 ========================================================================
-CRYPTORISK API — COMPLETE LAUNCH SUBMISSION KIT
+UXUS — AGENT SERVICES — LAUNCH SUBMISSION KIT
 Copy-paste these into each platform. All free. Do them in this order.
 ========================================================================
 
-YOUR LIVE ENDPOINTS:
-  Free:  https://uxus.finance/api/risk
-  Pro:   https://uxus.finance/api/risk/pro   ($0.01 USDC on Base)
-  Manifest: https://uxus.finance/.well-known/x402.json
-  Landing:  https://uxus.finance
+WHAT IT IS:
+  Pay-per-call primitives for AI agents on Base, paid in USDC via x402 —
+  no accounts, no API keys. LLM inference, web scraping, structured
+  extraction, embeddings, live search, and wallet/token risk scoring.
+
+LIVE ENDPOINTS:
+  Landing:   https://uxus.finance
+  Catalog:   https://uxus.finance/api/catalog            (free, machine-readable)
+  OpenAPI:   https://uxus.finance/openapi.json
+  Agent doc: https://uxus.finance/llms.txt
+  x402 disc: https://uxus.finance/.well-known/x402.json
+  MCP:       https://uxus.finance/api/mcp
+  Paid:      /api/llm /api/scrape /api/extract /api/embed /api/search
+             /api/risk/pro /api/risk/live/pro   ($0.01 USDC on Base each)
+  Free:      /api/risk /api/risk/live /api/lookup /api/entity /api/resolve
+             /api/callerid /api/shield/*
 
 ========================================================================
 1. X402SCAN  (do first — the main explorer bots browse)
 ========================================================================
 URL: https://www.x402scan.com/resources/register
-Paste this resource URL: https://uxus.finance/api/risk/pro
-(It auto-detects your x402 schema and lists you.)
+Paste each paid resource URL (it auto-detects the x402 schema):
+  https://uxus.finance/api/risk/pro
+  https://uxus.finance/api/risk/bazaar      (CDP Bazaar resource-server flow)
+  https://uxus.finance/api/search
+  https://uxus.finance/api/scrape
+  https://uxus.finance/api/llm
+  https://uxus.finance/api/extract
+  https://uxus.finance/api/embed
 
 ========================================================================
 2. X402-LIST.COM
 ========================================================================
 URL: https://x402-list.com  (look for "Submit" / "Add")
-Name: CryptoRisk API
+Name: UXUS — Agent Services
 Website: https://uxus.finance
-Description: Wallet & token risk scoring for EVM chains. 0-100 risk score,
-  verdict (PROCEED/CAUTION/BLOCK), OFAC sanctions + scam + honeypot detection.
-  $0.01 USDC on Base via x402.
+Description: Pay-per-call primitives for AI agents on Base — inference,
+  scraping, extraction, embeddings, search, and wallet/token risk
+  (OFAC sanctions + scam + honeypot/rug detection). $0.01 USDC via x402.
 Networks: base
 
 ========================================================================
@@ -33,7 +50,7 @@ Networks: base
 Repo: https://github.com/x402-foundation/x402  (README "Ecosystem" / awesome list)
   or: https://github.com/xpaysh/awesome-x402
 Add this line under Services/APIs:
-- [CryptoRisk API](https://uxus.finance) — Wallet & token risk scoring (sanctions, scam, honeypot) for Ethereum & Base. $0.01/call via x402 on Base.
+- [UXUS Agent Services](https://uxus.finance) — pay-per-call primitives for agents (inference, scrape, extract, embed, search, wallet/token risk). $0.01/call via x402 on Base.
 
 ========================================================================
 4. PAYAI  &  AGENT.MARKET  &  agent-tools.cloud
@@ -41,8 +58,8 @@ Add this line under Services/APIs:
 PayAI: https://payai.network (submit/list your x402 service)
 Agent.market: https://agent.market (Coinbase directory — Data category)
 agent-tools.cloud: auto-aggregates from x402scan+Bazaar; also has self-submit
-For each — Name: CryptoRisk API | Category: Data / Security |
-  URL: https://uxus.finance/api/risk/pro
+For each — Name: UXUS — Agent Services | Category: Data / Infrastructure |
+  URL: https://uxus.finance/api/catalog
 
 ========================================================================
 5. RAPIDAPI  (human developers — recurring subscription revenue)
@@ -56,19 +73,18 @@ URL: https://rapidapi.com/studio  (Add New API)
     PRO    ($9.99): 10,000 requests/mo
     ULTRA  ($29.99): 100,000 requests/mo
     MEGA   ($99.99): 1,000,000 requests/mo
-- IMPORTANT server-side check: verify header X-RapidAPI-Proxy-Secret matches
-  your secret before serving (prevents bypassing RapidAPI billing).
-  (We add this as a follow-up — needs a small code change + RapidAPI's secret.)
+- The RapidAPI-billed route is /api/risk/rapidapi — it verifies the
+  X-RapidAPI-Proxy-Secret header against RAPIDAPI_PROXY_SECRET (set that
+  env var to RapidAPI's secret) and 403s otherwise. Already implemented.
 
 ========================================================================
 6. FREE COMMUNITY POSTS (distribution)
 ========================================================================
-- Reddit: r/ethdev, r/web3 — "Built a free wallet-risk API for agents (x402 on Base)"
+- Reddit: r/ethdev, r/web3 — "Pay-per-call agent primitives on Base (x402), no API keys"
 - Farcaster: /base, /x402, /dev channels — link + example
-- Product Hunt: launch "CryptoRisk API"
-- Your TikTok: "I built an AI-agent-paid API from nothing" demo clip
-- X/Twitter: post the live example + tag x402 / Base / agent builders
+- Product Hunt: launch "UXUS — Agent Services"
+- X/Twitter: post a live curl example + tag x402 / Base / agent builders
 
 ========================================================================
-DONE = listed everywhere bots + humans look. Then it runs itself.
+DONE = listed everywhere bots + humans look.
 ========================================================================

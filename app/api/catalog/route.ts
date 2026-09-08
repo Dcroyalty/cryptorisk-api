@@ -45,7 +45,7 @@ export async function GET() {
         summary: "FREE wallet caller ID — should this wallet be answered. For wallet messaging (XMTP, Push), which has no spam filter. Composes entity attribution, risk scoring, on-chain history and verified-name resolution into ANSWER | SCREEN | BLOCK, with reasons[] and a confidence flag.",
         params: { address: "required 0x EVM address", chain: "base (default) | ethereum" } },
       { id: "shield", method: "GET/POST", url: `${BASE}/api/shield`, price_usd: "0.00",
-        summary: "FREE per-user private wallet blocklist. Signature-proved ownership (EIP-191 over a single-use nonce); a bearer session for reads. Private lists only — your block never touches anyone else's results. /check composes your list with caller ID: an explicit block wins, a sanctioned address can never be allowlisted, otherwise it falls through to ANSWER | SCREEN | BLOCK. Events kept 90 days.",
+        summary: "FREE per-user private wallet blocklist. Signature-proved ownership (EIP-191 over a single-use nonce); a bearer session for reads. Private lists only — your block never touches anyone else's results. /check composes your list with caller ID: an explicit block wins, a sanctioned address can never be allowlisted, otherwise it falls through to ANSWER | SCREEN | BLOCK. shield_events pruned daily — nothing older than 90 days kept.",
         params: {
           "GET nonce": "?owner=0x... -> { nonce, expires_at }",
           "POST session": "{ owner, signature } -> { token } (Bearer for reads, 60 min)",

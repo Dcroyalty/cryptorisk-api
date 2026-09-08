@@ -4,9 +4,16 @@
     "title": "UXUS — Agent Services",
     "version": "1.2.0",
     "description": "Pay-per-call primitives for AI agents. LLM inference, web scraping, structured extraction, embeddings, live search, and EVM wallet/token risk scoring. Paid in USDC on Base via the x402 protocol (v2). No accounts, no API keys.",
-    "contact": { "name": "UXUS", "url": "https://uxus.finance" }
+    "contact": {
+      "name": "UXUS",
+      "url": "https://uxus.finance"
+    }
   },
-  "servers": [{ "url": "https://uxus.finance" }],
+  "servers": [
+    {
+      "url": "https://uxus.finance"
+    }
+  ],
   "components": {
     "securitySchemes": {
       "x402": {
@@ -19,32 +26,69 @@
     "schemas": {
       "Error": {
         "type": "object",
-        "required": ["error"],
+        "required": [
+          "error"
+        ],
         "properties": {
-          "error": { "type": "string", "example": "bad_request" },
-          "detail": { "type": "string" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "string",
+            "example": "bad_request"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
         }
       },
       "PaymentRequired": {
         "type": "object",
         "description": "x402 v2 payment requirement. Also delivered base64-encoded in the PAYMENT-REQUIRED response header.",
         "properties": {
-          "x402Version": { "type": "integer", "example": 2 },
-          "error": { "type": "string", "example": "Payment required" },
-          "resource": { "type": "object" },
+          "x402Version": {
+            "type": "integer",
+            "example": 2
+          },
+          "error": {
+            "type": "string",
+            "example": "Payment required"
+          },
+          "resource": {
+            "type": "object"
+          },
           "accepts": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "scheme": { "type": "string", "example": "exact" },
-                "network": { "type": "string", "example": "eip155:8453" },
-                "amount": { "type": "string", "example": "10000" },
-                "asset": { "type": "string", "example": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" },
-                "payTo": { "type": "string", "example": "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de" },
-                "maxTimeoutSeconds": { "type": "integer", "example": 300 },
-                "extra": { "type": "object" }
+                "scheme": {
+                  "type": "string",
+                  "example": "exact"
+                },
+                "network": {
+                  "type": "string",
+                  "example": "eip155:8453"
+                },
+                "amount": {
+                  "type": "string",
+                  "example": "10000"
+                },
+                "asset": {
+                  "type": "string",
+                  "example": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+                },
+                "payTo": {
+                  "type": "string",
+                  "example": "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de"
+                },
+                "maxTimeoutSeconds": {
+                  "type": "integer",
+                  "example": 300
+                },
+                "extra": {
+                  "type": "object"
+                }
               }
             }
           }
@@ -52,375 +96,1287 @@
       },
       "Reason": {
         "type": "object",
-        "required": ["code", "severity", "detail", "source"],
+        "required": [
+          "code",
+          "severity",
+          "detail",
+          "source"
+        ],
         "properties": {
-          "code": { "type": "string", "example": "SANCTIONED" },
-          "severity": { "type": "integer", "minimum": 0, "maximum": 10 },
-          "detail": { "type": "string" },
-          "source": { "type": "string", "example": "ofac" }
+          "code": {
+            "type": "string",
+            "example": "SANCTIONED"
+          },
+          "severity": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "detail": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "example": "ofac"
+          }
         }
       },
       "RiskFree": {
         "type": "object",
-        "required": ["address", "risk_score", "risk_level", "verdict", "flags"],
+        "required": [
+          "address",
+          "risk_score",
+          "risk_level",
+          "verdict",
+          "flags"
+        ],
         "properties": {
-          "address": { "type": "string" },
-          "chain": { "type": "string", "enum": ["ethereum", "base"] },
-          "type": { "type": "string", "enum": ["wallet", "token"] },
-          "risk_score": { "type": "integer", "minimum": 0, "maximum": 100 },
-          "risk_level": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
-          "verdict": { "type": "string", "enum": ["PROCEED", "CAUTION", "BLOCK"] },
-          "flags": { "type": "array", "items": { "type": "string" }, "example": ["SANCTIONED"] },
-          "degraded": { "type": "boolean", "description": "true = an input needed for the verdict was unavailable (wallet-history explorer failed, or the token-security provider returned nothing) AND there was no sanctions/scam-list hit. verdict is then CAUTION (\"not fully assessed\"), never PROCEED, and carries a HISTORY_UNAVAILABLE or TOKEN_CHECK_UNAVAILABLE flag. Retry before acting." },
-          "tier": { "type": "string", "example": "free" },
-          "upgrade": { "type": "string" },
-          "checked_at": { "type": "string", "format": "date-time" }
+          "address": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string",
+            "enum": [
+              "ethereum",
+              "base"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "wallet",
+              "token"
+            ]
+          },
+          "risk_score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ]
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "PROCEED",
+              "CAUTION",
+              "BLOCK"
+            ]
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "SANCTIONED"
+            ]
+          },
+          "degraded": {
+            "type": "boolean",
+            "description": "true = an input needed for the verdict was unavailable (wallet-history explorer failed, or the token-security provider returned nothing) AND there was no sanctions/scam-list hit. verdict is then CAUTION (\"not fully assessed\"), never PROCEED, and carries a HISTORY_UNAVAILABLE or TOKEN_CHECK_UNAVAILABLE flag. Retry before acting."
+          },
+          "tier": {
+            "type": "string",
+            "example": "free"
+          },
+          "upgrade": {
+            "type": "string"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disclaimer": {
+            "type": "string",
+            "description": "Ships inside the response: developer-grade screening from public data, not legal/financial/compliance advice. See lib/disclaimer.ts."
+          }
         }
       },
       "RiskFull": {
         "type": "object",
-        "required": ["address", "risk_score", "risk_level", "verdict", "flags", "reasons", "signals", "sources"],
+        "required": [
+          "address",
+          "risk_score",
+          "risk_level",
+          "verdict",
+          "flags",
+          "reasons",
+          "signals",
+          "sources"
+        ],
         "properties": {
-          "address": { "type": "string" },
-          "chain": { "type": "string", "enum": ["ethereum", "base"] },
-          "type": { "type": "string", "enum": ["wallet", "token"] },
-          "risk_score": { "type": "integer", "minimum": 0, "maximum": 100 },
-          "risk_level": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
-          "verdict": { "type": "string", "enum": ["PROCEED", "CAUTION", "BLOCK"] },
-          "flags": { "type": "array", "items": { "type": "string" } },
-          "reasons": { "type": "array", "items": { "$ref": "#/components/schemas/Reason" } },
-          "signals": { "type": "object", "description": "Token signals (tax, mint, proxy, owner flags) or wallet signals (age, tx counts)." },
-          "sources": { "type": "array", "items": { "type": "string" }, "example": ["ofac", "scamsniffer"] },
-          "degraded": { "type": "boolean", "description": "true = a verdict input was unavailable and there was no list hit; verdict is CAUTION, not PROCEED. See HISTORY_UNAVAILABLE / TOKEN_CHECK_UNAVAILABLE in flags/reasons." },
-          "checked_at": { "type": "string", "format": "date-time" },
-          "cache_ttl": { "type": "integer" }
+          "address": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string",
+            "enum": [
+              "ethereum",
+              "base"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "wallet",
+              "token"
+            ]
+          },
+          "risk_score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ]
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "PROCEED",
+              "CAUTION",
+              "BLOCK"
+            ]
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            }
+          },
+          "signals": {
+            "type": "object",
+            "description": "Token signals (tax, mint, proxy, owner flags) or wallet signals (age, tx counts)."
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "ofac",
+              "scamsniffer"
+            ]
+          },
+          "degraded": {
+            "type": "boolean",
+            "description": "true = a verdict input was unavailable and there was no list hit; verdict is CAUTION, not PROCEED. See HISTORY_UNAVAILABLE / TOKEN_CHECK_UNAVAILABLE in flags/reasons."
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cache_ttl": {
+            "type": "integer"
+          },
+          "disclaimer": {
+            "type": "string",
+            "description": "Ships inside the response: developer-grade screening from public data, not legal/financial/compliance advice. See lib/disclaimer.ts."
+          }
         }
       },
       "LiveRiskControls": {
         "type": "object",
         "properties": {
-          "owner": { "type": "string", "nullable": true },
-          "ownership_renounced": { "type": "boolean" },
-          "is_upgradeable_proxy": { "type": "boolean" },
-          "proxy_admin": { "type": "string", "nullable": true },
-          "implementation": { "type": "string", "nullable": true },
-          "has_pause": { "type": "boolean" },
-          "is_paused": { "type": "boolean", "nullable": true },
-          "pending_owner": { "type": "string", "nullable": true }
+          "owner": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownership_renounced": {
+            "type": "boolean"
+          },
+          "is_upgradeable_proxy": {
+            "type": "boolean"
+          },
+          "proxy_admin": {
+            "type": "string",
+            "nullable": true
+          },
+          "implementation": {
+            "type": "string",
+            "nullable": true
+          },
+          "has_pause": {
+            "type": "boolean"
+          },
+          "is_paused": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "pending_owner": {
+            "type": "string",
+            "nullable": true
+          }
         }
       },
       "LiveRiskFree": {
         "type": "object",
-        "required": ["address", "mutable_risk_score", "can_turn_hostile", "time_to_rug", "verdict"],
+        "required": [
+          "address",
+          "mutable_risk_score",
+          "can_turn_hostile",
+          "time_to_rug",
+          "verdict"
+        ],
         "properties": {
-          "address": { "type": "string" },
-          "chain": { "type": "string", "enum": ["ethereum", "base"] },
-          "symbol": { "type": "string", "nullable": true },
-          "mutable_risk_score": { "type": "integer", "minimum": 0, "maximum": 100 },
-          "can_turn_hostile": { "type": "boolean" },
-          "time_to_rug": { "type": "string", "enum": ["instant", "delayed", "impossible", "unknown"] },
-          "verdict": { "type": "string", "enum": ["SAFE_TO_HOLD", "MONITOR", "EXIT_RISK", "DO_NOT_HOLD"] },
-          "powers_count": { "type": "integer" },
-          "tier": { "type": "string", "example": "free" },
-          "upgrade": { "type": "string" },
-          "note": { "type": "string" },
-          "rpc_ok": { "type": "boolean" },
-          "latency_ms": { "type": "integer" },
-          "checked_at": { "type": "string", "format": "date-time" }
+          "address": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string",
+            "enum": [
+              "ethereum",
+              "base"
+            ]
+          },
+          "symbol": {
+            "type": "string",
+            "nullable": true
+          },
+          "mutable_risk_score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "can_turn_hostile": {
+            "type": "boolean"
+          },
+          "time_to_rug": {
+            "type": "string",
+            "enum": [
+              "instant",
+              "delayed",
+              "impossible",
+              "unknown"
+            ]
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "SAFE_TO_HOLD",
+              "MONITOR",
+              "EXIT_RISK",
+              "DO_NOT_HOLD"
+            ]
+          },
+          "powers_count": {
+            "type": "integer"
+          },
+          "tier": {
+            "type": "string",
+            "example": "free"
+          },
+          "upgrade": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "rpc_ok": {
+            "type": "boolean"
+          },
+          "latency_ms": {
+            "type": "integer"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disclaimer": {
+            "type": "string",
+            "description": "Ships inside the response: developer-grade screening from public data, not legal/financial/compliance advice. See lib/disclaimer.ts."
+          }
         }
       },
       "LiveRiskFull": {
         "type": "object",
-        "required": ["address", "mutable_risk_score", "verdict", "powers", "controls"],
+        "required": [
+          "address",
+          "mutable_risk_score",
+          "verdict",
+          "powers",
+          "controls"
+        ],
         "properties": {
-          "address": { "type": "string" },
-          "chain": { "type": "string", "enum": ["ethereum", "base"] },
-          "symbol": { "type": "string", "nullable": true },
-          "is_contract": { "type": "boolean" },
-          "mutable_risk_score": { "type": "integer", "minimum": 0, "maximum": 100 },
-          "can_turn_hostile": { "type": "boolean" },
-          "time_to_rug": { "type": "string", "enum": ["instant", "delayed", "impossible", "unknown"] },
-          "verdict": { "type": "string", "enum": ["SAFE_TO_HOLD", "MONITOR", "EXIT_RISK", "DO_NOT_HOLD"] },
-          "powers": { "type": "array", "items": { "type": "string" } },
+          "address": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string",
+            "enum": [
+              "ethereum",
+              "base"
+            ]
+          },
+          "symbol": {
+            "type": "string",
+            "nullable": true
+          },
+          "is_contract": {
+            "type": "boolean"
+          },
+          "mutable_risk_score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "can_turn_hostile": {
+            "type": "boolean"
+          },
+          "time_to_rug": {
+            "type": "string",
+            "enum": [
+              "instant",
+              "delayed",
+              "impossible",
+              "unknown"
+            ]
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "SAFE_TO_HOLD",
+              "MONITOR",
+              "EXIT_RISK",
+              "DO_NOT_HOLD"
+            ]
+          },
+          "powers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "powers_explained": {
             "type": "array",
-            "items": { "type": "object", "properties": { "code": { "type": "string" }, "meaning": { "type": "string" } } }
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "meaning": {
+                  "type": "string"
+                }
+              }
+            }
           },
-          "controls": { "$ref": "#/components/schemas/LiveRiskControls" },
-          "tier": { "type": "string", "example": "pro" },
-          "methodology": { "type": "string" },
-          "latency_ms": { "type": "integer" },
-          "rpc_ok": { "type": "boolean" },
-          "checked_at": { "type": "string", "format": "date-time" }
+          "controls": {
+            "$ref": "#/components/schemas/LiveRiskControls"
+          },
+          "tier": {
+            "type": "string",
+            "example": "pro"
+          },
+          "methodology": {
+            "type": "string"
+          },
+          "latency_ms": {
+            "type": "integer"
+          },
+          "rpc_ok": {
+            "type": "boolean"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disclaimer": {
+            "type": "string",
+            "description": "Ships inside the response: developer-grade screening from public data, not legal/financial/compliance advice. See lib/disclaimer.ts."
+          }
         }
       },
       "LlmResponse": {
         "type": "object",
-        "required": ["model", "content"],
+        "required": [
+          "model",
+          "content"
+        ],
         "properties": {
-          "model": { "type": "string" },
-          "content": { "type": "string" },
-          "usage": { "type": "object", "nullable": true },
-          "latency_ms": { "type": "integer" },
-          "served_by": { "type": "string", "example": "x402-llm-gateway" }
+          "model": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "usage": {
+            "type": "object",
+            "nullable": true
+          },
+          "latency_ms": {
+            "type": "integer"
+          },
+          "served_by": {
+            "type": "string",
+            "example": "x402-llm-gateway"
+          }
         }
       },
       "ScrapeResponse": {
         "type": "object",
-        "required": ["url", "content", "format"],
+        "required": [
+          "url",
+          "content",
+          "format"
+        ],
         "properties": {
-          "url": { "type": "string" },
-          "status": { "type": "integer" },
-          "title": { "type": "string", "nullable": true },
-          "description": { "type": "string", "nullable": true },
-          "format": { "type": "string", "enum": ["markdown", "text", "html", "raw"] },
-          "content": { "type": "string" },
-          "truncated": { "type": "boolean" },
-          "chars": { "type": "integer" },
-          "latency_ms": { "type": "integer" },
-          "served_by": { "type": "string", "example": "x402-scrape-gateway" }
+          "url": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "markdown",
+              "text",
+              "html",
+              "raw"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "chars": {
+            "type": "integer"
+          },
+          "latency_ms": {
+            "type": "integer"
+          },
+          "served_by": {
+            "type": "string",
+            "example": "x402-scrape-gateway"
+          }
         }
       },
       "ExtractResponse": {
         "type": "object",
-        "required": ["data"],
+        "required": [
+          "data"
+        ],
         "properties": {
-          "data": { "type": "object", "description": "Object shaped to the schema supplied in the request." },
-          "model": { "type": "string" },
-          "latency_ms": { "type": "integer" },
-          "served_by": { "type": "string", "example": "x402-extract-gateway" }
+          "data": {
+            "type": "object",
+            "description": "Object shaped to the schema supplied in the request."
+          },
+          "model": {
+            "type": "string"
+          },
+          "latency_ms": {
+            "type": "integer"
+          },
+          "served_by": {
+            "type": "string",
+            "example": "x402-extract-gateway"
+          }
         }
       },
       "EmbedResponse": {
         "type": "object",
-        "required": ["model", "embeddings", "count"],
+        "required": [
+          "model",
+          "embeddings",
+          "count"
+        ],
         "properties": {
-          "model": { "type": "string", "example": "jina-embeddings-v3" },
-          "embeddings": { "type": "array", "items": { "type": "array", "items": { "type": "number" } } },
-          "dimensions": { "type": "integer", "nullable": true, "example": 1024 },
-          "count": { "type": "integer" },
-          "usage": { "type": "object", "nullable": true },
-          "latency_ms": { "type": "integer" },
-          "served_by": { "type": "string", "example": "x402-embed-gateway" }
+          "model": {
+            "type": "string",
+            "example": "jina-embeddings-v3"
+          },
+          "embeddings": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "dimensions": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1024
+          },
+          "count": {
+            "type": "integer"
+          },
+          "usage": {
+            "type": "object",
+            "nullable": true
+          },
+          "latency_ms": {
+            "type": "integer"
+          },
+          "served_by": {
+            "type": "string",
+            "example": "x402-embed-gateway"
+          }
         }
       },
       "SearchResult": {
         "type": "object",
-        "required": ["title", "url"],
+        "required": [
+          "title",
+          "url"
+        ],
         "properties": {
-          "title": { "type": "string" },
-          "url": { "type": "string" },
-          "description": { "type": "string" },
-          "score": { "type": "number", "minimum": 0, "maximum": 1, "description": "Relevance score from provider rank: 1.0 for the top result, descending toward 0.1. Rank or threshold on it." }
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Relevance score from provider rank: 1.0 for the top result, descending toward 0.1. Rank or threshold on it."
+          }
         }
       },
       "SearchResponse": {
         "type": "object",
-        "required": ["query", "results", "provider"],
+        "required": [
+          "query",
+          "results",
+          "provider"
+        ],
         "properties": {
-          "query": { "type": "string" },
-          "results": { "type": "array", "items": { "$ref": "#/components/schemas/SearchResult" } },
-          "provider": { "type": "string", "enum": ["serper", "brave", "duckduckgo"] },
-          "latency_ms": { "type": "integer" },
-          "served_by": { "type": "string", "example": "x402-search-gateway" }
+          "query": {
+            "type": "string"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            }
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "serper",
+              "brave",
+              "duckduckgo"
+            ]
+          },
+          "latency_ms": {
+            "type": "integer"
+          },
+          "served_by": {
+            "type": "string",
+            "example": "x402-search-gateway"
+          }
         }
       },
       "Catalog": {
         "type": "object",
         "properties": {
-          "store": { "type": "string" },
-          "description": { "type": "string" },
-          "payment": { "type": "object" },
+          "store": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "payment": {
+            "type": "object"
+          },
           "services": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "id": { "type": "string" },
-                "method": { "type": "string" },
-                "url": { "type": "string" },
-                "price_usd": { "type": "string" },
-                "summary": { "type": "string" },
-                "params": { "type": "object" }
+                "id": {
+                  "type": "string"
+                },
+                "method": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "price_usd": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "params": {
+                  "type": "object"
+                }
               }
             }
           },
-          "docs": { "type": "string" },
-          "discovery": { "type": "string" }
+          "docs": {
+            "type": "string"
+          },
+          "discovery": {
+            "type": "string"
+          }
         }
       },
       "McpInfo": {
         "type": "object",
         "properties": {
-          "server": { "type": "string" },
-          "transport": { "type": "string" },
-          "endpoint": { "type": "string" },
-          "methods": { "type": "array", "items": { "type": "string" } },
-          "tools": { "type": "array", "items": { "type": "object" } },
-          "payment": { "type": "object" }
+          "server": {
+            "type": "string"
+          },
+          "transport": {
+            "type": "string"
+          },
+          "endpoint": {
+            "type": "string"
+          },
+          "methods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "payment": {
+            "type": "object"
+          }
         }
       },
       "JsonRpcRequest": {
         "type": "object",
-        "required": ["jsonrpc", "method"],
+        "required": [
+          "jsonrpc",
+          "method"
+        ],
         "properties": {
-          "jsonrpc": { "type": "string", "example": "2.0" },
+          "jsonrpc": {
+            "type": "string",
+            "example": "2.0"
+          },
           "id": {},
-          "method": { "type": "string", "enum": ["initialize", "notifications/initialized", "tools/list", "tools/call"] },
-          "params": { "type": "object" }
+          "method": {
+            "type": "string",
+            "enum": [
+              "initialize",
+              "notifications/initialized",
+              "tools/list",
+              "tools/call"
+            ]
+          },
+          "params": {
+            "type": "object"
+          }
         }
       },
       "JsonRpcResponse": {
         "type": "object",
         "properties": {
-          "jsonrpc": { "type": "string", "example": "2.0" },
+          "jsonrpc": {
+            "type": "string",
+            "example": "2.0"
+          },
           "id": {},
-          "result": { "type": "object" },
-          "error": { "type": "object" }
+          "result": {
+            "type": "object"
+          },
+          "error": {
+            "type": "object"
+          }
         }
       },
       "Launch": {
         "type": "object",
         "properties": {
-          "pair": { "type": "string", "nullable": true },
-          "tokenAddress": { "type": "string", "nullable": true },
-          "priceUsd": { "type": "number", "nullable": true },
-          "liquidityUsd": { "type": "number" },
-          "fdvUsd": { "type": "number", "nullable": true },
-          "volumeH24Usd": { "type": "number", "nullable": true },
-          "ageMinutes": { "type": "integer" },
-          "flags": { "type": "array", "items": { "type": "string" } },
-          "dex": { "type": "string", "nullable": true },
-          "riskCheck": { "type": "string", "nullable": true }
+          "pair": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokenAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "priceUsd": {
+            "type": "number",
+            "nullable": true
+          },
+          "liquidityUsd": {
+            "type": "number"
+          },
+          "fdvUsd": {
+            "type": "number",
+            "nullable": true
+          },
+          "volumeH24Usd": {
+            "type": "number",
+            "nullable": true
+          },
+          "ageMinutes": {
+            "type": "integer"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dex": {
+            "type": "string",
+            "nullable": true
+          },
+          "riskCheck": {
+            "type": "string",
+            "nullable": true
+          }
         }
       },
       "LaunchesResponse": {
         "type": "object",
-        "required": ["chain", "count", "launches"],
+        "required": [
+          "chain",
+          "count",
+          "launches"
+        ],
         "properties": {
-          "chain": { "type": "string", "enum": ["ethereum", "base"] },
-          "count": { "type": "integer" },
-          "launches": { "type": "array", "items": { "$ref": "#/components/schemas/Launch" } },
-          "note": { "type": "string" },
-          "source": { "type": "string", "example": "geckoterminal" },
-          "checked_at": { "type": "string", "format": "date-time" }
+          "chain": {
+            "type": "string",
+            "enum": [
+              "ethereum",
+              "base"
+            ]
+          },
+          "count": {
+            "type": "integer"
+          },
+          "launches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Launch"
+            }
+          },
+          "note": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "example": "geckoterminal"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "LookupResult": {
         "type": "object",
-        "required": ["address", "chain", "chain_detected", "exists", "risk_score", "risk_level", "verdict", "flags", "entity", "name"],
+        "required": [
+          "address",
+          "chain",
+          "chain_detected",
+          "exists",
+          "risk_score",
+          "risk_level",
+          "verdict",
+          "flags",
+          "entity",
+          "name"
+        ],
         "properties": {
-          "address": { "type": "string" },
-          "chain": { "type": "string", "enum": ["evm", "xrpl"] },
-          "chain_detected": { "type": "boolean" },
-          "exists": { "type": "boolean", "nullable": true, "description": "null when on-chain state could not be verified (EVM RPC failure, or XRPL node unreachable). Never guessed." },
-          "risk_score": { "type": "integer", "minimum": 0, "maximum": 100, "nullable": true, "description": "null (XRPL) when the account state could not be read — not scored, not clean" },
-          "risk_level": { "type": "string", "enum": ["low", "medium", "high", "critical"], "nullable": true },
-          "verdict": { "type": "string", "enum": ["PROCEED", "CAUTION", "BLOCK"], "nullable": true },
-          "flags": { "type": "array", "items": { "type": "string" } },
-          "entity": { "$ref": "#/components/schemas/Entity" },
-          "name": { "type": "string", "nullable": true, "description": "primary ENS/Basename for an EVM address, forward-verified; null if none" },
-          "degraded": { "type": "boolean", "description": "true when a verdict input was unavailable: XRPL node unreachable (exists/risk come back null), or EVM wallet-history lookup failed (verdict is CAUTION not PROCEED, with a HISTORY_UNAVAILABLE flag). Retry before acting." },
-          "note": { "type": "string", "description": "present when degraded (XRPL): what could not be checked" },
-          "upgrade": { "type": "string", "nullable": true, "description": "points at /api/risk/pro for EVM; null for XRPL" }
+          "address": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string",
+            "enum": [
+              "evm",
+              "xrpl"
+            ]
+          },
+          "chain_detected": {
+            "type": "boolean"
+          },
+          "exists": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "null when on-chain state could not be verified (EVM RPC failure, or XRPL node unreachable). Never guessed."
+          },
+          "risk_score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "nullable": true,
+            "description": "null (XRPL) when the account state could not be read — not scored, not clean"
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "nullable": true
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "PROCEED",
+              "CAUTION",
+              "BLOCK"
+            ],
+            "nullable": true
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "entity": {
+            "$ref": "#/components/schemas/Entity"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "primary ENS/Basename for an EVM address, forward-verified; null if none"
+          },
+          "degraded": {
+            "type": "boolean",
+            "description": "true when a verdict input was unavailable: XRPL node unreachable (exists/risk come back null), or EVM wallet-history lookup failed (verdict is CAUTION not PROCEED, with a HISTORY_UNAVAILABLE flag). Retry before acting."
+          },
+          "note": {
+            "type": "string",
+            "description": "present when degraded (XRPL): what could not be checked"
+          },
+          "upgrade": {
+            "type": "string",
+            "nullable": true,
+            "description": "points at /api/risk/pro for EVM; null for XRPL"
+          },
+          "disclaimer": {
+            "type": "string",
+            "description": "Ships inside the response: developer-grade screening from public data, not legal/financial/compliance advice. See lib/disclaimer.ts."
+          }
         }
       },
       "ResolveResult": {
         "type": "object",
-        "required": ["query", "kind", "resolved", "address", "name", "sources"],
+        "required": [
+          "query",
+          "kind",
+          "resolved",
+          "address",
+          "name",
+          "sources"
+        ],
         "properties": {
-          "query": { "type": "string" },
-          "kind": { "type": "string", "enum": ["name", "address"] },
-          "namespace": { "type": "string", "nullable": true, "enum": ["ens", "basename", "evm", "xrpl", null] },
-          "chain": { "type": "string", "nullable": true, "enum": ["ethereum", "base", "xrpl", null] },
-          "resolved": { "type": "boolean" },
-          "address": { "type": "string", "nullable": true },
-          "name": { "type": "string", "nullable": true },
-          "sources": { "type": "array", "items": { "type": "string" } },
-          "lookup": { "type": "string", "nullable": true, "description": "cross-link into /api/lookup for the resolved address" },
-          "note": { "type": "string", "description": "present when resolution is intentionally not attempted (e.g. .xrp)" }
+          "query": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "name",
+              "address"
+            ]
+          },
+          "namespace": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "ens",
+              "basename",
+              "evm",
+              "xrpl",
+              null
+            ]
+          },
+          "chain": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "ethereum",
+              "base",
+              "xrpl",
+              null
+            ]
+          },
+          "resolved": {
+            "type": "boolean"
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lookup": {
+            "type": "string",
+            "nullable": true,
+            "description": "cross-link into /api/lookup for the resolved address"
+          },
+          "note": {
+            "type": "string",
+            "description": "present when resolution is intentionally not attempted (e.g. .xrp)"
+          }
         }
       },
       "Entity": {
         "type": "object",
-        "required": ["is_known", "label", "category"],
+        "required": [
+          "is_known",
+          "label",
+          "category"
+        ],
         "properties": {
-          "is_known": { "type": "boolean" },
-          "label": { "type": "string", "nullable": true, "description": "human name, e.g. \"Tornado.Cash: 1 ETH\"; null when unknown" },
+          "is_known": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "human name, e.g. \"Tornado.Cash: 1 ETH\"; null when unknown"
+          },
           "category": {
             "type": "string",
             "description": "\"sanctioned\" is set only when the address is on the OFAC SDN list (the single source of truth, shared with /api/risk). \"flagged\" means a non-OFAC blocklist named it — informational, not a hard stop.",
-            "enum": ["sanctioned", "mixer", "exchange", "bridge", "dex_router", "scam", "drainer", "phishing", "flagged", "token_contract", "protocol", "unknown"]
+            "enum": [
+              "sanctioned",
+              "mixer",
+              "exchange",
+              "bridge",
+              "dex_router",
+              "scam",
+              "drainer",
+              "phishing",
+              "flagged",
+              "token_contract",
+              "protocol",
+              "unknown"
+            ]
           },
-          "sanctions_source": { "type": "string", "description": "present only when category is \"sanctioned\": the list that designated it (currently always \"ofac\")" }
+          "sanctions_source": {
+            "type": "string",
+            "description": "present only when category is \"sanctioned\": the list that designated it (currently always \"ofac\")"
+          }
         }
       },
       "EntityResult": {
         "type": "object",
-        "required": ["address", "chain", "is_known", "label", "category"],
+        "required": [
+          "address",
+          "chain",
+          "is_known",
+          "label",
+          "category"
+        ],
         "properties": {
-          "address": { "type": "string" },
-          "chain": { "type": "string", "enum": ["ethereum", "base"] },
-          "is_known": { "type": "boolean" },
-          "label": { "type": "string", "nullable": true },
+          "address": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string",
+            "enum": [
+              "ethereum",
+              "base"
+            ]
+          },
+          "is_known": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
           "category": {
             "type": "string",
-            "enum": ["sanctioned", "mixer", "exchange", "bridge", "dex_router", "scam", "drainer", "phishing", "flagged", "token_contract", "protocol", "unknown"]
+            "enum": [
+              "sanctioned",
+              "mixer",
+              "exchange",
+              "bridge",
+              "dex_router",
+              "scam",
+              "drainer",
+              "phishing",
+              "flagged",
+              "token_contract",
+              "protocol",
+              "unknown"
+            ]
           },
-          "sanctions_source": { "type": "string", "description": "present only when category is \"sanctioned\": the list that designated it (currently always \"ofac\", from the OFAC SDN list in bad_addresses)" }
+          "sanctions_source": {
+            "type": "string",
+            "description": "present only when category is \"sanctioned\": the list that designated it (currently always \"ofac\", from the OFAC SDN list in bad_addresses)"
+          },
+          "disclaimer": {
+            "type": "string",
+            "description": "Ships inside the response: developer-grade screening from public data, not legal/financial/compliance advice. See lib/disclaimer.ts."
+          }
         }
       },
       "CallerIdResult": {
         "type": "object",
-        "required": ["address", "chain", "name", "entity", "exists", "risk_score", "risk_level", "verdict", "recommendation", "confidence", "reasons", "checked_at"],
+        "required": [
+          "address",
+          "chain",
+          "name",
+          "entity",
+          "exists",
+          "risk_score",
+          "risk_level",
+          "verdict",
+          "recommendation",
+          "confidence",
+          "reasons",
+          "checked_at"
+        ],
         "properties": {
-          "address": { "type": "string" },
-          "chain": { "type": "string", "enum": ["ethereum", "base"] },
-          "name": { "type": "string", "nullable": true, "description": "forward-verified primary ENS/Basename, or null" },
-          "entity": { "$ref": "#/components/schemas/Entity" },
-          "exists": { "type": "boolean", "nullable": true, "description": "null when on-chain state could not be checked" },
-          "risk_score": { "type": "integer", "nullable": true, "minimum": 0, "maximum": 100 },
-          "risk_level": { "type": "string", "nullable": true, "enum": ["low", "medium", "high", "critical"] },
-          "verdict": { "type": "string", "nullable": true, "enum": ["PROCEED", "CAUTION", "BLOCK"] },
-          "risk_degraded": { "type": "boolean", "nullable": true, "description": "true = risk was scored but wallet history was unavailable; verdict is CAUTION not PROCEED, and confidence is 'low'" },
-          "recommendation": { "type": "string", "enum": ["ANSWER", "SCREEN", "BLOCK"] },
-          "confidence": { "type": "string", "enum": ["high", "low"], "description": "high = entity and a fully-assessed risk both resolved; low = an input was missing OR the risk read was degraded (treat as unchecked, not clean)" },
-          "reasons": { "type": "array", "items": { "type": "string" }, "description": "short strings naming exactly what drove the recommendation" },
-          "checked_at": { "type": "string", "format": "date-time" }
+          "address": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string",
+            "enum": [
+              "ethereum",
+              "base"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "forward-verified primary ENS/Basename, or null"
+          },
+          "entity": {
+            "$ref": "#/components/schemas/Entity"
+          },
+          "exists": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "null when on-chain state could not be checked"
+          },
+          "risk_score": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 100
+          },
+          "risk_level": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ]
+          },
+          "verdict": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "PROCEED",
+              "CAUTION",
+              "BLOCK"
+            ]
+          },
+          "risk_degraded": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "true = risk was scored but wallet history was unavailable; verdict is CAUTION not PROCEED, and confidence is 'low'"
+          },
+          "recommendation": {
+            "type": "string",
+            "enum": [
+              "ANSWER",
+              "SCREEN",
+              "BLOCK"
+            ]
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "low"
+            ],
+            "description": "high = entity and a fully-assessed risk both resolved; low = an input was missing OR the risk read was degraded (treat as unchecked, not clean)"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "short strings naming exactly what drove the recommendation"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disclaimer": {
+            "type": "string",
+            "description": "Ships inside the response: developer-grade screening from public data, not legal/financial/compliance advice. See lib/disclaimer.ts."
+          }
         }
       },
       "ShieldNonce": {
         "type": "object",
-        "required": ["owner", "nonce", "expires_at"],
+        "required": [
+          "owner",
+          "nonce",
+          "expires_at"
+        ],
         "properties": {
-          "owner": { "type": "string" },
-          "nonce": { "type": "string", "description": "32-byte hex challenge. Single-use, 10-minute TTL. Sign the message the API tells you to build (EIP-191 / personal_sign)." },
-          "expires_at": { "type": "string", "format": "date-time" }
+          "owner": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string",
+            "description": "32-byte hex challenge. Single-use, 10-minute TTL. Sign the message the API tells you to build (EIP-191 / personal_sign)."
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "ShieldSession": {
         "type": "object",
-        "required": ["token", "owner", "expires_at"],
+        "required": [
+          "token",
+          "owner",
+          "expires_at"
+        ],
         "properties": {
-          "token": { "type": "string", "description": "64-hex bearer token. Send as 'Authorization: Bearer <token>' on all read endpoints. 60-minute TTL." },
-          "owner": { "type": "string" },
-          "expires_at": { "type": "string", "format": "date-time" }
+          "token": {
+            "type": "string",
+            "description": "64-hex bearer token. Send as 'Authorization: Bearer <token>' on all read endpoints. 60-minute TTL."
+          },
+          "owner": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "ShieldCheck": {
         "type": "object",
-        "required": ["address", "owner", "blocked", "source", "recommendation", "confidence", "reasons", "entity", "name", "checked_at"],
+        "required": [
+          "address",
+          "owner",
+          "blocked",
+          "source",
+          "recommendation",
+          "confidence",
+          "reasons",
+          "entity",
+          "name",
+          "checked_at"
+        ],
         "properties": {
-          "address": { "type": "string" },
-          "owner": { "type": "string" },
-          "blocked": { "type": "boolean", "description": "true if this address should not be answered for you" },
-          "source": { "type": "string", "nullable": true, "enum": ["sanctioned", "allow", "manual", "auto", null], "description": "which rule decided: sanctioned (hard stop) > allow (your allowlist) > manual (your block) > auto (caller-ID BLOCK) > null (fell through to the caller-ID recommendation)" },
-          "recommendation": { "type": "string", "enum": ["ANSWER", "SCREEN", "BLOCK"] },
-          "confidence": { "type": "string", "enum": ["high", "low"] },
-          "reasons": { "type": "array", "items": { "type": "string" } },
-          "entity": { "$ref": "#/components/schemas/Entity" },
-          "name": { "type": "string", "nullable": true },
-          "checked_at": { "type": "string", "format": "date-time" }
+          "address": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "blocked": {
+            "type": "boolean",
+            "description": "true if this address should not be answered for you"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "sanctioned",
+              "allow",
+              "manual",
+              "auto",
+              null
+            ],
+            "description": "which rule decided: sanctioned (hard stop) > allow (your allowlist) > manual (your block) > auto (caller-ID BLOCK) > null (fell through to the caller-ID recommendation)"
+          },
+          "recommendation": {
+            "type": "string",
+            "enum": [
+              "ANSWER",
+              "SCREEN",
+              "BLOCK"
+            ]
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "low"
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "entity": {
+            "$ref": "#/components/schemas/Entity"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "disclaimer": {
+            "type": "string",
+            "description": "Ships inside the response: developer-grade screening from public data, not legal/financial/compliance advice. See lib/disclaimer.ts."
+          }
         }
       }
     },
@@ -428,17 +1384,40 @@
       "PaymentRequired": {
         "description": "Payment required. The x402 v2 challenge is in the PAYMENT-REQUIRED header (base64) and mirrored in the body.",
         "headers": {
-          "PAYMENT-REQUIRED": { "description": "Base64-encoded x402 v2 payment requirement JSON.", "schema": { "type": "string" } }
+          "PAYMENT-REQUIRED": {
+            "description": "Base64-encoded x402 v2 payment requirement JSON.",
+            "schema": {
+              "type": "string"
+            }
+          }
         },
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaymentRequired" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/PaymentRequired"
+            }
+          }
+        }
       },
       "BadRequest": {
         "description": "Invalid or missing parameters.",
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       },
       "UpstreamError": {
         "description": "An upstream provider failed.",
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       }
     }
   },
@@ -448,37 +1427,89 @@
         "operationId": "llmInference",
         "summary": "LLM inference ($0.01 USDC on Base)",
         "description": "Send a prompt or messages[] and get a completion, routed across a 5-model fallback chain. The unpaid GET on this path returns only price and parameter docs.",
-        "security": [{ "x402": [] }],
+        "security": [
+          {
+            "x402": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "anyOf": [{ "required": ["prompt"] }, { "required": ["messages"] }],
+                "anyOf": [
+                  {
+                    "required": [
+                      "prompt"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "messages"
+                    ]
+                  }
+                ],
                 "properties": {
-                  "prompt": { "type": "string", "example": "Summarize x402 in one sentence." },
+                  "prompt": {
+                    "type": "string",
+                    "example": "Summarize x402 in one sentence."
+                  },
                   "messages": {
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": ["role", "content"],
-                      "properties": { "role": { "type": "string" }, "content": { "type": "string" } }
+                      "required": [
+                        "role",
+                        "content"
+                      ],
+                      "properties": {
+                        "role": {
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "string"
+                        }
+                      }
                     }
                   },
-                  "model": { "type": "string", "description": "Optional model slug; prepended to the fallback chain." },
-                  "max_tokens": { "type": "integer", "maximum": 2000, "default": 800 }
+                  "model": {
+                    "type": "string",
+                    "description": "Optional model slug; prepended to the fallback chain."
+                  },
+                  "max_tokens": {
+                    "type": "integer",
+                    "maximum": 2000,
+                    "default": 800
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Completion", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LlmResponse" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "402": { "$ref": "#/components/responses/PaymentRequired" },
-          "500": { "$ref": "#/components/responses/UpstreamError" },
-          "502": { "$ref": "#/components/responses/UpstreamError" }
+          "200": {
+            "description": "Completion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LlmResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "500": {
+            "$ref": "#/components/responses/UpstreamError"
+          },
+          "502": {
+            "$ref": "#/components/responses/UpstreamError"
+          }
         }
       }
     },
@@ -487,17 +1518,66 @@
         "operationId": "scrapeUrl",
         "summary": "Scrape any URL to clean markdown ($0.01 USDC on Base)",
         "description": "Fetch a URL past common bot-blocking and return title, description, and body as markdown, text, or html.",
-        "security": [{ "x402": [] }],
+        "security": [
+          {
+            "x402": []
+          }
+        ],
         "parameters": [
-          { "name": "url", "in": "query", "required": true, "schema": { "type": "string" }, "example": "https://example.com" },
-          { "name": "format", "in": "query", "required": false, "schema": { "type": "string", "enum": ["markdown", "text", "html"], "default": "markdown" } },
-          { "name": "max_chars", "in": "query", "required": false, "schema": { "type": "integer", "default": 40000, "maximum": 120000 } }
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "https://example.com"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "text",
+                "html"
+              ],
+              "default": "markdown"
+            }
+          },
+          {
+            "name": "max_chars",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 40000,
+              "maximum": 120000
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Page content", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScrapeResponse" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "402": { "$ref": "#/components/responses/PaymentRequired" },
-          "502": { "$ref": "#/components/responses/UpstreamError" }
+          "200": {
+            "description": "Page content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScrapeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "502": {
+            "$ref": "#/components/responses/UpstreamError"
+          }
         }
       }
     },
@@ -506,30 +1586,76 @@
         "operationId": "extractStructured",
         "summary": "Text or URL to structured JSON ($0.01 USDC on Base)",
         "description": "Return a JSON object shaped to the schema you supply, extracted from raw text or a fetched page. The unpaid GET on this path returns only an example.",
-        "security": [{ "x402": [] }],
+        "security": [
+          {
+            "x402": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["schema"],
-                "anyOf": [{ "required": ["text"] }, { "required": ["url"] }],
+                "required": [
+                  "schema"
+                ],
+                "anyOf": [
+                  {
+                    "required": [
+                      "text"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "url"
+                    ]
+                  }
+                ],
                 "properties": {
-                  "schema": { "type": "object", "example": { "title": "string", "price": "number", "in_stock": "boolean" } },
-                  "text": { "type": "string" },
-                  "url": { "type": "string", "example": "https://example.com/product" }
+                  "schema": {
+                    "type": "object",
+                    "example": {
+                      "title": "string",
+                      "price": "number",
+                      "in_stock": "boolean"
+                    }
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string",
+                    "example": "https://example.com/product"
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Structured data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ExtractResponse" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "402": { "$ref": "#/components/responses/PaymentRequired" },
-          "500": { "$ref": "#/components/responses/UpstreamError" },
-          "502": { "$ref": "#/components/responses/UpstreamError" }
+          "200": {
+            "description": "Structured data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "500": {
+            "$ref": "#/components/responses/UpstreamError"
+          },
+          "502": {
+            "$ref": "#/components/responses/UpstreamError"
+          }
         }
       }
     },
@@ -538,19 +1664,34 @@
         "operationId": "createEmbeddings",
         "summary": "Text to embedding vectors ($0.01 USDC on Base)",
         "description": "Return one 1024-dim jina-embeddings-v3 vector per input string (up to 64). The unpaid GET on this path returns only the model name.",
-        "security": [{ "x402": [] }],
+        "security": [
+          {
+            "x402": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["input"],
+                "required": [
+                  "input"
+                ],
                 "properties": {
                   "input": {
                     "oneOf": [
-                      { "type": "string", "example": "hello world" },
-                      { "type": "array", "items": { "type": "string" }, "maxItems": 64 }
+                      {
+                        "type": "string",
+                        "example": "hello world"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "maxItems": 64
+                      }
                     ]
                   }
                 }
@@ -559,11 +1700,35 @@
           }
         },
         "responses": {
-          "200": { "description": "Embeddings", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmbedResponse" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "402": { "$ref": "#/components/responses/PaymentRequired" },
-          "502": { "$ref": "#/components/responses/UpstreamError" },
-          "503": { "description": "Embeddings not configured on this deployment", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "200": {
+            "description": "Embeddings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmbedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "502": {
+            "$ref": "#/components/responses/UpstreamError"
+          },
+          "503": {
+            "description": "Embeddings not configured on this deployment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -572,16 +1737,52 @@
         "operationId": "webSearch",
         "summary": "Live web search ($0.01 USDC on Base)",
         "description": "Live web search — no API key, no account, no signup. Returns { query, results: [{ title, url, description, score }], provider, latency_ms }. score is 1.0 for the top result descending toward 0.1, so an agent can rank or threshold. Multiple search backends with automatic failover.",
-        "security": [{ "x402": [] }],
+        "security": [
+          {
+            "x402": []
+          }
+        ],
         "parameters": [
-          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "example": "x402 protocol" },
-          { "name": "count", "in": "query", "required": false, "schema": { "type": "integer", "maximum": 20, "default": 10 } }
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "x402 protocol"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "default": 10
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Search results", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SearchResponse" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "402": { "$ref": "#/components/responses/PaymentRequired" },
-          "502": { "$ref": "#/components/responses/UpstreamError" }
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "502": {
+            "$ref": "#/components/responses/UpstreamError"
+          }
         }
       }
     },
@@ -590,16 +1791,65 @@
         "operationId": "walletRiskFull",
         "summary": "Full EVM wallet/token risk report ($0.01 USDC on Base)",
         "description": "OFAC sanctions, scam/phishing lists, honeypot and rug signals. 0-100 score with PROCEED/CAUTION/BLOCK verdict, plus per-signal reasons, the raw signals object, and sources. Free /api/risk returns score, level, verdict, flags only.",
-        "security": [{ "x402": [] }],
+        "security": [
+          {
+            "x402": []
+          }
+        ],
         "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A" },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"], "default": "base" } },
-          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["wallet", "token"], "default": "wallet" } }
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ethereum",
+                "base"
+              ],
+              "default": "base"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "wallet",
+                "token"
+              ],
+              "default": "wallet"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Full risk report", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RiskFull" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "402": { "$ref": "#/components/responses/PaymentRequired" }
+          "200": {
+            "description": "Full risk report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskFull"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          }
         }
       }
     },
@@ -610,13 +1860,56 @@
         "description": "Returns risk_score (0-100), risk_level, PROCEED/CAUTION/BLOCK verdict, and flags for any EVM wallet or token. No reasons, signals, or sources.",
         "security": [],
         "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A" },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"], "default": "base" } },
-          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["wallet", "token"], "default": "wallet" } }
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ethereum",
+                "base"
+              ],
+              "default": "base"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "wallet",
+                "token"
+              ],
+              "default": "wallet"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Risk summary", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RiskFree" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" }
+          "200": {
+            "description": "Risk summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskFree"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
         }
       }
     },
@@ -627,12 +1920,44 @@
         "description": "Auto-detects the chain from the address format (EVM 0x address or XRPL classic r-address) — no chain parameter. One normalized envelope for every chain. EVM screening defaults to Base; ?chain=ethereum moves the wallet-history signal only (sanctions/scam lists are chain-agnostic). XRPL X-addresses are recognized but return 400 asking for the classic form.",
         "security": [],
         "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["base", "ethereum"], "default": "base" }, "description": "Optional EVM history-signal hint. Ignored for XRPL." }
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "base",
+                "ethereum"
+              ],
+              "default": "base"
+            },
+            "description": "Optional EVM history-signal hint. Ignored for XRPL."
+          }
         ],
         "responses": {
-          "200": { "description": "Normalized lookup result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LookupResult" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" }
+          "200": {
+            "description": "Normalized lookup result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
         }
       }
     },
@@ -643,12 +1968,43 @@
         "description": "For wallet messaging (XMTP, Push), which has no spam filter. Composes entity attribution + risk score + on-chain history + forward-verified name into ANSWER | SCREEN | BLOCK with reasons[]. BLOCK on entity category sanctioned/drainer/phishing/scam/mixer or risk verdict BLOCK. ANSWER on a known exchange/dex_router/protocol OR a forward-verified ENS/Basename, each with risk verdict PROCEED. SCREEN is the default for unknown addresses. confidence is 'low' when entity or risk could not be checked — degrades to SCREEN, never guesses.",
         "security": [],
         "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0x47CE0C6eD5B0Ce3d3A51fdb1C52DC66a7c3c2936" },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["base", "ethereum"], "default": "base" } }
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "0x47CE0C6eD5B0Ce3d3A51fdb1C52DC66a7c3c2936"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "base",
+                "ethereum"
+              ],
+              "default": "base"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Caller-ID recommendation", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CallerIdResult" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" }
+          "200": {
+            "description": "Caller-ID recommendation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallerIdResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
         }
       }
     },
@@ -656,14 +2012,33 @@
       "get": {
         "operationId": "shieldNonce",
         "summary": "FREE — get a signing challenge for a Shield owner",
-        "description": "Step 1 of every Shield interaction. Returns a single-use nonce (10-minute TTL) that also sweeps expired nonces, sessions, and shield_events older than 90 days (90-day retention, stated not buried). Build the message the docs specify and sign it with the owner key (EIP-191 / personal_sign). v1 verifies EOA (ECDSA) signatures only — ERC-1271 / Safe wallets are not supported yet; a signature failure names that as a possible cause.",
+        "description": "Step 1 of every Shield interaction. Returns a single-use nonce (10-minute TTL) and opportunistically sweeps expired nonces, sessions, and shield_events older than 90 days (a daily cron does the same, so retention holds regardless of traffic). Build the message the docs specify and sign it with the owner key (EIP-191 / personal_sign). v1 verifies EOA (ECDSA) signatures only — ERC-1271 / Safe wallets are not supported yet; a signature failure names that as a possible cause.",
         "security": [],
         "parameters": [
-          { "name": "owner", "in": "query", "required": true, "schema": { "type": "string" }, "description": "0x EVM address that will own the list" }
+          {
+            "name": "owner",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "0x EVM address that will own the list"
+          }
         ],
         "responses": {
-          "200": { "description": "Challenge", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShieldNonce" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" }
+          "200": {
+            "description": "Challenge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShieldNonce"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
         }
       }
     },
@@ -673,11 +2048,52 @@
         "summary": "FREE — exchange a signed nonce for a read bearer token",
         "description": "Step 2 for reads. POST { owner, signature } where signature is over the 'session' message built from the current nonce. Consumes the nonce and returns a 60-minute bearer token used by /list, /check, and /stats. A blocklist is private data — reads are authenticated, not open.",
         "security": [],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["owner", "signature"], "properties": { "owner": { "type": "string" }, "signature": { "type": "string" } } } } } },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "owner",
+                  "signature"
+                ],
+                "properties": {
+                  "owner": {
+                    "type": "string"
+                  },
+                  "signature": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
-          "200": { "description": "Session token", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShieldSession" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "description": "Signature did not recover to owner (see detail — names ERC-1271/Safe as a possible cause), or nonce missing/expired.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "200": {
+            "description": "Session token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShieldSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "description": "Signature did not recover to owner (see detail — names ERC-1271/Safe as a possible cause), or nonce missing/expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -687,11 +2103,63 @@
         "summary": "FREE — add an address to your private blocklist",
         "description": "POST { owner, signature, address, chain?, reason? }. Needs a fresh nonce and signature; the signed message binds the action ('block') and the target address, so a signature cannot be replayed onto a different operation. Idempotent — re-blocking updates the reason. PRIVATE: this never affects any other user's results. /unblock, /allow, /unallow have the identical shape (/allow and /unallow omit chain).",
         "security": [],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["owner", "signature", "address"], "properties": { "owner": { "type": "string" }, "signature": { "type": "string" }, "address": { "type": "string" }, "chain": { "type": "string", "default": "evm" }, "reason": { "type": "string" } } } } } },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "owner",
+                  "signature",
+                  "address"
+                ],
+                "properties": {
+                  "owner": {
+                    "type": "string"
+                  },
+                  "signature": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "chain": {
+                    "type": "string",
+                    "default": "evm"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
-          "200": { "description": "Applied", "content": { "application/json": { "schema": { "type": "object" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "description": "Signature or nonce invalid.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "200": {
+            "description": "Applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "description": "Signature or nonce invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -702,11 +2170,37 @@
         "description": "Requires 'Authorization: Bearer <token>' from /api/shield/session. Returns { owner, blocks[], allows[], counts }.",
         "security": [],
         "parameters": [
-          { "name": "Authorization", "in": "header", "required": true, "schema": { "type": "string" }, "description": "Bearer <session token>" }
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Bearer <session token>"
+          }
         ],
         "responses": {
-          "200": { "description": "Lists", "content": { "application/json": { "schema": { "type": "object" } } } },
-          "401": { "description": "Missing or expired session.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "200": {
+            "description": "Lists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or expired session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -714,17 +2208,65 @@
       "get": {
         "operationId": "shieldCheck",
         "summary": "FREE — should this address be answered, given your list",
-        "description": "Requires a bearer token from /api/shield/session. Composes your private list with the caller-ID recommendation. Precedence: sanctioned entity (hard stop — cannot be allowlisted) > your allowlist > your manual block > auto-BLOCK from caller ID > the caller-ID recommendation (ANSWER | SCREEN | BLOCK). Every call is logged to shield_events for /stats; those rows are pruned at 90 days — 90-day retention, stated not buried.",
+        "description": "Requires a bearer token from /api/shield/session. Composes your private list with the caller-ID recommendation. Precedence: sanctioned entity (hard stop — cannot be allowlisted) > your allowlist > your manual block > auto-BLOCK from caller ID > the caller-ID recommendation (ANSWER | SCREEN | BLOCK). Every call is logged to shield_events for /stats; those rows are pruned daily (cron + opportunistic) so nothing older than 90 days is kept — 90-day retention, stated not buried.",
         "security": [],
         "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "description": "0x EVM address to check against your list" },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["base", "ethereum"], "default": "base" } },
-          { "name": "Authorization", "in": "header", "required": true, "schema": { "type": "string" }, "description": "Bearer <session token>" }
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "0x EVM address to check against your list"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "base",
+                "ethereum"
+              ],
+              "default": "base"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Bearer <session token>"
+          }
         ],
         "responses": {
-          "200": { "description": "Decision", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShieldCheck" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "description": "Missing or expired session.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "200": {
+            "description": "Decision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShieldCheck"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "description": "Missing or expired session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -732,14 +2274,40 @@
       "get": {
         "operationId": "shieldStats",
         "summary": "FREE — your Shield activity, 7d / 30d / 90d",
-        "description": "Requires a bearer token. Counts every /check by action (blocked | screened | allowed) and blocked calls by entity category, over 7-day, 30-day, and 90-day windows. There is no all-time window — shield_events are pruned at 90 days. 90-day retention, stated not buried.",
+        "description": "Requires a bearer token. Counts every /check by action (blocked | screened | allowed) and blocked calls by entity category, over 7-day, 30-day, and 90-day windows. There is no all-time window — shield_events are pruned daily and nothing older than 90 days is retained. 90-day retention, stated not buried.",
         "security": [],
         "parameters": [
-          { "name": "Authorization", "in": "header", "required": true, "schema": { "type": "string" }, "description": "Bearer <session token>" }
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Bearer <session token>"
+          }
         ],
         "responses": {
-          "200": { "description": "Stats", "content": { "application/json": { "schema": { "type": "object" } } } },
-          "401": { "description": "Missing or expired session.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "200": {
+            "description": "Stats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or expired session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -750,11 +2318,30 @@
         "description": "Bidirectional. ENS (name.eth) and Basenames (name.base.eth), forward and reverse, via public RPC + the resolver contracts directly (no third-party API key). Reverse records are forward-verified against the input address to stop name spoofing. Direction is auto-detected from the query. XRPL .xrp names are detected but return resolved:false with a note (no canonical registry).",
         "security": [],
         "parameters": [
-          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "example": "vitalik.eth" }
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "vitalik.eth"
+          }
         ],
         "responses": {
-          "200": { "description": "Resolution result (resolved:false when a name/address has no record)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ResolveResult" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" }
+          "200": {
+            "description": "Resolution result (resolved:false when a name/address has no record)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
         }
       }
     },
@@ -765,12 +2352,43 @@
         "description": "Answers what an address is (not who owns it) from ScamSniffer, MEW, eth-labels and curated Base/Tornado sets. The \"sanctioned\" category comes solely from the OFAC SDN list ingested into bad_addresses — the same source /api/risk uses; a non-OFAC blocklist hit is category \"flagged\", not \"sanctioned\". is_known:false / category:\"unknown\" when nothing matches — never inferred from address shape.",
         "security": [],
         "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0x47CE0C6eD5B0Ce3d3A51fdb1C52DC66a7c3c2936" },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["base", "ethereum"], "default": "base" } }
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "0x47CE0C6eD5B0Ce3d3A51fdb1C52DC66a7c3c2936"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "base",
+                "ethereum"
+              ],
+              "default": "base"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Entity attribution", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EntityResult" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" }
+          "200": {
+            "description": "Entity attribution",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
         }
       }
     },
@@ -781,7 +2399,16 @@
         "description": "Returns every service with its id, method, URL, price, and parameter list in one call.",
         "security": [],
         "responses": {
-          "200": { "description": "All services with prices", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Catalog" } } } }
+          "200": {
+            "description": "All services with prices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Catalog"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -792,7 +2419,16 @@
         "description": "Server name, transport, methods, and the tool list with prices.",
         "security": [],
         "responses": {
-          "200": { "description": "MCP server metadata", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/McpInfo" } } } }
+          "200": {
+            "description": "MCP server metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpInfo"
+                }
+              }
+            }
+          }
         }
       },
       "post": {
@@ -802,10 +2438,25 @@
         "security": [],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JsonRpcRequest" } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonRpcRequest"
+              }
+            }
+          }
         },
         "responses": {
-          "200": { "description": "JSON-RPC result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JsonRpcResponse" } } } }
+          "200": {
+            "description": "JSON-RPC result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonRpcResponse"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -816,13 +2467,46 @@
         "description": "Can the token owner turn hostile while you hold? Returns verdict, mutable_risk_score, can_turn_hostile, time_to_rug. The full owner-power breakdown is in /api/risk/live/pro.",
         "security": [],
         "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A" },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"], "default": "base" } }
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ethereum",
+                "base"
+              ],
+              "default": "base"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Mutable-risk summary", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LiveRiskFree" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "500": { "$ref": "#/components/responses/UpstreamError" }
+          "200": {
+            "description": "Mutable-risk summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveRiskFree"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/UpstreamError"
+          }
         }
       }
     },
@@ -831,16 +2515,55 @@
         "operationId": "riskLiveFull",
         "summary": "Full mutable-risk report ($0.01 USDC on Base)",
         "description": "Every owner power with a plain-English explanation, the raw controls object (owner, EIP-1967 implementation + admin slots, pause state, pending owner), and the on-chain read methodology. Free /api/risk/live returns verdict, score, time_to_rug only.",
-        "security": [{ "x402": [] }],
+        "security": [
+          {
+            "x402": []
+          }
+        ],
         "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A" },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"], "default": "base" } }
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ethereum",
+                "base"
+              ],
+              "default": "base"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Full mutable-risk report", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LiveRiskFull" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "402": { "$ref": "#/components/responses/PaymentRequired" },
-          "500": { "$ref": "#/components/responses/UpstreamError" }
+          "200": {
+            "description": "Full mutable-risk report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveRiskFull"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "500": {
+            "$ref": "#/components/responses/UpstreamError"
+          }
         }
       }
     },
@@ -849,16 +2572,65 @@
         "operationId": "walletRiskBazaar",
         "summary": "Wallet/token risk score via x402 Bazaar ($0.01 USDC on Base)",
         "description": "The same full report as /api/risk/pro, served through the x402 Bazaar resource-server flow (eip155:8453). Returns the free summary when no payment is presented.",
-        "security": [{ "x402": [] }],
+        "security": [
+          {
+            "x402": []
+          }
+        ],
         "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"], "default": "base" } },
-          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["wallet", "token"], "default": "wallet" } }
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ethereum",
+                "base"
+              ],
+              "default": "base"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "wallet",
+                "token"
+              ],
+              "default": "wallet"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Risk score", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RiskFull" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "402": { "$ref": "#/components/responses/PaymentRequired" }
+          "200": {
+            "description": "Risk score",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskFull"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          }
         }
       }
     },
@@ -869,14 +2641,66 @@
         "description": "The same report as /api/risk/pro, billed through RapidAPI. Requires the X-RapidAPI-Proxy-Secret header; returns 403 otherwise. Use /api/risk/pro to pay per call via x402 instead.",
         "security": [],
         "parameters": [
-          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A" },
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"], "default": "base" } },
-          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["wallet", "token"], "default": "wallet" } }
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "0x0330070FD38Ec3bB94F58FA55D40368271E9e54A"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ethereum",
+                "base"
+              ],
+              "default": "base"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "wallet",
+                "token"
+              ],
+              "default": "wallet"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Full risk report", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RiskFull" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "403": { "description": "Not a RapidAPI subscriber", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "200": {
+            "description": "Full risk report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskFull"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "description": "Not a RapidAPI subscriber",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -887,14 +2711,57 @@
         "description": "Newest DEX pools on Base/Ethereum (GeckoTerminal). Each row carries a riskCheck link into /api/risk/live.",
         "security": [],
         "parameters": [
-          { "name": "chain", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ethereum", "base"], "default": "base" } },
-          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 30, "default": 20 } },
-          { "name": "minLiquidityUsd", "in": "query", "required": false, "schema": { "type": "number", "minimum": 0 } }
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ethereum",
+                "base"
+              ],
+              "default": "base"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30,
+              "default": 20
+            }
+          },
+          {
+            "name": "minLiquidityUsd",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Fresh pools", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LaunchesResponse" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "502": { "$ref": "#/components/responses/UpstreamError" }
+          "200": {
+            "description": "Fresh pools",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LaunchesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "502": {
+            "$ref": "#/components/responses/UpstreamError"
+          }
         }
       }
     }

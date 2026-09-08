@@ -23,7 +23,7 @@ const inner = paymentMiddleware(
           example: {
             address: "0xd8da...6045", chain: "base", type: "wallet",
             risk_score: 0, risk_level: "low", verdict: "PROCEED", flags: ["CLEAN"],
-            reasons: [{ code: "CLEAN", severity: 0, detail: "no sanctions or scam-list matches", source: "cryptorisk" }],
+            reasons: [{ code: "CLEAN", severity: 0, detail: "no sanctions or scam-list matches", source: "uxus" }],
             signals: { wallet_age_days: 1135, tx_count: 42 },
             sources: ["ofac", "scamsniffer", "mew"], checked_at: "2026-09-03T00:00:00Z",
           },
@@ -155,6 +155,11 @@ const inner = paymentMiddleware(
   facilitator as any
 );
 
+// Paths whose PAID operation is POST (llm/extract/embed). A GET there is the
+// free self-doc handler — don't gate it, or callers probing for usage get a 402
+// instead of the docs. scrape/search are GET-paid, so they stay gated.
+const DOC_GET_PATHS = new Set(["/api/llm", "/api/extract", "/api/embed"]);
+
 // x402-next's paymentMiddleware exposes no response hook. Wrap it: on a 402,
 // add a PAYMENT-REQUIRED header carrying the base64-encoded v1 challenge that
 // already lives in the JSON body. Additive only — the body is written back
@@ -162,6 +167,10 @@ const inner = paymentMiddleware(
 // probes (402 Index, x402scan) classify x402 on response-header presence and
 // never read the body.
 export async function middleware(req: NextRequest): Promise<NextResponse> {
+  if (req.method === "GET" && DOC_GET_PATHS.has(new URL(req.url).pathname)) {
+    return NextResponse.next();
+  }
+
   const res = await inner(req);
   if (res.status !== 402) return res;
 

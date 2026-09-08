@@ -88,7 +88,7 @@ export default function Home() {
 
       <div className="wrap">
         <div className="top">
-          <b>CryptoRisk Agent Services</b>
+          <b>UXUS Agent Services</b>
           <span>USDC · Base · x402</span>
         </div>
 

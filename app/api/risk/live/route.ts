@@ -1,4 +1,4 @@
-// app/api/risk/live/route.ts â€” CryptoRisk LIVE (mutable-risk scanner)
+// app/api/risk/live/route.ts — UXUS LIVE (mutable-risk scanner)
 //
 // The one question every other scanner refuses to answer.
 // GoPlus / Honeypot.is / ApeSpace all ship the same disclaimer: "a token that
@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server";
 import { analyzeLiveRisk, type Chain } from "@/lib/live-risk";
 import { isEvmAddress } from "@/lib/sources";
+import { RISK_DISCLAIMER } from "@/lib/disclaimer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,6 +56,7 @@ export async function GET(req: Request) {
           "Snapshot scanners tell you if a token is safe now. This tells you whether the owner can make it unsafe in the next block.",
         rpc_ok: r.rpc_ok,
         latency_ms: r.latency_ms,
+        disclaimer: RISK_DISCLAIMER,
         checked_at: r.checked_at,
       },
       { headers: { "Cache-Control": "public, max-age=15" } }

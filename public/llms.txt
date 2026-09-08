@@ -115,7 +115,9 @@ GET /api/shield/stats                             -> 7d / 30d / 90d counts by ac
 solely by the OFAC SDN list) > your allowlist > your manual block > auto-BLOCK from
 caller ID > the caller-ID recommendation (ANSWER|SCREEN|BLOCK). A "flagged" (non-OFAC
 blocklist) address is NOT a hard stop — you can allowlist it.
-Every /check is logged so /stats is real. shield_events are pruned at 90 days — 90-day retention, stated not buried.
+Every /check is logged so /stats is real. shield_events are pruned by a daily job
+(and opportunistically on /nonce) — nothing older than 90 days is retained. 90-day
+retention, stated not buried.
 
 ## Payment
 x402 protocol. Network: Base (eip155:8453). Asset: USDC.

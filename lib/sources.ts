@@ -10,7 +10,6 @@ export interface WalletSignals {
   tx_count: number | null;
   first_seen: string | null;
   last_seen: string | null;
-  is_contract: boolean;
   // false = the block-explorer history lookup FAILED (rate-limited / down / bad
   // response). null/zero fields are then UNKNOWN, not "this wallet has no history".
   // Same contract as live-risk's rpc_ok.
@@ -22,7 +21,6 @@ const FAILED: WalletSignals = {
   tx_count: null,
   first_seen: null,
   last_seen: null,
-  is_contract: false,
   signals_ok: false,
 };
 
@@ -87,7 +85,7 @@ function signalsFromExplorer(j: unknown): WalletSignals {
 
 function signalsFromTxList(list: unknown[]): WalletSignals {
   if (list.length === 0) {
-    return { wallet_age_days: null, tx_count: 0, first_seen: null, last_seen: null, is_contract: false, signals_ok: true };
+    return { wallet_age_days: null, tx_count: 0, first_seen: null, last_seen: null, signals_ok: true };
   }
   const first = list[0] as { timeStamp?: string };
   const last = list[list.length - 1] as { timeStamp?: string };
@@ -99,7 +97,6 @@ function signalsFromTxList(list: unknown[]): WalletSignals {
     tx_count: list.length,
     first_seen: firstTs ? new Date(firstTs).toISOString() : null,
     last_seen: lastTs ? new Date(lastTs).toISOString() : null,
-    is_contract: false,
     signals_ok: true,
   };
 }

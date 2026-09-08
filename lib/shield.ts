@@ -8,12 +8,14 @@
 // (Safe / smart-contract wallets) is not supported yet — the signature-failure
 // message says so explicitly.
 //
-// Retention: shield_events rows older than 90 days are pruned opportunistically
-// on every /nonce call, alongside expired nonces and sessions.
+// Retention: shield_events rows older than 90 days are pruned by a daily cron
+// (/api/cron/sweep) and, opportunistically, on every /nonce call — alongside
+// expired nonces and sessions. So nothing older than 90 days is retained.
 import { randomBytes } from "node:crypto";
 import { verifyMessage, isAddress } from "viem";
 import { sql } from "@/lib/db";
 import { composeCallerId } from "@/lib/callerid";
+import { RISK_DISCLAIMER } from "@/lib/disclaimer";
 
 const NONCE_TTL_MIN = 10;
 const SESSION_TTL_MIN = 60;
@@ -73,12 +75,18 @@ export function buildMessage(a: {
   return lines.join("\n");
 }
 
-// ---- opportunistic housekeeping ----
+// ---- housekeeping ----
+// Runs opportunistically on every GET /api/shield/nonce AND on a daily cron
+// (/api/cron/sweep), so the 90-day event retention is a real guarantee (within
+// ~24h) even in a stretch with no nonce requests.
 
-export async function sweep(): Promise<void> {
-  await sql`DELETE FROM shield_nonces WHERE expires_at < now()`;
-  await sql`DELETE FROM shield_sessions WHERE expires_at < now()`;
-  await sql`DELETE FROM shield_events WHERE created_at < now() - ${`${EVENT_RETENTION_DAYS} days`}::interval`;
+export async function sweep(): Promise<{ nonces: number; sessions: number; events: number }> {
+  const nonces = (await sql`DELETE FROM shield_nonces WHERE expires_at < now() RETURNING 1`).length;
+  const sessions = (await sql`DELETE FROM shield_sessions WHERE expires_at < now() RETURNING 1`).length;
+  const events = (
+    await sql`DELETE FROM shield_events WHERE created_at < now() - ${`${EVENT_RETENTION_DAYS} days`}::interval RETURNING 1`
+  ).length;
+  return { nonces, sessions, events };
 }
 
 // ---- nonce lifecycle ----
@@ -245,10 +253,10 @@ export async function checkAddress(
   const address = assertAddress(addressRaw, "address");
 
   const [blockRows, allowRows, composed] = await Promise.all([
-    sql`SELECT reason, source FROM shield_blocks WHERE owner = ${owner} AND blocked_address = ${address}` as Promise<
+    sql`SELECT reason, source FROM shield_blocks WHERE owner = ${owner} AND blocked_address = ${address}` as unknown as Promise<
       { reason: string | null; source: string }[]
     >,
-    sql`SELECT 1 FROM shield_allows WHERE owner = ${owner} AND address = ${address}` as Promise<unknown[]>,
+    sql`SELECT 1 FROM shield_allows WHERE owner = ${owner} AND address = ${address}` as unknown as Promise<unknown[]>,
     composeCallerId(address, chain),
   ]);
 
@@ -303,6 +311,7 @@ export async function checkAddress(
     reasons,
     entity: entity ?? { is_known: false, label: null, category: "unknown" },
     name,
+    disclaimer: RISK_DISCLAIMER,
     checked_at: new Date().toISOString(),
   };
 }

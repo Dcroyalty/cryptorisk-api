@@ -19,12 +19,12 @@ const isEvm = (a) => /^0x[0-9a-fA-F]{40}$/.test(a);
 const norm = (a) => a.toLowerCase();
 
 async function getJson(u) {
-  const r = await fetch(u, { headers: { "user-agent": "cryptorisk-ingest" } });
+  const r = await fetch(u, { headers: { "user-agent": "uxus-ingest" } });
   if (!r.ok) throw new Error(`${u} -> HTTP ${r.status}`);
   return r.json();
 }
 async function getText(u) {
-  const r = await fetch(u, { headers: { "user-agent": "cryptorisk-ingest" } });
+  const r = await fetch(u, { headers: { "user-agent": "uxus-ingest" } });
   if (!r.ok) throw new Error(`${u} -> HTTP ${r.status}`);
   return r.text();
 }

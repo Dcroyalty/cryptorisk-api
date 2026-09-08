@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isEvmAddress } from "@/lib/sources";
 import { composeCallerId } from "@/lib/callerid";
+import { RISK_DISCLAIMER } from "@/lib/disclaimer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
       recommendation: result.recommendation,
       confidence: result.confidence,
       reasons: result.reasons,
+      disclaimer: RISK_DISCLAIMER,
       checked_at: new Date().toISOString(),
     },
     {
