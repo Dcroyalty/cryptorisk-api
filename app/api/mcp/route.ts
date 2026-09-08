@@ -137,7 +137,7 @@ const TOOLS: ToolDef[] = [
   {
     name: "check_entity",
     description:
-      "Entity attribution — what IS this address, not who owns it. Params: address (0x EVM address, required); chain (base default, or ethereum). Returns { address, chain, is_known, label, category }. category is one of sanctioned, mixer, exchange, bridge, dex_router, scam, drainer, phishing, token_contract, protocol, unknown. Sourced from OFAC, ScamSniffer, MEW, eth-labels and curated Base/Tornado sets. Never guesses. Free.",
+      "Entity attribution — what IS this address, not who owns it. Params: address (0x EVM address, required); chain (base default, or ethereum). Returns { address, chain, is_known, label, category }. category is one of sanctioned, mixer, exchange, bridge, dex_router, scam, drainer, phishing, flagged, token_contract, protocol, unknown. \"sanctioned\" is set only when the address is on the OFAC SDN list (the same source /api/risk uses); a non-OFAC blocklist hit is \"flagged\". Sourced from OFAC, ScamSniffer, MEW, eth-labels and curated Base/Tornado sets. Never guesses. Free.",
     inputSchema: {
       type: "object",
       properties: {

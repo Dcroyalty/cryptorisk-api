@@ -116,7 +116,7 @@
     {
       "resource": "https://uxus.finance/api/entity",
       "type": "http", "method": "GET",
-      "description": "Returns { is_known, label, category } for an EVM address — what it IS (not who owns it). category is one of sanctioned, mixer, exchange, bridge, dex_router, scam, drainer, phishing, token_contract, protocol, unknown. Sourced from OFAC, ScamSniffer, MEW, eth-labels and curated Base/Tornado sets. Never guesses.",
+      "description": "Returns { is_known, label, category } for an EVM address — what it IS (not who owns it). category is one of sanctioned, mixer, exchange, bridge, dex_router, scam, drainer, phishing, flagged, token_contract, protocol, unknown. \"sanctioned\" comes solely from the OFAC SDN list (same source as /api/risk); a non-OFAC blocklist hit is \"flagged\". Sourced from OFAC, ScamSniffer, MEW, eth-labels and curated Base/Tornado sets. Never guesses.",
       "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
       "input": { "query": { "address": "required 0x EVM address", "chain": "base (default) | ethereum" } },
       "output": "application/json"

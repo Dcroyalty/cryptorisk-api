@@ -50,14 +50,19 @@ GET /api/lookup?address=<any address, any chain>
 No chain parameter — EVM and XRPL are auto-detected from the address format.
 Optional ?chain=ethereum hint (EVM only; default base).
 Returns: { address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, entity, upgrade }
-Same field names for every chain.
+Same field names for every chain. exists / risk_score / risk_level / verdict are
+null when the chain RPC could not be reached (XRPL) — with degraded:true and a
+note. null means "not checked", never "clean".
 
 ### Entity attribution (free) — $0.00
 GET /api/entity?address=0x...&chain=base|ethereum   (default base)
 What IS this address — not who owns it.
 Returns: { address, chain, is_known, label, category }
-category: sanctioned | mixer | exchange | bridge | dex_router | scam | drainer | phishing | token_contract | protocol | unknown
-Sources: OFAC, ScamSniffer, MEW darklist, eth-labels, curated Base/Tornado sets. Never guesses.
+category: sanctioned | mixer | exchange | bridge | dex_router | scam | drainer | phishing | flagged | token_contract | protocol | unknown
+"sanctioned" is asserted ONLY when the address is on the OFAC SDN list (the same
+list /api/risk uses) — one source of truth, and the only category Shield hard-blocks.
+"flagged" = named by a non-OFAC blocklist; informational, allowlistable.
+Sources: OFAC (SDN list), ScamSniffer, MEW darklist, eth-labels, curated Base/Tornado sets. Never guesses.
 
 ### Name resolution (free) — $0.00
 GET /api/resolve?q=<name or address>
@@ -99,8 +104,10 @@ GET /api/shield/list                              -> { blocks[], allows[] }
 GET /api/shield/check?address=0x...&chain=base    -> { blocked, source, recommendation, reasons[], entity, name }
 GET /api/shield/stats                             -> 7d / 30d / 90d counts by action and entity category
 
-/check precedence: sanctioned entity (hard stop, cannot be allowlisted) > your allowlist >
-your manual block > auto-BLOCK from caller ID > the caller-ID recommendation (ANSWER|SCREEN|BLOCK).
+/check precedence: OFAC-sanctioned entity (hard stop, cannot be allowlisted — decided
+solely by the OFAC SDN list) > your allowlist > your manual block > auto-BLOCK from
+caller ID > the caller-ID recommendation (ANSWER|SCREEN|BLOCK). A "flagged" (non-OFAC
+blocklist) address is NOT a hard stop — you can allowlist it.
 Every /check is logged so /stats is real. shield_events are pruned at 90 days — 90-day retention, stated not buried.
 
 ## Payment

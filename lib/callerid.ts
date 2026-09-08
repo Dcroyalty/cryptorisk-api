@@ -12,6 +12,10 @@ import { evmAccountState } from "@/lib/evm-account";
 import { primaryName } from "@/lib/resolve";
 
 const BLOCK_CATEGORIES = new Set(["sanctioned", "drainer", "phishing", "scam", "mixer"]);
+// non-OFAC blocklist hit: a caution signal, not a hard stop — it suppresses
+// ANSWER and falls through to SCREEN, but never forces BLOCK and can be
+// allowlisted downstream (Shield).
+const FLAGGED = "flagged";
 // categories that can plausibly originate a message (run a notification service)
 const ANSWER_CATEGORIES = new Set(["exchange", "dex_router", "protocol"]);
 // known, not hostile, but a contract that cannot originate a message — a caller
@@ -44,6 +48,19 @@ export function recommend(input: CallerIdInput): CallerIdResult {
     block.push("risk verdict: BLOCK");
   }
   if (block.length) return { recommendation: "BLOCK", confidence, reasons: block };
+
+  // ---- non-OFAC flag: suppress ANSWER, fall through to SCREEN ----
+  if (entity?.category === FLAGGED) {
+    return {
+      recommendation: "SCREEN",
+      confidence,
+      reasons: [
+        `flagged by a non-OFAC blocklist: ${entity.label ?? "unspecified"}`,
+        name != null ? `verified name: ${name}` : "no verified name",
+        risk === null ? "risk scoring unavailable" : `risk verdict: ${risk.verdict}`,
+      ],
+    };
+  }
 
   // ---- ANSWER (only if no BLOCK trigger fired) ----
   const entityIdentity =

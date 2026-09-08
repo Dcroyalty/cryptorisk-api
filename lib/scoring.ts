@@ -48,10 +48,16 @@ export function scoreFromBadHits(hits: { source: string; category: string }[]) {
 
   for (const h of hits) {
     sources.add(h.source);
-    if (h.source === "ofac" || h.category === "sanctioned") {
+    if (h.source === "ofac") {
       score = Math.max(score, 100);
       flags.add("SANCTIONED");
-      reasons.push({ code: "SANCTIONED", severity: 10, detail: "Address appears on the OFAC SDN sanctions list", source: h.source });
+      reasons.push({ code: "SANCTIONED", severity: 10, detail: "Address is on the OFAC SDN sanctions list", source: "ofac" });
+    } else if (h.category === "sanctioned") {
+      // a non-OFAC list used the "sanctioned" category — report it as what it is,
+      // and name the list. Not an OFAC designation.
+      score = Math.max(score, 95);
+      flags.add("SANCTIONED");
+      reasons.push({ code: "SANCTIONED", severity: 10, detail: `Address is designated sanctioned by ${h.source} (not an OFAC SDN listing)`, source: h.source });
     } else if (h.category === "scam") {
       score = Math.max(score, 90);
       flags.add("SCAM_LIST_MATCH");

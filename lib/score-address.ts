@@ -16,7 +16,8 @@ export async function scoreAddress(address: string, chain: string, type: "wallet
   let score = bad.score;
   let flags = [...bad.flags];
   let reasons: Reason[] = [...bad.reasons];
-  const sources = new Set<string>(["ofac", "scamsniffer", "mew", ...bad.sources]);
+  // sources = the lists that actually matched this address, not the lists consulted.
+  const sources = new Set<string>(bad.sources);
   let signals: Record<string, unknown> = {};
 
   if (type === "token") {
@@ -36,6 +37,7 @@ export async function scoreAddress(address: string, chain: string, type: "wallet
       signals = { holder_count: t.holder_count, buy_tax: t.buy_tax, sell_tax: t.sell_tax, is_open_source: t.is_open_source, is_proxy: t.is_proxy, owner_address: t.owner_address };
       if (bad.score === 0 && !honeypot && score === 0) { flags.push("CLEAN"); reasons.push({ code: "CLEAN", severity: 0, detail: "No major token-risk flags found", source: "cryptorisk" }); }
     }
+    if (!t) { flags.push("TOKEN_CHECK_UNAVAILABLE"); reasons.push({ code: "TOKEN_CHECK_UNAVAILABLE", severity: 0, detail: "Token-security provider (GoPlus) did not return data — token-risk signals were NOT checked. Absence of flags is not a clean result.", source: "cryptorisk" }); }
   } else {
     const ws = await getWalletSignals(address, chain as "ethereum" | "base");
     signals = ws;

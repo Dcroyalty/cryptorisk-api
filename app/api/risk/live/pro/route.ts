@@ -24,7 +24,9 @@ const EXPLAIN: Record<string, string> = {
   CONTROLS_LOCKED: "Ownership renounced and not upgradeable. The rules cannot change.",
   NOT_A_CONTRACT: "This address is a wallet (EOA), not a token contract.",
   RPC_UNAVAILABLE_RESULT_UNKNOWN:
-    "Chain was unreachable. Treat as UNKNOWN, not safe. Retry before acting.",
+    "Chain was unreachable (eth_getCode did not return). Treat as UNKNOWN, not safe. Retry before acting.",
+  PARTIAL_READ_RESULT_UNKNOWN:
+    "One or more control reads (owner / pause / proxy slots) did not land on any RPC node. The verdict cannot be trusted — treat as UNKNOWN, not safe. Retry before acting.",
 };
 
 export async function GET(req: Request) {

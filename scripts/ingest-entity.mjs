@@ -2,9 +2,14 @@
 // Writes ONLY to entity_labels. Never reads or writes bad_addresses / score_cache.
 // Run: node scripts/ingest-entity.mjs   (re-runnable; upserts, keeps first_seen)
 //
-// Sources: dawsbot/eth-labels (accounts + tokens, chains 1 + 8453), OFAC (0xB10C),
-// ScamSniffer, MEW darklist, and two curated hardcoded sets (DEX routers +
-// Tornado / Base predeploys) that are the only reason Base coverage isn't zero.
+// Sources: dawsbot/eth-labels (accounts + tokens, chains 1 + 8453), OFAC (0xB10C,
+// label only — see step 3), ScamSniffer, MEW darklist, and two curated hardcoded
+// sets (DEX routers + Tornado / Base predeploys) that are the only reason Base
+// coverage isn't zero.
+//
+// This script NEVER owns the "sanctioned" signal. entity_labels carries no
+// category='sanctioned' rows — the OFAC SDN list lives in bad_addresses
+// (scripts/ingest.mjs) and lib/entity.ts is the only place the two are joined.
 import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
@@ -105,8 +110,14 @@ function deriveEntity(rows) {
   const anySet = (set) => slugs.some((s) => set.has(s));
   const match = (re) => slugs.some((s) => re.test(s));
 
+  // eth-labels "blocked" / "ofac-*" / "sanctioned" slugs mean "blocked by some
+  // list, somewhere" — they are NOT an OFAC designation and are not verified
+  // against the OFAC SDN list. Map to "flagged": informational, never a hard
+  // block. The authoritative sanctions signal comes only from scripts/ingest.mjs
+  // (bad_addresses, source='ofac'); lib/entity.ts promotes a "flagged" address
+  // to "sanctioned" only when it is on that list.
   if (match(/^(blocked|ofac-sanctions-lists|ofac-sanctioned|sanctioned)$/))
-    return { category: "sanctioned", label: bestLabel(tags, "OFAC / blocked") };
+    return { category: "flagged", label: bestLabel(tags, "flagged by a blocklist") };
   if (match(/(exploit$|-hack$|contract-vulnerability$|^heist$)/))
     return { category: "scam", label: bestLabel(tags, "exploit") };
   if (has("phish-hack") || match(/phish/))
@@ -228,11 +239,17 @@ try {
   results["eth-labels/tokens"] = `ERR ${e.message}`;
 }
 
-// 3) OFAC (0xB10C) — sanctioned
+// 3) OFAC (0xB10C) — label only.
+// entity_labels does NOT own the sanctions signal. That lives in bad_addresses
+// (source='ofac'), written by scripts/ingest.mjs, and is the single source of
+// truth consulted by lib/entity.ts and lib/score-address.ts. Here we only keep a
+// nice label so /api/entity can show "OFAC SDN List"; the category is "flagged"
+// and lib/entity.ts promotes it to "sanctioned" iff the address is in
+// bad_addresses(source='ofac').
 try {
   const txt = await getText("https://raw.githubusercontent.com/0xB10C/ofac-sanctioned-digital-currency-addresses/lists/sanctioned_addresses_ETH.txt");
   const rows = txt.split(/\r?\n/).map((s) => s.trim()).filter(isEvm)
-    .map((a) => ({ address: lc(a), chain: "evm", label: "OFAC SDN List", category: "sanctioned", source: "ofac" }));
+    .map((a) => ({ address: lc(a), chain: "evm", label: "OFAC SDN List", category: "flagged", source: "ofac" }));
   await upsert(rows);
   results.ofac = rows.length;
 } catch (e) {

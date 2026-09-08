@@ -35,8 +35,26 @@ const DEAD = new Set([ZERO, "0x000000000000000000000000000000000000dead"]);
 
 let rpcIndex = 0;
 
-async function rpc<T = string>(chain: Chain, method: string, params: unknown[], timeoutMs = 4000): Promise<T | null> {
+// Every read reports one of three outcomes. The point: a call that the chain
+// answered with an execution revert ("this function does not exist") is a
+// DEFINITIVE result — treat feature-absent as known. A call we could not land on
+// any node is UNKNOWN — and any verdict built on an unknown read is itself
+// unknown, never "safe".
+type Outcome<T> =
+  | { kind: "ok"; value: T }
+  | { kind: "reverted" }        // chain said no — definitive
+  | { kind: "unreachable" };    // no node answered — unknown
+
+function isRevertError(err: unknown): boolean {
+  const e = err as { code?: number; message?: string } | undefined;
+  const code = e?.code;
+  const msg = String(e?.message ?? "").toLowerCase();
+  return code === 3 || /execution reverted|revert|invalid opcode|out of gas/.test(msg);
+}
+
+async function rpc<T = string>(chain: Chain, method: string, params: unknown[], timeoutMs = 4000): Promise<Outcome<T>> {
   const urls = RPCS[chain];
+  let sawRevert = false;
   for (let attempt = 0; attempt < urls.length; attempt++) {
     const url = urls[(rpcIndex + attempt) % urls.length];
     const ctrl = new AbortController();
@@ -50,20 +68,30 @@ async function rpc<T = string>(chain: Chain, method: string, params: unknown[], 
       });
       const j = await r.json();
       clearTimeout(timer);
-      if (j?.error) continue;
       if (j?.result !== undefined) {
         rpcIndex = (rpcIndex + attempt) % urls.length; // stick to the healthy node
-        return j.result as T;
+        return { kind: "ok", value: j.result as T };
+      }
+      if (j?.error) {
+        if (isRevertError(j.error)) { sawRevert = true; continue; } // remember, but double-check another node
+        continue; // transient node error (rate limit, -32603, …) — try the next node
       }
     } catch {
       clearTimeout(timer);
     }
   }
-  return null;
+  // A revert seen on at least one node and never contradicted by a result => definitive.
+  return sawRevert ? { kind: "reverted" } : { kind: "unreachable" };
 }
 
 const call = (chain: Chain, to: string, data: string) =>
   rpc<string>(chain, "eth_call", [{ to, data }, "latest"]);
+
+// A read is "settled" if the chain gave us a definitive answer (a value or a revert).
+const settled = (o: Outcome<unknown>) => o.kind === "ok" || o.kind === "reverted";
+// eth_getStorageAt / eth_getCode never legitimately revert — require a real value.
+const gotValue = (o: Outcome<unknown>) => o.kind === "ok";
+const valueOf = <T>(o: Outcome<T>): T | null => (o.kind === "ok" ? o.value : null);
 
 const isEmpty = (hex: string | null) => !hex || hex === "0x" || /^0x0*$/.test(hex);
 const addrFromWord = (hex: string | null): string | null => {
@@ -116,12 +144,24 @@ export interface LiveRisk {
   rpc_ok: boolean;   // false = we could not reach chain; treat result as UNKNOWN, not safe
 }
 
+// Result is UNKNOWN, not safe: chain unreachable, or a verdict-feeding read failed.
+function unknownResult(addr: string, chain: Chain, t0: number, reason: string): LiveRisk {
+  return {
+    address: addr, chain, symbol: null, is_contract: false,
+    mutable_risk_score: 50, can_turn_hostile: true, time_to_rug: "unknown",
+    verdict: "MONITOR", powers: [reason],
+    controls: { owner: null, ownership_renounced: false, is_upgradeable_proxy: false,
+      proxy_admin: null, implementation: null, has_pause: false, is_paused: null, pending_owner: null },
+    checked_at: new Date().toISOString(), latency_ms: Date.now() - t0, rpc_ok: false,
+  };
+}
+
 export async function analyzeLiveRisk(address: string, chain: Chain): Promise<LiveRisk> {
   const t0 = Date.now();
   const addr = address.toLowerCase();
 
   // Everything in parallel â€” this is why we're fast.
-  const [code, ownerRaw, getOwnerRaw, pendingRaw, pausedRaw, implRaw, implSlot, adminSlot, symbolRaw] =
+  const [codeO, ownerO, getOwnerO, pendingO, pausedO, implO, implSlotO, adminSlotO, symbolO] =
     await Promise.all([
       rpc<string>(chain, "eth_getCode", [addr, "latest"]),
       call(chain, addr, SEL.owner),
@@ -134,32 +174,10 @@ export async function analyzeLiveRisk(address: string, chain: Chain): Promise<Li
       call(chain, addr, SEL.symbol),
     ]);
 
-  // Fail CLOSED. If the chain was unreachable, never report "safe".
-  const rpc_ok = code !== null;
-  if (!rpc_ok) {
-    return {
-      address: addr, chain, symbol: null, is_contract: false,
-      mutable_risk_score: 50, can_turn_hostile: true, time_to_rug: "unknown",
-      verdict: "MONITOR", powers: ["RPC_UNAVAILABLE_RESULT_UNKNOWN"],
-      controls: { owner: null, ownership_renounced: false, is_upgradeable_proxy: false,
-        proxy_admin: null, implementation: null, has_pause: false, is_paused: null, pending_owner: null },
-      checked_at: new Date().toISOString(), latency_ms: Date.now() - t0, rpc_ok: false,
-    };
-  }
-
+  // Fail CLOSED. eth_getCode must return a real value or we know nothing.
+  if (!gotValue(codeO)) return unknownResult(addr, chain, t0, "RPC_UNAVAILABLE_RESULT_UNKNOWN");
+  const code = valueOf(codeO) as string;
   const is_contract = code !== "0x" && code.length > 4;
-
-  const owner = addrFromWord(ownerRaw) ?? addrFromWord(getOwnerRaw);
-  const ownership_renounced = !owner || DEAD.has(owner);
-  const implementation = addrFromWord(implRaw) ?? addrFromWord(implSlot);
-  const proxy_admin = addrFromWord(adminSlot);
-  const is_upgradeable_proxy = !!implementation;
-  const is_paused = pauseState(pausedRaw);
-  const has_pause = is_paused !== null;
-  const pending_owner = addrFromWord(pendingRaw);
-
-  const powers: string[] = [];
-  let score = 0;
 
   if (!is_contract) {
     return {
@@ -171,6 +189,44 @@ export async function analyzeLiveRisk(address: string, chain: Chain): Promise<Li
       checked_at: new Date().toISOString(), latency_ms: Date.now() - t0, rpc_ok: true,
     };
   }
+
+  // Every read that feeds the verdict must have a definitive answer. A revert is
+  // definitive (function absent). "unreachable" is not — if any of these did not
+  // land, the verdict is UNKNOWN, never "safe". (symbol() is cosmetic — excluded.)
+  const ownerRaw = valueOf(ownerO);
+  const getOwnerRaw = valueOf(getOwnerO);
+  const owner = addrFromWord(ownerRaw) ?? addrFromWord(getOwnerRaw);
+  // ownership is known if we read a concrete owner, or both owner reads settled
+  // (value or revert) so we know there is none.
+  const ownershipKnown = !!owner || (settled(ownerO) && settled(getOwnerO));
+  if (
+    !ownershipKnown ||
+    !settled(pendingO) ||
+    !settled(pausedO) ||
+    !settled(implO) ||
+    !gotValue(implSlotO) ||   // eth_getStorageAt: must be a real word
+    !gotValue(adminSlotO)
+  ) {
+    return unknownResult(addr, chain, t0, "PARTIAL_READ_RESULT_UNKNOWN");
+  }
+
+  const pendingRaw = valueOf(pendingO);
+  const pausedRaw = valueOf(pausedO);
+  const implRaw = valueOf(implO);
+  const implSlot = valueOf(implSlotO);
+  const adminSlot = valueOf(adminSlotO);
+  const symbolRaw = valueOf(symbolO);
+
+  const ownership_renounced = !owner || DEAD.has(owner);
+  const implementation = addrFromWord(implRaw) ?? addrFromWord(implSlot);
+  const proxy_admin = addrFromWord(adminSlot);
+  const is_upgradeable_proxy = !!implementation;
+  const is_paused = pauseState(pausedRaw);
+  const has_pause = is_paused !== null;
+  const pending_owner = addrFromWord(pendingRaw);
+
+  const powers: string[] = [];
+  let score = 0;
 
   // --- The scoring that no snapshot scanner does ---
   if (is_upgradeable_proxy) {

@@ -47,12 +47,22 @@ async function upsert(rows) {
 
 const results = {};
 
-// 1) OFAC sanctioned ETH addresses (0xB10C nightly mirror)
+// 1) OFAC sanctioned ETH addresses (0xB10C nightly mirror).
+// This is THE sanctions source of truth for every endpoint. Full sync, not
+// append-only: addresses removed from the OFAC SDN list are deleted here so a
+// delisting propagates. Only source='ofac' rows are touched.
 try {
   const txt = await getText("https://raw.githubusercontent.com/0xB10C/ofac-sanctioned-digital-currency-addresses/lists/sanctioned_addresses_ETH.txt");
-  const rows = txt.split(/\r?\n/).map(s => s.trim()).filter(isEvm).map(a => ({ address: norm(a), chain: "evm", source: "ofac", category: "sanctioned" }));
+  const list = txt.split(/\r?\n/).map(s => s.trim()).filter(isEvm).map(norm);
+  if (!list.length) throw new Error("OFAC list fetch returned 0 addresses — refusing to sync");
+  const rows = list.map(a => ({ address: a, chain: "evm", source: "ofac", category: "sanctioned" }));
   await upsert(rows);
-  results.ofac_eth = rows.length;
+  const del = await sql`
+    DELETE FROM bad_addresses
+    WHERE source = 'ofac' AND address <> ALL(${list}::text[])
+    RETURNING address
+  `;
+  results.ofac_eth = { on_list: rows.length, delisted_removed: del.length };
 } catch (e) { results.ofac_eth = `ERR ${e.message}`; }
 
 // 2) ScamSniffer blacklist (EVM scam/phishing/drainer)

@@ -264,7 +264,9 @@ export async function checkAddress(
   if (category === SANCTIONED) {
     blocked = true;
     source = "sanctioned";
-    reasons = ["entity category: sanctioned — hard stop, cannot be allowlisted"];
+    reasons = [
+      "on the OFAC SDN sanctions list — hard stop, cannot be allowlisted",
+    ];
   } else if (allowed) {
     blocked = false;
     source = "allow";

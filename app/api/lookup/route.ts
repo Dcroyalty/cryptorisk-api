@@ -109,6 +109,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // RPC unreachable -> exists/risk come back null, not guessed. Flag it so a
+  // consumer doesn't read null as "clean".
+  const degraded = r.flags.includes("RPC_UNAVAILABLE");
+
   return NextResponse.json(
     {
       address: r.address,
@@ -121,8 +125,15 @@ export async function GET(req: NextRequest) {
       flags: r.flags,
       entity: { is_known: false, label: null, category: "unknown" },
       name: null,
+      degraded,
+      ...(degraded
+        ? { note: "Could not reach an XRPL node — exists and risk are unknown, not clean. Retry before acting." }
+        : {}),
       upgrade: null,
     },
-    { status: 200, headers: { "Cache-Control": "public, max-age=30" } },
+    {
+      status: 200,
+      headers: { "Cache-Control": degraded ? "no-store" : "public, max-age=30" },
+    },
   );
 }

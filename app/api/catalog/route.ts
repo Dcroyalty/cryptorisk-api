@@ -36,7 +36,7 @@ export async function GET() {
         summary: "FREE universal reverse lookup — any address, any chain (EVM + XRPL), auto-detected. One normalized envelope for every chain.",
         params: { address: "required — EVM 0x address or XRPL classic r-address", chain: "optional EVM hint: base (default) | ethereum" } },
       { id: "entity", method: "GET", url: `${BASE}/api/entity`, price_usd: "0.00",
-        summary: "FREE entity attribution — what IS this address. Returns is_known, label, and category (sanctioned, mixer, exchange, bridge, dex_router, scam, drainer, phishing, token_contract, protocol) from OFAC, ScamSniffer, eth-labels and curated sets.",
+        summary: "FREE entity attribution — what IS this address. Returns is_known, label, and category (sanctioned, mixer, exchange, bridge, dex_router, scam, drainer, phishing, flagged, token_contract, protocol) from ScamSniffer, eth-labels and curated sets. 'sanctioned' comes only from the OFAC SDN list (same source as /api/risk); a non-OFAC blocklist hit is 'flagged'.",
         params: { address: "required 0x EVM address", chain: "base (default) | ethereum" } },
       { id: "resolve", method: "GET", url: `${BASE}/api/resolve`, price_usd: "0.00",
         summary: "FREE bidirectional name <-> address resolution. ENS (name.eth) and Basenames (name.base.eth), forward and reverse, via public RPC. Reverse records are forward-verified against the address. XRPL .xrp names are detected but return resolved:false (no canonical registry).",

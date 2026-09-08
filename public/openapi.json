@@ -311,13 +311,15 @@
           "address": { "type": "string" },
           "chain": { "type": "string", "enum": ["evm", "xrpl"] },
           "chain_detected": { "type": "boolean" },
-          "exists": { "type": "boolean", "nullable": true, "description": "null when on-chain state could not be verified" },
-          "risk_score": { "type": "integer", "minimum": 0, "maximum": 100 },
-          "risk_level": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
-          "verdict": { "type": "string", "enum": ["PROCEED", "CAUTION", "BLOCK"] },
+          "exists": { "type": "boolean", "nullable": true, "description": "null when on-chain state could not be verified (EVM RPC failure, or XRPL node unreachable). Never guessed." },
+          "risk_score": { "type": "integer", "minimum": 0, "maximum": 100, "nullable": true, "description": "null (XRPL) when the account state could not be read — not scored, not clean" },
+          "risk_level": { "type": "string", "enum": ["low", "medium", "high", "critical"], "nullable": true },
+          "verdict": { "type": "string", "enum": ["PROCEED", "CAUTION", "BLOCK"], "nullable": true },
           "flags": { "type": "array", "items": { "type": "string" } },
           "entity": { "$ref": "#/components/schemas/Entity" },
           "name": { "type": "string", "nullable": true, "description": "primary ENS/Basename for an EVM address, forward-verified; null if none" },
+          "degraded": { "type": "boolean", "description": "true when an upstream RPC could not be reached and exists/risk came back null — retry before acting" },
+          "note": { "type": "string", "description": "present when degraded: what could not be checked" },
           "upgrade": { "type": "string", "nullable": true, "description": "points at /api/risk/pro for EVM; null for XRPL" }
         }
       },
@@ -345,8 +347,10 @@
           "label": { "type": "string", "nullable": true, "description": "human name, e.g. \"Tornado.Cash: 1 ETH\"; null when unknown" },
           "category": {
             "type": "string",
-            "enum": ["sanctioned", "mixer", "exchange", "bridge", "dex_router", "scam", "drainer", "phishing", "token_contract", "protocol", "unknown"]
-          }
+            "description": "\"sanctioned\" is set only when the address is on the OFAC SDN list (the single source of truth, shared with /api/risk). \"flagged\" means a non-OFAC blocklist named it — informational, not a hard stop.",
+            "enum": ["sanctioned", "mixer", "exchange", "bridge", "dex_router", "scam", "drainer", "phishing", "flagged", "token_contract", "protocol", "unknown"]
+          },
+          "sanctions_source": { "type": "string", "description": "present only when category is \"sanctioned\": the list that designated it (currently always \"ofac\")" }
         }
       },
       "EntityResult": {
@@ -359,7 +363,7 @@
           "label": { "type": "string", "nullable": true },
           "category": {
             "type": "string",
-            "enum": ["sanctioned", "mixer", "exchange", "bridge", "dex_router", "scam", "drainer", "phishing", "token_contract", "protocol", "unknown"]
+            "enum": ["sanctioned", "mixer", "exchange", "bridge", "dex_router", "scam", "drainer", "phishing", "flagged", "token_contract", "protocol", "unknown"]
           }
         }
       },
@@ -754,7 +758,7 @@
       "get": {
         "operationId": "entityAttribution",
         "summary": "FREE entity attribution — what IS this address",
-        "description": "Answers what an address is (not who owns it) from OFAC, ScamSniffer, MEW, eth-labels and curated Base/Tornado sets. is_known:false / category:\"unknown\" when nothing matches — never inferred from address shape.",
+        "description": "Answers what an address is (not who owns it) from ScamSniffer, MEW, eth-labels and curated Base/Tornado sets. The \"sanctioned\" category comes solely from the OFAC SDN list ingested into bad_addresses — the same source /api/risk uses; a non-OFAC blocklist hit is category \"flagged\", not \"sanctioned\". is_known:false / category:\"unknown\" when nothing matches — never inferred from address shape.",
         "security": [],
         "parameters": [
           { "name": "address", "in": "query", "required": true, "schema": { "type": "string" }, "example": "0x47CE0C6eD5B0Ce3d3A51fdb1C52DC66a7c3c2936" },

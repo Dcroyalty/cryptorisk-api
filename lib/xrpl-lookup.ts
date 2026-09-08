@@ -113,10 +113,12 @@ function hexToUtf8(hex?: string): string | null {
 
 export interface XrplLookup {
   address: string;
-  exists: boolean;
-  risk_score: number;
-  risk_level: RiskLevel;
-  verdict: Verdict;
+  // null = could not be determined (RPC unreachable). Never guessed.
+  exists: boolean | null;
+  // null = not scored (address invalid, or account state unavailable).
+  risk_score: number | null;
+  risk_level: RiskLevel | null;
+  verdict: Verdict | null;
   flags: string[];
   account_age_days: number | null;
   xrp_balance: string | null;
@@ -126,14 +128,21 @@ export interface XrplLookup {
   checked_at: string;
 }
 
-function shell(address: string, flags: string[], score: number, exists: boolean): XrplLookup {
-  const level = levelFromScore(score);
+// A non-scored result. `score` null => risk_score/level/verdict all null (we did
+// not compute a score, so we do not assert one).
+function shell(
+  address: string,
+  flags: string[],
+  score: number | null,
+  exists: boolean | null,
+): XrplLookup {
+  const level = score === null ? null : levelFromScore(score);
   return {
     address,
     exists,
     risk_score: score,
     risk_level: level,
-    verdict: verdictFromLevel(level),
+    verdict: level === null ? null : verdictFromLevel(level),
     flags,
     account_age_days: null,
     xrp_balance: null,
@@ -146,7 +155,8 @@ function shell(address: string, flags: string[], score: number, exists: boolean)
 
 export async function xrplLookup(input: string): Promise<XrplLookup> {
   const address = toClassic(input);
-  if (!address) return shell(input.trim(), ["INVALID_ADDRESS"], 30, false);
+  // invalid checksum — the route turns this into a 400
+  if (!address) return shell(input.trim(), ["INVALID_ADDRESS"], null, null);
 
   const [infoR, linesR, txR, signerR] = await Promise.all([
     rpc<any>("account_info", [{ account: address, ledger_index: "validated", strict: true }]),
@@ -159,11 +169,13 @@ export async function xrplLookup(input: string): Promise<XrplLookup> {
     ]),
   ]);
 
-  if (!infoR.ok) return shell(address, ["RPC_UNAVAILABLE"], 40, false);
+  // Could not reach any XRPL node — we know nothing. Do not assert existence or risk.
+  if (!infoR.ok) return shell(address, ["RPC_UNAVAILABLE"], null, null);
 
   const info = infoR.result;
+  // Definitive answer from the ledger: the account is not funded / does not exist.
   if (info?.error === "actNotFound" || !info?.account_data) {
-    return shell(address, ["NOT_FOUND"], 30, false);
+    return shell(address, ["NOT_FOUND"], null, false);
   }
 
   const acct = info.account_data;
