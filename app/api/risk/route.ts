@@ -23,6 +23,9 @@ export async function GET(req: NextRequest) {
     risk_level: full.risk_level,
     verdict: full.verdict,
     flags: full.flags,
+    // true = an upstream needed for the verdict was unavailable; verdict is
+    // CAUTION ("not fully assessed"), not PROCEED. Retry before acting.
+    degraded: full.degraded,
     tier: "free",
     upgrade: "Call /api/risk/pro for full reasons, signals, and sources ($0.01/call via x402).",
     checked_at: full.checked_at,

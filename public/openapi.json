@@ -71,6 +71,7 @@
           "risk_level": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
           "verdict": { "type": "string", "enum": ["PROCEED", "CAUTION", "BLOCK"] },
           "flags": { "type": "array", "items": { "type": "string" }, "example": ["SANCTIONED"] },
+          "degraded": { "type": "boolean", "description": "true = an input needed for the verdict was unavailable (wallet-history explorer failed, or the token-security provider returned nothing) AND there was no sanctions/scam-list hit. verdict is then CAUTION (\"not fully assessed\"), never PROCEED, and carries a HISTORY_UNAVAILABLE or TOKEN_CHECK_UNAVAILABLE flag. Retry before acting." },
           "tier": { "type": "string", "example": "free" },
           "upgrade": { "type": "string" },
           "checked_at": { "type": "string", "format": "date-time" }
@@ -89,7 +90,8 @@
           "flags": { "type": "array", "items": { "type": "string" } },
           "reasons": { "type": "array", "items": { "$ref": "#/components/schemas/Reason" } },
           "signals": { "type": "object", "description": "Token signals (tax, mint, proxy, owner flags) or wallet signals (age, tx counts)." },
-          "sources": { "type": "array", "items": { "type": "string" }, "example": ["ofac", "scamsniffer", "goplus"] },
+          "sources": { "type": "array", "items": { "type": "string" }, "example": ["ofac", "scamsniffer"] },
+          "degraded": { "type": "boolean", "description": "true = a verdict input was unavailable and there was no list hit; verdict is CAUTION, not PROCEED. See HISTORY_UNAVAILABLE / TOKEN_CHECK_UNAVAILABLE in flags/reasons." },
           "checked_at": { "type": "string", "format": "date-time" },
           "cache_ttl": { "type": "integer" }
         }
@@ -318,8 +320,8 @@
           "flags": { "type": "array", "items": { "type": "string" } },
           "entity": { "$ref": "#/components/schemas/Entity" },
           "name": { "type": "string", "nullable": true, "description": "primary ENS/Basename for an EVM address, forward-verified; null if none" },
-          "degraded": { "type": "boolean", "description": "true when an upstream RPC could not be reached and exists/risk came back null — retry before acting" },
-          "note": { "type": "string", "description": "present when degraded: what could not be checked" },
+          "degraded": { "type": "boolean", "description": "true when a verdict input was unavailable: XRPL node unreachable (exists/risk come back null), or EVM wallet-history lookup failed (verdict is CAUTION not PROCEED, with a HISTORY_UNAVAILABLE flag). Retry before acting." },
+          "note": { "type": "string", "description": "present when degraded (XRPL): what could not be checked" },
           "upgrade": { "type": "string", "nullable": true, "description": "points at /api/risk/pro for EVM; null for XRPL" }
         }
       },
@@ -380,8 +382,9 @@
           "risk_score": { "type": "integer", "nullable": true, "minimum": 0, "maximum": 100 },
           "risk_level": { "type": "string", "nullable": true, "enum": ["low", "medium", "high", "critical"] },
           "verdict": { "type": "string", "nullable": true, "enum": ["PROCEED", "CAUTION", "BLOCK"] },
+          "risk_degraded": { "type": "boolean", "nullable": true, "description": "true = risk was scored but wallet history was unavailable; verdict is CAUTION not PROCEED, and confidence is 'low'" },
           "recommendation": { "type": "string", "enum": ["ANSWER", "SCREEN", "BLOCK"] },
-          "confidence": { "type": "string", "enum": ["high", "low"], "description": "high = entity and risk both resolved; low = an input degraded to null (treat as unchecked, not clean)" },
+          "confidence": { "type": "string", "enum": ["high", "low"], "description": "high = entity and a fully-assessed risk both resolved; low = an input was missing OR the risk read was degraded (treat as unchecked, not clean)" },
           "reasons": { "type": "array", "items": { "type": "string" }, "description": "short strings naming exactly what drove the recommendation" },
           "checked_at": { "type": "string", "format": "date-time" }
         }

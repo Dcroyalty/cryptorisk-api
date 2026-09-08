@@ -1,5 +1,10 @@
-// scripts/ingest.mjs — download free bad-address lists and load into Neon.
-// Run: node scripts/ingest.mjs   (re-run anytime to refresh; it upserts)
+// scripts/ingest.mjs — MANUAL refresh of the bad-address lists in Neon.
+// Run: node scripts/ingest.mjs
+//
+// The SCHEDULED path is app/api/cron/refresh-lists (see vercel.json), backed by
+// lib/refresh-lists.ts — that is the canonical implementation. This script
+// mirrors it for local / one-off use; keep the two in sync. Both guard the OFAC
+// full-sync: if the upstream returns 0 addresses, abort rather than wipe.
 import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
@@ -65,19 +70,21 @@ try {
   results.ofac_eth = { on_list: rows.length, delisted_removed: del.length };
 } catch (e) { results.ofac_eth = `ERR ${e.message}`; }
 
-// 2) ScamSniffer blacklist (EVM scam/phishing/drainer)
+// 2) ScamSniffer blacklist (EVM scam/phishing/drainer). Append-only upsert.
 try {
   const arr = await getJson("https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json");
   const list = Array.isArray(arr) ? arr : Object.keys(arr || {});
   const rows = list.map(String).filter(isEvm).map(a => ({ address: norm(a), chain: "evm", source: "scamsniffer", category: "scam" }));
+  if (!rows.length) throw new Error("ScamSniffer returned 0 addresses — skipped");
   await upsert(rows);
   results.scamsniffer = rows.length;
 } catch (e) { results.scamsniffer = `ERR ${e.message}`; }
 
-// 3) MyEtherWallet darklist (malicious addresses)
+// 3) MyEtherWallet darklist (malicious addresses). Append-only upsert.
 try {
   const arr = await getJson("https://raw.githubusercontent.com/MyEtherWallet/ethereum-lists/master/src/addresses/addresses-darklist.json");
   const rows = (Array.isArray(arr) ? arr : []).map(o => o && o.address).map(String).filter(isEvm).map(a => ({ address: norm(a), chain: "evm", source: "mew", category: "scam" }));
+  if (!rows.length) throw new Error("MEW darklist returned 0 addresses — skipped");
   await upsert(rows);
   results.mew = rows.length;
 } catch (e) { results.mew = `ERR ${e.message}`; }

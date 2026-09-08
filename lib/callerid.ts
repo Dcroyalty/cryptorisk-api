@@ -24,7 +24,9 @@ const NON_ORIGINATING_CATEGORIES = new Set(["bridge", "token_contract"]);
 
 export interface CallerIdInput {
   entity: { is_known: boolean; label: string | null; category: string } | null;
-  risk: { score: number; level: string; verdict: "PROCEED" | "CAUTION" | "BLOCK" } | null;
+  // degraded:true = risk was scored but an input (wallet history) was
+  // unavailable — treat like a missing risk input, not a clean one.
+  risk: { score: number; level: string; verdict: "PROCEED" | "CAUTION" | "BLOCK"; degraded?: boolean } | null;
   name: string | null;
 }
 
@@ -36,8 +38,10 @@ export interface CallerIdResult {
 
 export function recommend(input: CallerIdInput): CallerIdResult {
   const { entity, risk, name } = input;
-  // high only when BOTH decision-critical inputs resolved
-  const confidence: "high" | "low" = entity !== null && risk !== null ? "high" : "low";
+  // high only when BOTH decision-critical inputs resolved — a degraded risk
+  // read (history lookup failed) counts as not resolved.
+  const riskResolved = risk !== null && !risk.degraded;
+  const confidence: "high" | "low" = entity !== null && riskResolved ? "high" : "low";
 
   // ---- BLOCK ----
   const block: string[] = [];
@@ -57,19 +61,24 @@ export function recommend(input: CallerIdInput): CallerIdResult {
       reasons: [
         `flagged by a non-OFAC blocklist: ${entity.label ?? "unspecified"}`,
         name != null ? `verified name: ${name}` : "no verified name",
-        risk === null ? "risk scoring unavailable" : `risk verdict: ${risk.verdict}`,
+        risk === null
+          ? "risk scoring unavailable"
+          : risk.degraded
+            ? `risk verdict: ${risk.verdict} (wallet history unavailable — not fully assessed)`
+            : `risk verdict: ${risk.verdict}`,
       ],
     };
   }
 
-  // ---- ANSWER (only if no BLOCK trigger fired) ----
+  // ---- ANSWER (only if no BLOCK trigger fired, and risk PROCEED was actually assessed) ----
+  const riskProceed = risk?.verdict === "PROCEED" && !risk.degraded;
   const entityIdentity =
     entity?.is_known === true && !!entity.category && ANSWER_CATEGORIES.has(entity.category);
   const answer: string[] = [];
-  if (entityIdentity && risk?.verdict === "PROCEED") {
+  if (entityIdentity && riskProceed) {
     answer.push(`known entity: ${entity!.label ?? entity!.category} (${entity!.category})`);
   }
-  if (name != null && risk?.verdict === "PROCEED") {
+  if (name != null && riskProceed) {
     answer.push(`verified name: ${name}`);
   }
   if (answer.length) {
@@ -97,6 +106,7 @@ export function recommend(input: CallerIdInput): CallerIdResult {
   reasons.push(name != null ? `verified name: ${name}` : "no verified name");
 
   if (risk === null) reasons.push("risk scoring unavailable");
+  else if (risk.degraded) reasons.push(`risk verdict: ${risk.verdict} (wallet history unavailable — not fully assessed)`);
   else reasons.push(`risk verdict: ${risk.verdict}`);
 
   return { recommendation: "SCREEN", confidence, reasons };
@@ -106,7 +116,7 @@ export function recommend(input: CallerIdInput): CallerIdResult {
 
 export interface ComposedCallerId {
   entity: { is_known: boolean; label: string | null; category: string } | null;
-  risk: { score: number; level: string; verdict: "PROCEED" | "CAUTION" | "BLOCK" } | null;
+  risk: { score: number; level: string; verdict: "PROCEED" | "CAUTION" | "BLOCK"; degraded: boolean } | null;
   name: string | null;
   exists: boolean | null;
   result: CallerIdResult;
@@ -133,7 +143,9 @@ export async function composeCallerId(
   const name = nameR.status === "fulfilled" && nameR.value ? nameR.value.name : null;
 
   const entity = e ? { is_known: e.is_known, label: e.label, category: e.category } : null;
-  const risk = s ? { score: s.risk_score, level: s.risk_level, verdict: s.verdict } : null;
+  const risk = s
+    ? { score: s.risk_score, level: s.risk_level, verdict: s.verdict, degraded: s.degraded }
+    : null;
   const exists = a
     ? a.has_code || a.nonce > 0 || a.balance_wei > BigInt(0)
       ? true

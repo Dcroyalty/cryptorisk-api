@@ -19,6 +19,9 @@ export async function scoreAddress(address: string, chain: string, type: "wallet
   // sources = the lists that actually matched this address, not the lists consulted.
   const sources = new Set<string>(bad.sources);
   let signals: Record<string, unknown> = {};
+  // true = an input needed for the verdict was unavailable and there was no list
+  // hit — the verdict is "not fully assessed", never PROCEED/CLEAN.
+  let degraded = false;
 
   if (type === "token") {
     const t = await getTokenRisk(address, CHAIN_IDS[chain]);
@@ -37,25 +40,38 @@ export async function scoreAddress(address: string, chain: string, type: "wallet
       signals = { holder_count: t.holder_count, buy_tax: t.buy_tax, sell_tax: t.sell_tax, is_open_source: t.is_open_source, is_proxy: t.is_proxy, owner_address: t.owner_address };
       if (bad.score === 0 && !honeypot && score === 0) { flags.push("CLEAN"); reasons.push({ code: "CLEAN", severity: 0, detail: "No major token-risk flags found", source: "cryptorisk" }); }
     }
-    if (!t) { flags.push("TOKEN_CHECK_UNAVAILABLE"); reasons.push({ code: "TOKEN_CHECK_UNAVAILABLE", severity: 0, detail: "Token-security provider (GoPlus) did not return data — token-risk signals were NOT checked. Absence of flags is not a clean result.", source: "cryptorisk" }); }
+    if (!t && bad.score === 0) {
+      degraded = true;
+      flags.push("TOKEN_CHECK_UNAVAILABLE");
+      reasons.push({ code: "TOKEN_CHECK_UNAVAILABLE", severity: 3, detail: "Token-security provider (GoPlus) did not return data — token-risk signals were NOT checked. Absence of flags is not a clean result.", source: "cryptorisk" });
+    }
   } else {
     const ws = await getWalletSignals(address, chain as "ethereum" | "base");
-    signals = ws;
+    signals = { ...ws };
     const applied = applyWalletSignals({ score, flags, reasons }, ws);
     score = applied.score; flags = applied.flags; reasons = applied.reasons;
+    degraded = applied.degraded;
   }
 
   score = Math.min(100, Math.max(0, score));
-  const level = levelFromScore(score);
+  let level = levelFromScore(score);
+  let verdict = verdictFromLevel(level);
+  // Degraded with no list hit: the verdict was not fully assessed. Floor it at
+  // CAUTION — never report PROCEED for an address we could not vet.
+  if (degraded && bad.score === 0 && verdict === "PROCEED") {
+    level = "medium";
+    verdict = "CAUTION";
+  }
   return {
     address, chain, type,
     risk_score: score,
     risk_level: level,
-    verdict: verdictFromLevel(level),
+    verdict,
     flags: [...new Set(flags)],
     reasons,
     signals,
     sources: [...sources],
+    degraded,
     checked_at: new Date().toISOString(),
     cache_ttl: 3600,
   };

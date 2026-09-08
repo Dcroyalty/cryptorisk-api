@@ -23,6 +23,10 @@ export interface RiskResult {
   reasons: Reason[];
   signals: Record<string, unknown>;
   sources: string[];
+  // true = a data source needed to reach a verdict was unavailable (wallet
+  // history lookup failed, or the token-security provider returned nothing).
+  // The verdict is then "not fully assessed" (CAUTION), never PROCEED/CLEAN.
+  degraded: boolean;
   checked_at: string;
   cache_ttl: number;
 }
@@ -68,18 +72,24 @@ export function scoreFromBadHits(hits: { source: string; category: string }[]) {
 }
 
 // Combine wallet-behavior signals (age/velocity) into the score.
+// signals_ok:false means the block-explorer history read FAILED — the age/tx
+// fields are unknown, not zero. In that case, with no list hit, the verdict is
+// "not assessed" (degraded), never CLEAN. Same rule as live-risk's
+// PARTIAL_READ_RESULT_UNKNOWN: a failed input that feeds the verdict makes the
+// verdict unavailable, not safe.
 export function applyWalletSignals(
   base: { score: number; flags: string[]; reasons: Reason[] },
-  signals: { wallet_age_days?: number | null; tx_count?: number | null; is_contract?: boolean }
+  signals: { wallet_age_days?: number | null; tx_count?: number | null; is_contract?: boolean; signals_ok?: boolean }
 ) {
   let { score } = base;
   const flags = new Set(base.flags);
   const reasons = [...base.reasons];
 
+  const historyOk = signals.signals_ok !== false;
   const age = signals.wallet_age_days;
   const tx = signals.tx_count ?? 0;
 
-  if (age != null && age < 7) {
+  if (historyOk && age != null && age < 7) {
     if (tx > 100) {
       score += 25; flags.add("NEW_WALLET"); flags.add("HIGH_VELOCITY");
       reasons.push({ code: "HIGH_VELOCITY", severity: 5, detail: "New wallet (<7d) with high transaction count", source: "behavior" });
@@ -87,14 +97,25 @@ export function applyWalletSignals(
       score += 10; flags.add("NEW_WALLET");
       reasons.push({ code: "NEW_WALLET", severity: 3, detail: "Wallet is less than 7 days old", source: "behavior" });
     }
-  } else if (age != null && age > 180 && base.score === 0) {
+  } else if (historyOk && age != null && age > 180 && base.score === 0) {
     score = Math.max(0, score - 10);
   }
 
-  if (base.score === 0 && flags.size === 0) {
+  // A failed history read with no list hit => degraded. Don't emit CLEAN.
+  const degraded = !historyOk && base.score === 0;
+  if (degraded) {
+    flags.add("HISTORY_UNAVAILABLE");
+    reasons.push({
+      code: "HISTORY_UNAVAILABLE",
+      severity: 3,
+      detail:
+        "Block-explorer history lookup failed (rate-limited or unavailable). No sanctions or scam-list match was found, but wallet-behavior signals were NOT checked — treat this as unassessed, not clean.",
+      source: "cryptorisk",
+    });
+  } else if (base.score === 0 && flags.size === 0) {
     flags.add("CLEAN");
     reasons.push({ code: "CLEAN", severity: 0, detail: "No sanctions or scam-list matches found", source: "cryptorisk" });
   }
 
-  return { score: Math.min(100, Math.max(0, score)), flags: [...flags], reasons };
+  return { score: Math.min(100, Math.max(0, score)), flags: [...flags], reasons, degraded };
 }

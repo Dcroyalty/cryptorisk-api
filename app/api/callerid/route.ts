@@ -40,11 +40,17 @@ export async function GET(req: NextRequest) {
       risk_score: risk ? risk.score : null,
       risk_level: risk ? risk.level : null,
       verdict: risk ? risk.verdict : null,
+      // true = risk was scored but wallet history was unavailable — verdict is
+      // CAUTION, not PROCEED, and confidence drops to "low".
+      risk_degraded: risk ? risk.degraded : null,
       recommendation: result.recommendation,
       confidence: result.confidence,
       reasons: result.reasons,
       checked_at: new Date().toISOString(),
     },
-    { status: 200, headers: { "Cache-Control": "public, max-age=60" } },
+    {
+      status: 200,
+      headers: { "Cache-Control": risk?.degraded ? "no-store" : "public, max-age=60" },
+    },
   );
 }

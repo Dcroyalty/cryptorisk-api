@@ -95,10 +95,16 @@ export async function GET(req: NextRequest) {
             }
           : { is_known: false, label: null, category: "unknown" },
         name: pname ? pname.name : null,
+        // true = the risk verdict could not be fully assessed (history lookup
+        // failed) — it is CAUTION, not PROCEED. null means "not checked".
+        degraded: full.degraded,
         upgrade:
           "GET /api/risk/pro?address=0x...&chain=ethereum|base for reasons, signals, and sources ($0.01/call via x402).",
       },
-      { status: 200, headers: { "Cache-Control": "public, max-age=30" } },
+      {
+        status: 200,
+        headers: { "Cache-Control": full.degraded ? "no-store" : "public, max-age=30" },
+      },
     );
   }
 
