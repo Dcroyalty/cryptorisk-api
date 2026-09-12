@@ -1,12 +1,17 @@
 ﻿import { sql } from "@/lib/db";
 import { getWalletSignals, getTokenRisk } from "@/lib/sources";
 import { RISK_DISCLAIMER } from "@/lib/disclaimer";
+import { ARC_TESTNET_CHAIN_ID } from "@/lib/arc";
 import {
   scoreFromBadHits, applyWalletSignals, levelFromScore, verdictFromLevel,
   type RiskResult, type Reason,
 } from "@/lib/scoring";
 
-const CHAIN_IDS: Record<string, number> = { ethereum: 1, base: 8453 };
+// arc: placeholder testnet chain id, only used for the GoPlus token-risk
+// lookup (type=token). GoPlus almost certainly won't index Arc at launch —
+// that call degrades gracefully already (returns null -> TOKEN_CHECK_UNAVAILABLE).
+// Update once GoPlus confirms Arc support; doesn't block wallet screening.
+const CHAIN_IDS: Record<string, number> = { ethereum: 1, base: 8453, arc: ARC_TESTNET_CHAIN_ID };
 export const SUPPORTED_CHAINS = Object.keys(CHAIN_IDS);
 export function chainId(chain: string) { return CHAIN_IDS[chain]; }
 
@@ -47,7 +52,7 @@ export async function scoreAddress(address: string, chain: string, type: "wallet
       reasons.push({ code: "TOKEN_CHECK_UNAVAILABLE", severity: 3, detail: "Token-security provider (GoPlus) did not return data — token-risk signals were NOT checked. Absence of flags is not a clean result.", source: "uxus" });
     }
   } else {
-    const ws = await getWalletSignals(address, chain as "ethereum" | "base");
+    const ws = await getWalletSignals(address, chain as "ethereum" | "base" | "arc");
     signals = { ...ws };
     const applied = applyWalletSignals({ score, flags, reasons }, ws);
     score = applied.score; flags = applied.flags; reasons = applied.reasons;

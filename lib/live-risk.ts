@@ -10,12 +10,20 @@
 // eth_getStorageAt) against public Base/Ethereum RPC. No third-party
 // security API in the hot path -> faster, cheaper, no rate-limit ceiling.
 
-export type Chain = "base" | "ethereum";
+import { arcRpcUrl } from "./arc";
 
-const RPCS: Record<Chain, string[]> = {
+export type Chain = "base" | "ethereum" | "arc";
+
+const RPCS: Record<Exclude<Chain, "arc">, string[]> = {
   base: ["https://mainnet.base.org", "https://base.llamarpc.com", "https://base-rpc.publicnode.com"],
   ethereum: ["https://eth.llamarpc.com", "https://ethereum-rpc.publicnode.com", "https://rpc.ankr.com/eth"],
 };
+
+// Arc has one official RPC (Circle's), resolved per-call from env so a
+// testnet->mainnet cutover is an env change, not a code change.
+function rpcUrls(chain: Chain): string[] {
+  return chain === "arc" ? [arcRpcUrl()] : RPCS[chain];
+}
 
 // Verified selectors (keccak256 of signature, first 4 bytes)
 const SEL = {
@@ -53,7 +61,7 @@ function isRevertError(err: unknown): boolean {
 }
 
 async function rpc<T = string>(chain: Chain, method: string, params: unknown[], timeoutMs = 4000): Promise<Outcome<T>> {
-  const urls = RPCS[chain];
+  const urls = rpcUrls(chain);
   let sawRevert = false;
   for (let attempt = 0; attempt < urls.length; attempt++) {
     const url = urls[(rpcIndex + attempt) % urls.length];

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import SiteFooter from "./components/SiteFooter";
 
 const SERVICES = [
   { id: "llm",     send: "prompt",           get: "completion",              price: "0.01", note: "any model, no key" },
@@ -42,6 +43,9 @@ export default function Home() {
           padding:22px 0;border-bottom:1px solid var(--rule);font-family:'IBM Plex Mono',monospace;font-size:13px}
         .top b{font-weight:600;letter-spacing:-.01em}
         .top span{color:var(--muted)}
+        .top nav{display:flex;gap:16px;align-items:baseline}
+        .top nav a{color:var(--muted);text-decoration:none}
+        .top nav a:hover{color:var(--ink)}
         h1{font-size:clamp(34px,6vw,58px);line-height:1.02;letter-spacing:-.035em;
           font-weight:700;margin:56px 0 20px;max-width:16ch}
         .lede{font-size:19px;line-height:1.55;color:var(--muted);max-width:56ch;margin:0 0 40px}
@@ -81,15 +85,17 @@ export default function Home() {
         .links strong{display:block;font-size:14px;font-weight:600;margin-bottom:3px}
         .links span{font-size:12.5px;color:var(--muted);font-family:'IBM Plex Mono',monospace;
           word-break:break-all}
-        footer{margin:72px 0 40px;padding-top:20px;border-top:1px solid var(--rule);
-          font-size:12.5px;color:var(--muted);line-height:1.7}
         @media (prefers-reduced-motion:reduce){*{transition:none!important}}
       `}} />
 
       <div className="wrap">
         <div className="top">
           <b>UXUS Agent Services</b>
-          <span>USDC · Base · x402</span>
+          <nav>
+            <a href="/pricing">Pricing</a>
+            <a href="/terms">Terms</a>
+            <span>USDC · Base · x402</span>
+          </nav>
         </div>
 
         <h1>Six primitives your agent can pay for by itself.</h1>
@@ -163,11 +169,7 @@ export default function Home() {
           <a href="/llms.txt"><strong>Agent docs</strong><span>/llms.txt</span></a>
         </div>
 
-        <footer>
-          Payments settle in USDC on Base via the x402 protocol. Risk signals are compiled from public
-          sources including the OFAC sanctions list, community scam and phishing registries, and on-chain
-          contract analysis — developer-grade screening, not a substitute for a compliance program.
-        </footer>
+        <SiteFooter />
       </div>
     </>
   );

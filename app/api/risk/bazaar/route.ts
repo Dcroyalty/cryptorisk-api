@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { isEvmAddress } from "@/lib/sources";
 import { scoreAddress, chainId, SUPPORTED_CHAINS } from "@/lib/score-address";
+import { isArcMainnetLive, ARC_NOT_LIVE_MESSAGE } from "@/lib/arc";
 import { HTTPFacilitatorClient } from "@x402/core/http";
 import { x402ResourceServer, x402HTTPResourceServer } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
@@ -25,7 +26,7 @@ const discovery = declareDiscoveryExtension({
   inputSchema: {
     properties: {
       address: { type: "string", description: "0x EVM address (wallet or token contract) to score" },
-      chain: { type: "string", description: "ethereum or base (default base)" },
+      chain: { type: "string", description: "ethereum, base, or arc (default base)" },
       type: { type: "string", description: "wallet or token (default wallet)" },
     },
     required: ["address"],
@@ -73,6 +74,7 @@ async function runScore(req: NextRequest) {
   const type = (searchParams.get("type") || "wallet").toLowerCase() as "wallet" | "token";
   if (!isEvmAddress(raw)) return NextResponse.json({ error: "invalid_address", detail: "Provide a valid 0x EVM address" }, { status: 400 });
   if (!chainId(chain)) return NextResponse.json({ error: "unsupported_chain", detail: `Supported: ${SUPPORTED_CHAINS.join(", ")}` }, { status: 400 });
+  if (chain === "arc" && !isArcMainnetLive()) return NextResponse.json({ error: "not_yet_live", message: ARC_NOT_LIVE_MESSAGE }, { status: 503 });
   return await scoreAddress(raw.toLowerCase(), chain, type);
 }
 

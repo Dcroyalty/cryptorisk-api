@@ -2,6 +2,8 @@
 // These run on Vercel (open internet). Each is wrapped so a failure degrades
 // EXPLICITLY (signals_ok:false) rather than silently reading as "no history".
 
+import { arcExplorerUrl } from "./arc";
+
 const EVM = /^0x[0-9a-fA-F]{40}$/;
 export const isEvmAddress = (a: string) => EVM.test(a);
 
@@ -24,14 +26,16 @@ const FAILED: WalletSignals = {
   signals_ok: false,
 };
 
-// --- Wallet behavior via Etherscan V2 (ETH) or Blockscout (Base). ---
-// Etherscan free key covers Ethereum mainnet. For Base we use Blockscout (free, no key).
+// --- Wallet behavior via Etherscan V2 (ETH) or Blockscout (Base, Arc). ---
+// Etherscan free key covers Ethereum mainnet. Base and Arc use Blockscout (free, no key).
 export async function getWalletSignals(
   address: string,
-  chain: "ethereum" | "base",
+  chain: "ethereum" | "base" | "arc",
 ): Promise<WalletSignals> {
   try {
-    return chain === "base" ? await baseSignals(address) : await ethSignals(address);
+    if (chain === "base") return await baseSignals(address);
+    if (chain === "arc") return await arcSignals(address);
+    return await ethSignals(address);
   } catch {
     return { ...FAILED };
   }
@@ -65,6 +69,14 @@ async function baseSignals(address: string): Promise<WalletSignals> {
   // Blockscout Base (Etherscan-compatible), keyless
   return fetchSignals(
     `https://base.blockscout.com/api?module=account&action=txlist&address=${address}&sort=asc&page=1&offset=10000`,
+  );
+}
+
+async function arcSignals(address: string): Promise<WalletSignals> {
+  // Blockscout Arc (Etherscan-compatible), keyless. URL resolved from
+  // ARC_EXPLORER_URL, defaulting to testnet — mainnet cutover is an env change.
+  return fetchSignals(
+    `${arcExplorerUrl()}/api?module=account&action=txlist&address=${address}&sort=asc&page=1&offset=10000`,
   );
 }
 

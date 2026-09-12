@@ -14,6 +14,7 @@ import { NextResponse } from "next/server";
 import { analyzeLiveRisk, type Chain } from "@/lib/live-risk";
 import { isEvmAddress } from "@/lib/sources";
 import { RISK_DISCLAIMER } from "@/lib/disclaimer";
+import { isArcMainnetLive, ARC_NOT_LIVE_MESSAGE } from "@/lib/arc";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,11 +30,14 @@ export async function GET(req: Request) {
       { status: 400 }
     );
   }
-  if (chain !== "base" && chain !== "ethereum") {
+  if (chain !== "base" && chain !== "ethereum" && chain !== "arc") {
     return NextResponse.json(
-      { error: "bad_request", message: "chain must be 'base' or 'ethereum'." },
+      { error: "bad_request", message: "chain must be 'base', 'ethereum', or 'arc'." },
       { status: 400 }
     );
+  }
+  if (chain === "arc" && !isArcMainnetLive()) {
+    return NextResponse.json({ error: "not_yet_live", message: ARC_NOT_LIVE_MESSAGE }, { status: 503 });
   }
 
   try {
