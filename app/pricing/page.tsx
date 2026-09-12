@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import { BASE_SITE_CSS } from "../site-style";
 import SiteFooter from "../components/SiteFooter";
+import SubscribeButton from "./SubscribeButton";
+import { STRIPE_ENABLED, type PlanId } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Pricing — UXUS",
   description: "Wallet and token risk screening pricing: free tier, and Starter/Pro subscriptions.",
 };
 
-const TIERS = [
+const TIERS: {
+  name: string; price: string; per: string; blurb: string; features: string[];
+  free?: true; plan?: PlanId;
+}[] = [
   {
     name: "Free",
     price: "$0",
@@ -18,9 +23,7 @@ const TIERS = [
       "OFAC sanctions + scam-list matching",
       "Unlimited requests",
     ],
-    cta: "Use it now",
-    href: "/",
-    available: true,
+    free: true,
   },
   {
     name: "Starter",
@@ -33,8 +36,7 @@ const TIERS = [
       "5,000 screening calls/month",
       "Email support",
     ],
-    cta: "Coming soon",
-    available: false,
+    plan: "starter",
   },
   {
     name: "Pro",
@@ -46,8 +48,7 @@ const TIERS = [
       "25,000 screening calls/month",
       "Priority email support",
     ],
-    cta: "Coming soon",
-    available: false,
+    plan: "pro",
   },
 ];
 
@@ -109,12 +110,14 @@ export default function Pricing() {
                   <li key={f}>{f}</li>
                 ))}
               </ul>
-              {t.available ? (
-                <a className="btn on" href={t.href}>
-                  {t.cta}
+              {t.free ? (
+                <a className="btn on" href="/">
+                  Use it now
                 </a>
+              ) : STRIPE_ENABLED ? (
+                <SubscribeButton plan={t.plan as PlanId} />
               ) : (
-                <span className="btn soon">{t.cta}</span>
+                <span className="btn soon">Coming soon</span>
               )}
             </div>
           ))}

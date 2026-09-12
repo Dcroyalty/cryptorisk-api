@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { paymentMiddleware, Network } from "x402-next";
 import { facilitator } from "@coinbase/x402";
+import { guard, KEY_FORMAT } from "@/lib/keys";
 
 const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
 const N = "base" as Network;
@@ -166,9 +167,39 @@ const DOC_GET_PATHS = new Set(["/api/llm", "/api/extract", "/api/embed"]);
 // byte-for-byte, so v1 clients (which read the body) are unaffected. Directory
 // probes (402 Index, x402scan) classify x402 on response-header presence and
 // never read the body.
+// Stripe-subscription API keys are a second, independent way to reach
+// /api/risk/pro — a valid key with quota remaining bypasses the x402 payment
+// gate entirely. No key, or a key that doesn't match our format, falls
+// through to the exact same x402 flow as before (x402 is unchanged for
+// anyone not presenting one of our keys). guard() is the ONLY quota check —
+// there is no second quota system anywhere else.
+const QUOTA_GATED_PATHS = new Set(["/api/risk/pro"]);
+
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  if (req.method === "GET" && DOC_GET_PATHS.has(new URL(req.url).pathname)) {
+  const pathname = new URL(req.url).pathname;
+
+  if (req.method === "GET" && DOC_GET_PATHS.has(pathname)) {
     return NextResponse.next();
+  }
+
+  if (QUOTA_GATED_PATHS.has(pathname)) {
+    const auth = req.headers.get("authorization") || "";
+    const m = auth.match(/^Bearer\s+(\S+)$/);
+    if (m && KEY_FORMAT.test(m[1])) {
+      const result = await guard(m[1]);
+      if (result.ok) {
+        const res = NextResponse.next();
+        res.headers.set("x-uxus-plan", result.plan);
+        res.headers.set("x-uxus-quota-remaining", String(result.remaining));
+        return res;
+      }
+      if (result.reason === "quota_exceeded") {
+        return NextResponse.json({ error: "quota_exceeded", message: result.message }, { status: 429 });
+      }
+      // "inactive" or "invalid_key" (format matched but not found/live) — a
+      // clear error, not a silent fall-through to demanding an x402 payment.
+      return NextResponse.json({ error: result.reason, message: result.message }, { status: 402 });
+    }
   }
 
   const res = await inner(req);
