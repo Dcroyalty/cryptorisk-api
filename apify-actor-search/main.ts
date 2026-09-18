@@ -98,10 +98,11 @@ async function main(): Promise<void> {
 
     const raw = await res.json();
     const mapped = mapSerperResponse(raw);
+    const results = withScores(mapped.organic.map((o) => ({ title: o.title, url: o.url, description: o.description })));
 
     await Actor.pushData({
       query: q,
-      results: withScores(mapped.organic.map((o) => ({ title: o.title, url: o.url, description: o.description }))),
+      results,
       organic: mapped.organic, // same rows, richer: position/sitelinks/attributes/date kept intact
       ads: mapped.ads,
       people_also_ask: mapped.people_also_ask,
@@ -110,6 +111,13 @@ async function main(): Promise<void> {
       answer_box: mapped.answer_box,
       shopping: mapped.shopping,
       ai_overview: mapped.ai_overview,
+      // Count fields exist purely so the Console table view (.actor/dataset_schema.json)
+      // can show them as columns — the schema's display system has no built-in way to
+      // derive an array's length, so it has to be computed and stored here instead.
+      results_count: results.length,
+      organic_count: mapped.organic.length,
+      people_also_ask_count: mapped.people_also_ask.length,
+      related_searches_count: mapped.related_searches.length,
       latency_ms: Date.now() - started,
       checked_at: new Date().toISOString(),
     });

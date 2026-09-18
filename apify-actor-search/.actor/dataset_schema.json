@@ -1,0 +1,155 @@
+{
+  "actorSpecification": 1,
+  "fields": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "The search query executed."
+      },
+      "results": {
+        "type": "array",
+        "description": "Organic results in the stable {title,url,description,score} shape shared with uxus.finance's hosted /api/search.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "url": { "type": "string" },
+            "description": { "type": "string" },
+            "score": { "type": "number" }
+          }
+        }
+      },
+      "organic": {
+        "type": "array",
+        "description": "Same organic rows as results, richer: position, and sitelinks/attributes/date when Google returns them.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "url": { "type": "string" },
+            "description": { "type": "string" },
+            "position": { "type": ["number", "null"] },
+            "sitelinks": { "type": "array" },
+            "attributes": { "type": "object" },
+            "date": { "type": "string" }
+          }
+        }
+      },
+      "people_also_ask": {
+        "type": "array",
+        "description": "Confirmed to populate live. The expandable question list Google shows.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "question": { "type": "string" },
+            "snippet": { "type": "string" },
+            "title": { "type": "string" },
+            "url": { "type": "string" }
+          }
+        }
+      },
+      "related_searches": {
+        "type": "array",
+        "description": "Confirmed to populate live. Query-refinement suggestions.",
+        "items": { "type": "string" }
+      },
+      "ads": {
+        "type": "array",
+        "description": "Passed through verbatim when the upstream response includes them. Not observed to populate across 13 test queries on 2 accounts — present in the schema, not guaranteed in practice."
+      },
+      "shopping": {
+        "type": "array",
+        "description": "Passed through verbatim when the upstream response includes them. Not observed to populate across 13 test queries on 2 accounts."
+      },
+      "knowledge_graph": {
+        "type": ["object", "null"],
+        "description": "Populated when Google returns an entity panel and Serper surfaces it. Not observed to populate across 13 test queries on 2 accounts, including canonical trigger queries."
+      },
+      "answer_box": {
+        "type": ["object", "null"],
+        "description": "Populated when Google returns a direct-answer box and Serper surfaces it. Not observed to populate across 13 test queries on 2 accounts."
+      },
+      "ai_overview": {
+        "description": "Passed through verbatim if present. Not observed to populate; presence/shape not confirmed as stable."
+      },
+      "results_count": {
+        "type": "number",
+        "description": "Length of results — computed at push time so it can be shown as a table column."
+      },
+      "organic_count": {
+        "type": "number",
+        "description": "Length of organic — computed at push time so it can be shown as a table column."
+      },
+      "people_also_ask_count": {
+        "type": "number",
+        "description": "Length of people_also_ask — computed at push time so it can be shown as a table column."
+      },
+      "related_searches_count": {
+        "type": "number",
+        "description": "Length of related_searches — computed at push time so it can be shown as a table column."
+      },
+      "latency_ms": {
+        "type": "number",
+        "description": "Time the Serper call took, in milliseconds."
+      },
+      "checked_at": {
+        "type": "string",
+        "description": "ISO timestamp of the query."
+      },
+      "error": {
+        "type": "string",
+        "description": "Present only on a failed query record (request_failed or upstream_error) instead of the fields above. Not charged."
+      },
+      "status": {
+        "type": "number",
+        "description": "HTTP status from the upstream error, present only on an upstream_error record."
+      },
+      "message": {
+        "type": "string",
+        "description": "Error detail, present only on a failed query record."
+      }
+    }
+  },
+  "views": {
+    "overview": {
+      "title": "Overview",
+      "transformation": {
+        "fields": ["query", "results_count", "organic_count", "people_also_ask_count", "related_searches_count", "latency_ms", "checked_at"]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "query": {
+            "label": "Query",
+            "format": "text"
+          },
+          "results_count": {
+            "label": "Results",
+            "format": "number"
+          },
+          "organic_count": {
+            "label": "Organic",
+            "format": "number"
+          },
+          "people_also_ask_count": {
+            "label": "PAA",
+            "format": "number"
+          },
+          "related_searches_count": {
+            "label": "Related",
+            "format": "number"
+          },
+          "latency_ms": {
+            "label": "Latency (ms)",
+            "format": "number"
+          },
+          "checked_at": {
+            "label": "Checked at",
+            "format": "date"
+          }
+        }
+      }
+    }
+  }
+}
