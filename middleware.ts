@@ -5,12 +5,21 @@ import { guard, KEY_FORMAT } from "@/lib/keys";
 
 const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
 const N = "base" as Network;
+const CANONICAL_ORIGIN = "https://uxus.finance";
+
+// x402-next falls back to `${request.nextUrl.protocol}//${request.nextUrl.host}${pathname}`
+// for the x402 `resource` field whenever a route omits `resource` — see
+// node_modules/x402-next/dist/esm/index.js. cryptorisk-api.vercel.app is still a live
+// alias to this same deployment, so without a pinned `resource` here, a payer hitting
+// that host mints a second, separately-indexed CDP resource for the same endpoint.
+// Every route below pins `resource` to the canonical origin so CDP only ever sees one.
 
 const inner = paymentMiddleware(
   PAY_TO,
   {
     "/api/risk/pro": { price: "$0.01", network: N,
       config: {
+        resource: `${CANONICAL_ORIGIN}/api/risk/pro`,
         description: "Full wallet & token risk report — no API key, no account, no signup; pay per call in USDC on Base. GET ?address=0x... (required), chain=ethereum|base (default base), type=wallet|token (default wallet). Checks OFAC sanctions, scam/phishing lists, and honeypot/tax/mint signals. Returns risk_score 0-100, risk_level, a PROCEED|CAUTION|BLOCK verdict, flags[], reasons[] with severity, raw signals, and sources[]. For agents screening a counterparty before they transact.",
         inputSchema: {
           queryParams: {
@@ -32,6 +41,7 @@ const inner = paymentMiddleware(
       } },
     "/api/risk/live/pro": { price: "$0.01", network: N,
       config: {
+        resource: `${CANONICAL_ORIGIN}/api/risk/live/pro`,
         description: "Mutable-risk report for a token — can the owner still turn it hostile? No API key, no account, no signup; pay per call in USDC on Base. GET ?address=0x... (required), chain=ethereum|base (default base). Direct on-chain reads only: eth_getCode, owner(), pendingOwner(), paused(), EIP-1967 slots. Returns mutable_risk_score, verdict, can_turn_hostile, time_to_rug, every owner power explained in plain English, and raw controls. For agents holding or about to buy a token.",
         inputSchema: {
           queryParams: {
@@ -51,6 +61,7 @@ const inner = paymentMiddleware(
       } },
     "/api/llm":      { price: "$0.01", network: N,
       config: {
+        resource: `${CANONICAL_ORIGIN}/api/llm`,
         description: "LLM chat completions for AI agents — no API key, no account, no signup; pay per call in USDC on Base. POST JSON { prompt } or { messages: [{ role, content }] }; optional model (OpenRouter slug), max_tokens (default 800, max 2000). Routes across a 5-model fallback chain so one unavailable model doesn't fail the call. Returns { model, content, usage, latency_ms }. For agents that need inference without holding an OpenAI or Anthropic key.",
         inputSchema: {
           bodyType: "json",
@@ -71,6 +82,7 @@ const inner = paymentMiddleware(
       } },
     "/api/scrape":   { price: "$0.01", network: N,
       config: {
+        resource: `${CANONICAL_ORIGIN}/api/scrape`,
         description: "Fetch any URL and get clean, LLM-ready page content — no API key, no account, no signup; pay per call in USDC on Base. Gets past common bot-blocking. Params: ?url=... (required), format=markdown|text|html (default markdown), max_chars=N (default 40000, max 120000). Returns { url, status, title, description, format, content, truncated, chars, latency_ms }; non-HTML URLs return raw content. For agents that need a page as text before summarising or extracting.",
         inputSchema: {
           queryParams: {
@@ -96,6 +108,7 @@ const inner = paymentMiddleware(
       } },
     "/api/extract":  { price: "$0.01", network: N,
       config: {
+        resource: `${CANONICAL_ORIGIN}/api/extract`,
         description: "Pull structured JSON out of messy text or a web page — no API key, no account, no signup; pay per call in USDC on Base. POST JSON { schema: { field: type, ... } (required), and text or url }. If url is given the page is fetched and stripped first; an LLM fills the schema and missing fields come back null. Returns { data, model, latency_ms }. For agents turning an article, listing, or product page into typed fields.",
         inputSchema: {
           bodyType: "json",
@@ -115,6 +128,7 @@ const inner = paymentMiddleware(
       } },
     "/api/embed":    { price: "$0.01", network: N,
       config: {
+        resource: `${CANONICAL_ORIGIN}/api/embed`,
         description: "Text embeddings for AI agents — no API key, no account, no signup; pay per call in USDC on Base. POST JSON { input: string or string[] (max 64 per call) }. Model is jina-embeddings-v3, 1024 dimensions, retrieval.passage task. Returns { model, embeddings (one vector per input), dimensions, count, usage, latency_ms }. For agents building a vector index or doing semantic search without a Jina or OpenAI key.",
         inputSchema: {
           bodyType: "json",
@@ -133,6 +147,7 @@ const inner = paymentMiddleware(
       } },
     "/api/search":   { price: "$0.01", network: N,
       config: {
+        resource: `${CANONICAL_ORIGIN}/api/search`,
         description: "Live web search for AI agents — no API key, no account, no signup; pay per call in USDC on Base. GET ?q=YOUR+QUERY (required), count=N (1-20, default 10). Returns { query, results: [{ title, url, description, score }], provider, latency_ms }; score is 1.0 for the top result descending toward 0.1, so you can rank or threshold. Multiple search backends with automatic failover. For agents grounding an answer in current web data or gathering source URLs to scrape.",
         inputSchema: {
           queryParams: {
@@ -175,8 +190,26 @@ const DOC_GET_PATHS = new Set(["/api/llm", "/api/extract", "/api/embed"]);
 // there is no second quota system anywhere else.
 const QUOTA_GATED_PATHS = new Set(["/api/risk/pro"]);
 
+// The old Vercel preview domain — still a live alias to this same production
+// deployment. We have no Vercel dashboard/CLI access from here to remove or
+// redirect the alias at the platform level, so retire it in-app instead: any
+// request arriving on this host is 301'd to the canonical domain before it
+// can reach the paywall, so nothing can ever complete an x402 payment against
+// it again (the `resource` pin above already stops it being indexed as a
+// separate CDP resource even without this redirect — this closes the rest).
+const OLD_HOST = "cryptorisk-api.vercel.app";
+
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  const pathname = new URL(req.url).pathname;
+  const url = new URL(req.url);
+
+  if (url.hostname === OLD_HOST) {
+    url.protocol = "https:";
+    url.hostname = "uxus.finance";
+    url.port = "";
+    return NextResponse.redirect(url, 301);
+  }
+
+  const pathname = url.pathname;
 
   if (req.method === "GET" && DOC_GET_PATHS.has(pathname)) {
     return NextResponse.next();
@@ -214,6 +247,10 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  matcher: ["/api/risk/pro", "/api/risk/live/pro", "/api/llm", "/api/scrape", "/api/extract", "/api/embed", "/api/search"],
+  // Broadened from the 7 paid routes to every path so the OLD_HOST redirect
+  // above retires the whole cryptorisk-api.vercel.app alias, not just the
+  // paywalled ones. Excludes Next's own static/image assets — redirecting
+  // those too would just add pointless hops for anything already mid-load.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
   runtime: "nodejs",
 };
