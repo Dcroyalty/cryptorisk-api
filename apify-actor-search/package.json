@@ -1,7 +1,7 @@
 {
   "name": "google-search-serp-scraper",
   "version": "0.1.0",
-  "description": "Native Google SERP scraper via Serper: organic, ads, People Also Ask, related searches, knowledge graph, shopping with ratings, AI Overview.",
+  "description": "Native Google SERP scraper via Serper: organic results, People Also Ask, and related searches — confirmed live. Ads/shopping/knowledge graph/answer box/AI Overview pass through when present but aren't guaranteed for every query.",
   "private": true,
   "type": "commonjs",
   "scripts": {
