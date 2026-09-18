@@ -1,4 +1,4 @@
-# Google Search Scraper — Organic, PAA, Related Searches
+# Google Search Scraper — Organic, PAA & Related Searches
 
 Give it a query. Get back organic results, People Also Ask, and related searches — confirmed live, every time, not a maybe.
 
@@ -65,7 +65,7 @@ A query that fails upstream (Serper error, network failure) gets a `{ "error": .
 
 ## Pricing
 
-**$0.15 per 1,000 results returned** (pay-per-event, one `query-executed` event per query — at the default `num: 10` that's $0.0015/query). Below the category's $0.11–$1.80-per-1,000 range midpoint, deliberately: this actor ships three confirmed blocks (organic, People Also Ask, related searches) against the cheapest competitors' one (organic only), with zero users and zero reviews to lean on. Priced to win adoption first; revisit once there's usage and ratings to justify moving up.
+**$10.00 per 1,000 results returned** (pay-per-event, one `query-executed` event per query — at the default `num: 10` that's $0.10/query). This is well above the $0.11–$1.80-per-1,000 range typical for comparable SERP actors on the Store.
 
 ## What this is not
 

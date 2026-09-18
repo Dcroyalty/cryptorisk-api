@@ -1,0 +1,11 @@
+{
+  "actorOutputSchemaVersion": 1,
+  "title": "Output of Google Search Scraper",
+  "properties": {
+    "searchResults": {
+      "title": "Search results",
+      "description": "One record per query executed: organic results, People Also Ask, related searches, plus ads/shopping/knowledge_graph/answer_box/ai_overview when the upstream response includes them.",
+      "template": "{{links.apiDefaultDatasetUrl}}/items?view=overview"
+    }
+  }
+}
