@@ -65,7 +65,7 @@ A query that fails upstream (Serper error, network failure) gets a `{ "error": .
 
 ## Pricing
 
-**$0.90 per 1,000 results returned** (pay-per-event, one `query-executed` event per query — at the default `num: 10` that's $0.009/query). This is mid-band for the category's $0.11–$1.80-per-1,000 range: not the floor, because organic + PAA + related is a genuine step up from the bare 5-field organic-only scrapers that sit at 1-2 users each; not the top, because we're not claiming the ad/shopping/knowledge-graph depth the dominant incumbent has and we've confirmed we can't currently deliver.
+**$0.15 per 1,000 results returned** (pay-per-event, one `query-executed` event per query — at the default `num: 10` that's $0.0015/query). Below the category's $0.11–$1.80-per-1,000 range midpoint, deliberately: this actor ships three confirmed blocks (organic, People Also Ask, related searches) against the cheapest competitors' one (organic only), with zero users and zero reviews to lean on. Priced to win adoption first; revisit once there's usage and ratings to justify moving up.
 
 ## What this is not
 
