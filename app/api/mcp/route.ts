@@ -60,19 +60,28 @@ const TOOLS: ToolDef[] = [
   {
     name: "search_web",
     description:
-      "Live web search. Query the web and get ranked results — no API key, no account, no signup. Params: query (string, required); count (integer 1-20, default 10). Returns { query, results: [{ title, url, description, score }], provider, latency_ms }; score is 1.0 for the top result descending toward 0.1, so you can rank or threshold. Multiple search backends with automatic failover. For grounding an answer in current information or finding source URLs to read.",
+      "Live web search. Query the web and get ranked results — no API key, no account, no signup. Params: query (string, required); count (integer 1-20, default 10); country/language/page/device (optional). Returns { query, results: [{ title, url, description, score }], ads, people_also_ask, related_searches, knowledge_graph, answer_box, shopping, ai_overview, provider, latency_ms }; score is 1.0 for the top result descending toward 0.1. Structured blocks (ads/PAA/related/knowledge_graph/answer_box/shopping/ai_overview) are populated when the Google-backed provider answers; empty/null on fallback. For grounding an answer in current information, comparison-shopping, or finding source URLs to read.",
     inputSchema: {
       type: "object",
       properties: {
         query: { type: "string", description: "Search query. Required." },
         count: { type: "integer", minimum: 1, maximum: 20, default: 10, description: "Number of results, 1-20. Default 10." },
+        country: { type: "string", description: "2-letter country code. Optional." },
+        language: { type: "string", description: "2+ letter language code. Optional." },
+        page: { type: "integer", minimum: 1, description: "1-based result page. Optional." },
+        device: { type: "string", description: "Forwarded to the upstream provider if set; not confirmed to change results on every provider. Optional." },
       },
       required: ["query"],
       additionalProperties: false,
     },
     run: async (a) => {
       try {
-        return await searchWeb(String(a.query ?? ""), Number(a.count) || 10);
+        return await searchWeb(String(a.query ?? ""), Number(a.count) || 10, {
+          country: a.country ? String(a.country) : undefined,
+          language: a.language ? String(a.language) : undefined,
+          page: a.page ? Number(a.page) : undefined,
+          device: a.device ? String(a.device) : undefined,
+        });
       } catch (e) {
         if (e instanceof SearchError) return { error: "search_failed", detail: e.message };
         throw e;

@@ -148,11 +148,15 @@ const inner = paymentMiddleware(
     "/api/search":   { price: "$0.01", network: N,
       config: {
         resource: `${CANONICAL_ORIGIN}/api/search`,
-        description: "Live web search for AI agents — no API key, no account, no signup; pay per call in USDC on Base. GET ?q=YOUR+QUERY (required), count=N (1-20, default 10). Returns { query, results: [{ title, url, description, score }], provider, latency_ms }; score is 1.0 for the top result descending toward 0.1, so you can rank or threshold. Multiple search backends with automatic failover. For agents grounding an answer in current web data or gathering source URLs to scrape.",
+        description: "Live web search for AI agents — no API key, no account, no signup; pay per call in USDC on Base. GET ?q=YOUR+QUERY (required), count=N (1-20, default 10), country/language/page/device (optional). Returns { query, results: [{ title, url, description, score }], ads, people_also_ask, related_searches, knowledge_graph, answer_box, shopping, ai_overview, provider, latency_ms }. score is 1.0 for the top result descending toward 0.1. The structured blocks (ads/PAA/related/knowledge_graph/answer_box/shopping/ai_overview) are populated when the Google-backed provider answers; empty/null on fallback. For agents grounding an answer in current web data, comparison-shopping, or gathering source URLs to scrape.",
         inputSchema: {
           queryParams: {
             q: "Search query. Required.",
             count: "Number of results, 1-20. Default 10.",
+            country: "2-letter country code (Google gl param). Optional.",
+            language: "2+ letter language code (Google hl param). Optional.",
+            page: "1-based result page. Optional.",
+            device: "Forwarded to the upstream provider if set. Not confirmed to change results on every provider. Optional.",
           },
         },
         outputSchema: {
@@ -162,6 +166,13 @@ const inner = paymentMiddleware(
             results: [
               { title: "x402 — Payment Required", url: "https://x402.org/", description: "An open standard for paying for HTTP requests with stablecoins.", score: 1 },
             ],
+            ads: [],
+            people_also_ask: [],
+            related_searches: ["x402 protocol coinbase", "http 402 payment required"],
+            knowledge_graph: null,
+            answer_box: null,
+            shopping: [],
+            ai_overview: null,
             provider: "duckduckgo",
             latency_ms: 480,
           },

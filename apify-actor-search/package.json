@@ -1,0 +1,20 @@
+{
+  "name": "google-search-serp-scraper",
+  "version": "0.1.0",
+  "description": "Native Google SERP scraper via Serper: organic, ads, People Also Ask, related searches, knowledge graph, shopping with ratings, AI Overview.",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
+    "start": "node dist/main.js",
+    "start:dev": "npm run build && node dist/main.js"
+  },
+  "dependencies": {
+    "apify": "^3.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsc-alias": "^1.9.5",
+    "typescript": "^5.6.0"
+  }
+}

@@ -39,9 +39,9 @@
     {
       "resource": "https://uxus.finance/api/search",
       "type": "http", "method": "GET",
-      "description": "Live web search with no API key, no account, no signup. Returns { query, results: [{ title, url, description, score }], provider, latency_ms }; score is 1.0 for the top result descending toward 0.1, so you can rank or threshold. Multiple search backends with automatic failover.",
+      "description": "Live web search with no API key, no account, no signup. Returns { query, results: [{ title, url, description, score }], ads, people_also_ask, related_searches, knowledge_graph, answer_box, shopping, ai_overview, provider, latency_ms }; score is 1.0 for the top result descending toward 0.1. Structured SERP blocks (ads/People Also Ask/related searches/knowledge graph/answer box/shopping/AI Overview) are populated when the Google-backed provider answers; empty/null on fallback.",
       "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "q": "Search query. Required.", "count": "Number of results, 1-20. Default 10." } },
+      "input": { "query": { "q": "Search query. Required.", "count": "Number of results, 1-20. Default 10.", "country": "2-letter country code. Optional.", "language": "2+ letter language code. Optional.", "page": "1-based result page. Optional.", "device": "Forwarded to the upstream provider if set. Optional." } },
       "output": "application/json"
     },
     {

@@ -2,6 +2,14 @@
 // /api/search route and the free MCP search_web tool.
 // Providers tried in order: Serper (2,500/mo free) -> Brave (free tier) ->
 // DuckDuckGo (keyless, unlimited). Works with no keys at all via DDG.
+//
+// Serper is the only provider with structured Google-SERP blocks (ads, People
+// Also Ask, related searches, knowledge graph, shopping, AI Overview) — see
+// lib/serper-map.ts. When Serper isn't used (no key, or it fails and we fall
+// back to Brave/DDG) those fields come back empty/null rather than fabricated;
+// `provider` always says which backend actually answered.
+
+import { mapSerperResponse, type SerperMapped } from "@/lib/serper-map";
 
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
@@ -12,12 +20,51 @@ export interface SearchHit {
   description: string;
   score: number;
 }
+
+const EMPTY_SERPER_BLOCKS: SerperMapped = {
+  organic: [],
+  ads: [],
+  people_also_ask: [],
+  related_searches: [],
+  knowledge_graph: null,
+  answer_box: null,
+  shopping: [],
+  ai_overview: null,
+};
+
 export interface SearchResult {
   query: string;
   results: SearchHit[];
+  // Structured Google-SERP blocks. Populated only when `provider` is "serper"
+  // — Brave and DuckDuckGo don't expose these, so they come back empty/null,
+  // never guessed.
+  ads: unknown[];
+  people_also_ask: SerperMapped["people_also_ask"];
+  related_searches: string[];
+  knowledge_graph: SerperMapped["knowledge_graph"];
+  answer_box: SerperMapped["answer_box"];
+  shopping: SerperMapped["shopping"];
+  ai_overview: unknown | null;
   provider: "serper" | "brave" | "duckduckgo";
   latency_ms: number;
   served_by: string;
+}
+
+export interface SearchOptions {
+  /** Serper `gl` / Brave `country` — 2-letter country code. */
+  country?: string;
+  /** Serper `hl` / Brave `search_lang` — 2+ letter language code. */
+  language?: string;
+  /** 1-based result page. Serper: passed through as `page`. Brave: converted to its 0-based `offset` (capped at 9 by Brave's own API). Ignored by DuckDuckGo (single-page HTML scrape, no pagination support). */
+  page?: number;
+  /**
+   * Forwarded to Serper as-is if set. Serper's public documentation does not
+   * confirm a stable device-targeting parameter as of 2026-09 (checked
+   * against three independently maintained client implementations, none of
+   * which implement one) — included for forward-compatibility, not because
+   * it's verified to change results. Ignored by Brave and DuckDuckGo.
+   */
+  device?: string;
 }
 
 function decode(s: string): string {
@@ -67,7 +114,7 @@ async function ddg(q: string, count: number) {
 
 export class SearchError extends Error {}
 
-export async function searchWeb(qRaw: string, countRaw: number): Promise<SearchResult> {
+export async function searchWeb(qRaw: string, countRaw: number, opts: SearchOptions = {}): Promise<SearchResult> {
   const q = (qRaw || "").trim();
   if (!q) throw new SearchError("query is required");
   const count = Math.min(Math.max(Number(countRaw) || 10, 1), 20);
@@ -77,30 +124,49 @@ export async function searchWeb(qRaw: string, countRaw: number): Promise<SearchR
 
   if (serper) {
     try {
+      const body: Record<string, unknown> = { q, num: count };
+      if (opts.country) body.gl = opts.country;
+      if (opts.language) body.hl = opts.language;
+      if (opts.page) body.page = opts.page;
+      if (opts.device) body.device = opts.device;
+
       const r = await fetch("https://google.serper.dev/search", {
         method: "POST",
         headers: { "X-API-KEY": serper, "Content-Type": "application/json" },
-        body: JSON.stringify({ q, num: count }),
+        body: JSON.stringify(body),
       });
       if (r.ok) {
         const d = await r.json();
-        const results = (d?.organic ?? []).map((x: Record<string, string>) => ({
-          title: x.title,
-          url: x.link,
-          description: x.snippet,
-        }));
-        if (results.length)
-          return { query: q, results: withScores(results), provider: "serper", latency_ms: Date.now() - started, served_by: "x402-search-gateway" };
+        const mapped = mapSerperResponse(d);
+        if (mapped.organic.length)
+          return {
+            query: q,
+            results: withScores(mapped.organic.map((o) => ({ title: o.title, url: o.url, description: o.description }))),
+            ads: mapped.ads,
+            people_also_ask: mapped.people_also_ask,
+            related_searches: mapped.related_searches,
+            knowledge_graph: mapped.knowledge_graph,
+            answer_box: mapped.answer_box,
+            shopping: mapped.shopping,
+            ai_overview: mapped.ai_overview,
+            provider: "serper",
+            latency_ms: Date.now() - started,
+            served_by: "x402-search-gateway",
+          };
       }
     } catch {}
   }
 
   if (brave) {
     try {
-      const r = await fetch(
-        `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(q)}&count=${count}`,
-        { headers: { Accept: "application/json", "X-Subscription-Token": brave } },
-      );
+      const params = new URLSearchParams({ q, count: String(count) });
+      if (opts.country) params.set("country", opts.country);
+      if (opts.language) params.set("search_lang", opts.language);
+      if (opts.page) params.set("offset", String(Math.max(0, Math.min(9, opts.page - 1))));
+
+      const r = await fetch(`https://api.search.brave.com/res/v1/web/search?${params.toString()}`, {
+        headers: { Accept: "application/json", "X-Subscription-Token": brave },
+      });
       if (r.ok) {
         const d = await r.json();
         const results = (d?.web?.results ?? []).map((x: Record<string, string>) => ({
@@ -109,14 +175,28 @@ export async function searchWeb(qRaw: string, countRaw: number): Promise<SearchR
           description: x.description,
         }));
         if (results.length)
-          return { query: q, results: withScores(results), provider: "brave", latency_ms: Date.now() - started, served_by: "x402-search-gateway" };
+          return {
+            query: q,
+            results: withScores(results),
+            ...EMPTY_SERPER_BLOCKS,
+            provider: "brave",
+            latency_ms: Date.now() - started,
+            served_by: "x402-search-gateway",
+          };
       }
     } catch {}
   }
 
   const results = await ddg(q, count).catch(() => null);
   if (results)
-    return { query: q, results: withScores(results), provider: "duckduckgo", latency_ms: Date.now() - started, served_by: "x402-search-gateway" };
+    return {
+      query: q,
+      results: withScores(results),
+      ...EMPTY_SERPER_BLOCKS,
+      provider: "duckduckgo",
+      latency_ms: Date.now() - started,
+      served_by: "x402-search-gateway",
+    };
 
   throw new SearchError("no provider returned results");
 }

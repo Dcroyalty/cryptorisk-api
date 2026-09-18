@@ -33,9 +33,18 @@ Body: { "input": "text" }  or  { "input": ["a","b"] }  (max 64)
 Returns: { embeddings, dimensions, count }
 
 ### Search — $0.01
-GET /api/search?q=your+query&count=10
-Returns: { query, results: [{title, url, description, score}], provider }
+GET /api/search?q=your+query&count=10&country=us&language=en&page=1
+Optional: country (2-letter, Google gl), language (2+ letter, Google hl), page
+(1-based), device (forwarded upstream if set, not confirmed to change results
+on every provider).
+Returns: { query, results: [{title, url, description, score}], ads,
+people_also_ask, related_searches, knowledge_graph, answer_box, shopping,
+ai_overview, provider }
 score: 1.0 for the top result, descending toward 0.1 — rank or threshold on it.
+The structured blocks (ads/People Also Ask/related searches/knowledge graph/
+answer box/shopping/AI Overview) are populated when the Google-backed provider
+(Serper) answers a request; they come back empty/null on fallback to Brave or
+DuckDuckGo — check `provider` to know which one served you.
 
 ### Wallet & token risk — $0.01
 GET /api/risk/pro?address=0x...&chain=base&type=wallet

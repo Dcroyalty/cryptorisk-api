@@ -11,16 +11,24 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") || "").trim();
   const count = Number(searchParams.get("count")) || 10;
+  const country = searchParams.get("country") || searchParams.get("gl") || undefined;
+  const language = searchParams.get("language") || searchParams.get("hl") || undefined;
+  const page = Number(searchParams.get("page")) || undefined;
+  const device = searchParams.get("device") || undefined;
 
   if (!q) {
     return NextResponse.json(
-      { service: "x402 Search Gateway", usage: "GET /api/search?q=your+query&count=10", price: "$0.01 USDC on Base per call" },
+      {
+        service: "x402 Search Gateway",
+        usage: "GET /api/search?q=your+query&count=10&country=us&language=en&page=1",
+        price: "$0.01 USDC on Base per call",
+      },
       { status: 400 },
     );
   }
 
   try {
-    const out = await searchWeb(q, count);
+    const out = await searchWeb(q, count, { country, language, page, device });
     return NextResponse.json(out, { status: 200 });
   } catch (e) {
     if (e instanceof SearchError) {
