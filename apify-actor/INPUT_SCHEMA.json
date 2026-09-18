@@ -1,0 +1,25 @@
+{
+  "title": "Wallet & Address Sanctions + Risk Screener",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "addresses": {
+      "title": "Addresses",
+      "type": "array",
+      "description": "EVM addresses to screen (0x..., 40 hex chars). Up to 1000 per run. An invalid entry returns an explanatory record instead of failing the run — you are not charged for it.",
+      "editor": "stringList",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "chain": {
+      "title": "Chain",
+      "type": "string",
+      "description": "Which chain to read on-chain signals (contract reads, wallet tx history) from. OFAC/scam-list matching is address-based and applies regardless of chain.",
+      "editor": "select",
+      "enum": ["ethereum", "base", "arc"],
+      "enumTitles": ["Ethereum", "Base", "Arc (Circle L1)"],
+      "default": "ethereum"
+    }
+  },
+  "required": ["addresses"]
+}

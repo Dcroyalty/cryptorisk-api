@@ -1,0 +1,14 @@
+{
+  "actorSpecification": 1,
+  "name": "wallet-sanctions-risk-screener",
+  "title": "Wallet & Address Sanctions + Risk Screener",
+  "version": "0.1",
+  "buildTag": "latest",
+  "dockerfile": "../Dockerfile",
+  "input": "../INPUT_SCHEMA.json",
+  "readme": "../README.md",
+  "output": "./output_schema.json",
+  "storages": {
+    "dataset": "./dataset_schema.json"
+  }
+}

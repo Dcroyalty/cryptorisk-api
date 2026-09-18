@@ -1,0 +1,156 @@
+{
+  "actorSpecification": 1,
+  "fields": {
+    "type": "object",
+    "properties": {
+      "address": {
+        "type": "string",
+        "description": "The EVM address screened (or the raw invalid input, on an invalid_address record)."
+      },
+      "chain": {
+        "type": "string",
+        "enum": ["ethereum", "base", "arc"]
+      },
+      "valid": {
+        "type": "boolean",
+        "description": "false only when the input wasn't a valid 0x + 40-hex-char address. Not charged."
+      },
+      "error": {
+        "type": "string",
+        "description": "\"invalid_address\", present only when valid is false."
+      },
+      "message": {
+        "type": "string",
+        "description": "Present only when valid is false."
+      },
+      "degraded": {
+        "type": "boolean",
+        "description": "true when a data source needed for the verdict was unavailable (wallet-history lookup failed, or an on-chain read didn't land) and there was no sanctions/scam-list hit. The verdict is floored at CAUTION, never PROCEED, when this is true."
+      },
+      "sanctions_verdict": {
+        "type": "string",
+        "enum": ["PROCEED", "CAUTION", "BLOCK"]
+      },
+      "sanctions_risk_score": {
+        "type": "number",
+        "description": "0-100."
+      },
+      "sanctions_flags": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "sanctions_reasons": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string" },
+            "severity": { "type": "number" },
+            "detail": { "type": "string" },
+            "source": { "type": "string" }
+          }
+        }
+      },
+      "sanctions_source": {
+        "type": ["string", "null"],
+        "description": "The real list that matched — \"ofac\" for an actual SDN hit, the actual registry name for a scam-list hit, null for no hit. Never \"ofac\" for a non-OFAC designation."
+      },
+      "wallet_signals": {
+        "type": "object",
+        "description": "wallet_age_days, tx_count, first_seen, last_seen, signals_ok — signals_ok:false means the block-explorer history read failed (age/tx are unknown, not zero)."
+      },
+      "lists_consulted": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Lists that actually matched this address, not every list checked."
+      },
+      "is_contract": {
+        "type": "boolean"
+      },
+      "mutable_verdict": {
+        "type": "string",
+        "enum": ["SAFE_TO_HOLD", "MONITOR", "EXIT_RISK", "DO_NOT_HOLD"]
+      },
+      "mutable_risk_score": {
+        "type": "number",
+        "description": "0-100."
+      },
+      "can_turn_hostile": {
+        "type": "boolean"
+      },
+      "time_to_rug": {
+        "type": "string",
+        "enum": ["instant", "delayed", "impossible", "unknown"]
+      },
+      "owner_powers": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "e.g. OWNER_CAN_REPLACE_ALL_CONTRACT_LOGIC, or an *_UNKNOWN code when a read didn't land."
+      },
+      "controls": {
+        "type": "object",
+        "description": "owner, ownership_renounced, is_upgradeable_proxy, proxy_admin, implementation, has_pause, is_paused, pending_owner."
+      },
+      "rpc_ok": {
+        "type": "boolean"
+      },
+      "arc_network": {
+        "type": "string",
+        "enum": ["mainnet", "testnet"],
+        "description": "Present only when chain is \"arc\" — whether Arc mainnet is actually configured on this deployment or the run silently used testnet."
+      },
+      "disclaimer": {
+        "type": "string"
+      },
+      "checked_at": {
+        "type": "string",
+        "description": "ISO timestamp."
+      }
+    }
+  },
+  "views": {
+    "overview": {
+      "title": "Overview",
+      "transformation": {
+        "fields": ["address", "chain", "sanctions_verdict", "sanctions_risk_score", "mutable_verdict", "mutable_risk_score", "degraded", "checked_at"]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "address": {
+            "label": "Address",
+            "format": "text"
+          },
+          "chain": {
+            "label": "Chain",
+            "format": "text"
+          },
+          "sanctions_verdict": {
+            "label": "Sanctions verdict",
+            "format": "text"
+          },
+          "sanctions_risk_score": {
+            "label": "Sanctions score",
+            "format": "number"
+          },
+          "mutable_verdict": {
+            "label": "Mutable verdict",
+            "format": "text"
+          },
+          "mutable_risk_score": {
+            "label": "Mutable score",
+            "format": "number"
+          },
+          "degraded": {
+            "label": "Degraded",
+            "format": "boolean"
+          },
+          "checked_at": {
+            "label": "Checked at",
+            "format": "date"
+          }
+        }
+      }
+    }
+  }
+}

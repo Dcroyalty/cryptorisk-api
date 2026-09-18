@@ -1,0 +1,12 @@
+{
+  "actorOutputSchemaVersion": 1,
+  "title": "Output of Wallet & Address Sanctions + Risk Screener",
+  "properties": {
+    "screenedAddresses": {
+      "type": "string",
+      "title": "Screened addresses",
+      "description": "One record per address: OFAC/scam-list sanctions verdict, wallet age/tx signals, and live on-chain contract-control reads (owner, pause, upgradeable proxy).",
+      "template": "{{links.apiDefaultDatasetUrl}}/items?view=overview"
+    }
+  }
+}
