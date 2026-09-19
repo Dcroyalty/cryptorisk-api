@@ -36,13 +36,14 @@ A single-signal OFAC checker tells you "not on the list." This tells you "not on
   ],
   "sanctions_source": "ofac",
   "wallet_signals": {
-    "wallet_age_days": 1241,
+    "wallet_age_days": 1246,
     "tx_count": 4,
     "first_seen": "2023-04-21T12:13:59.000Z",
     "last_seen": "2024-12-04T05:51:11.000Z",
     "signals_ok": true
   },
-  "lists_consulted": ["ofac"],
+  "lists_consulted": ["mew", "ofac", "scamsniffer"],
+  "lists_matched": ["ofac"],
   "is_contract": false,
   "mutable_verdict": "SAFE_TO_HOLD",
   "mutable_risk_score": 0,
@@ -52,7 +53,7 @@ A single-signal OFAC checker tells you "not on the list." This tells you "not on
   "controls": { "owner": null, "ownership_renounced": true, "is_upgradeable_proxy": false, "proxy_admin": null, "implementation": null, "has_pause": false, "is_paused": null, "pending_owner": null },
   "rpc_ok": true,
   "disclaimer": "Automated screening from public data (OFAC SDN list, community scam/phishing registries, on-chain reads). Developer-grade signal, not legal, financial, or compliance advice and not a substitute for a compliance program. Lists refresh daily and can lag a real-world designation; verify against the official source before you act. No warranty.",
-  "checked_at": "2026-09-13T15:58:40.409Z"
+  "checked_at": "2026-09-19T02:46:20.514Z"
 }
 ```
 
@@ -68,7 +69,9 @@ That's a real, live run against an address actually on the current OFAC SDN list
   "sanctions_risk_score": 0,
   "sanctions_flags": ["CLEAN"],
   "sanctions_source": null,
-  "wallet_signals": { "wallet_age_days": 4003, "tx_count": 10000, "signals_ok": true },
+  "wallet_signals": { "wallet_age_days": 4008, "tx_count": 10000, "signals_ok": true },
+  "lists_consulted": ["mew", "ofac", "scamsniffer"],
+  "lists_matched": [],
   "is_contract": true,
   "mutable_verdict": "SAFE_TO_HOLD",
   "mutable_risk_score": 0,
@@ -81,7 +84,7 @@ That's a real, live run against an address actually on the current OFAC SDN list
 
 ## When a source can't be reached, you're told — never a silent "clean"
 
-If the block-explorer history lookup fails, or an on-chain read doesn't land on any node, that's not treated as "no findings." It's treated as **unknown**, and the verdict is floored so it can never read as safe:
+If the block-explorer history lookup fails, or an on-chain read doesn't land on any node, that's not treated as "no findings." It's treated as **unknown**. The sanctions verdict is floored so it can never read as safe, and every on-chain field we couldn't read is `null` — never a default that looks like an observation:
 
 ```json
 {
@@ -92,13 +95,33 @@ If the block-explorer history lookup fails, or an on-chain read doesn't land on 
     "code": "HISTORY_UNAVAILABLE",
     "detail": "Block-explorer history lookup failed (rate-limited or unavailable). No sanctions or scam-list match was found, but wallet-behavior signals were NOT checked — treat this as unassessed, not clean."
   }],
+  "wallet_signals": { "wallet_age_days": null, "tx_count": null, "signals_ok": false },
+  "lists_consulted": ["mew", "ofac", "scamsniffer"],
+  "lists_matched": [],
+  "is_contract": null,
   "mutable_verdict": "MONITOR",
+  "mutable_risk_score": null,
+  "can_turn_hostile": null,
+  "time_to_rug": null,
   "owner_powers": ["RPC_UNAVAILABLE_RESULT_UNKNOWN"],
+  "controls": { "owner": null, "ownership_renounced": null, "is_upgradeable_proxy": null, "proxy_admin": null, "implementation": null, "has_pause": null, "is_paused": null, "pending_owner": null },
   "rpc_ok": false
 }
 ```
 
-`sanctions_source` always names the real list that matched — `"ofac"` for an actual SDN hit, the actual registry name for a scam-list hit, never asserted as OFAC when it isn't.
+When `rpc_ok` is `false`:
+
+- `is_contract`, `mutable_risk_score`, `can_turn_hostile`, `time_to_rug` and **every key of `controls`** are `null`. `null` means "we couldn't read this" — not `false`, not `0`. A `false` from this actor is always something we observed.
+- It's all-or-nothing. If any read that feeds the verdict fails, the whole on-chain block is `null`, even a read that did land (`eth_getCode` succeeding doesn't make `is_contract` trustworthy when the owner and proxy reads didn't).
+- `mutable_verdict` is the fixed floor `MONITOR` — "could not assess," never `SAFE_TO_HOLD` — the on-chain counterpart of `CAUTION`. `owner_powers` names why: `RPC_UNAVAILABLE_RESULT_UNKNOWN` (no node answered) or `PARTIAL_READ_RESULT_UNKNOWN` (some reads landed, some didn't).
+
+An address that's on a list still returns that hit when the sources are down — a degraded run never downgrades a `BLOCK`.
+
+### Which lists were checked vs. which matched
+
+- **`lists_consulted`** — every list the address was checked against, hit or not (currently `mew`, `ofac`, `scamsniffer`). It's the same on every record in a run, so a clean address shows what "clean" was checked against. If no lists are loaded the run fails rather than return unsupported "clean" results.
+- **`lists_matched`** — only the lists that matched this address. `[]` on a clean address means checked, no hit.
+- **`sanctions_source`** — the list behind a `SANCTIONED` finding: `"ofac"` for an actual SDN hit, never `"ofac"` for anything else. It is `null` when the address is only on a scam/phishing registry — those come back as a `SCAM_LIST_MATCH` reason (with the registry as its `source`), `BLOCK`, and an entry in `lists_matched`.
 
 ## Input
 

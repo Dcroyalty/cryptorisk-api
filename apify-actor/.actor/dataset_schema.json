@@ -53,7 +53,7 @@
       },
       "sanctions_source": {
         "type": ["string", "null"],
-        "description": "The real list that matched — \"ofac\" for an actual SDN hit, the actual registry name for a scam-list hit, null for no hit. Never \"ofac\" for a non-OFAC designation."
+        "description": "The list behind a SANCTIONED finding — \"ofac\" for an actual SDN hit, never \"ofac\" for a non-OFAC designation. null when there is no sanctions finding, including when the address is only on a scam/phishing registry: those hits are reported as SCAM_LIST_MATCH in sanctions_reasons (each with its registry as `source`) and in lists_matched."
       },
       "wallet_signals": {
         "type": "object",
@@ -62,37 +62,57 @@
       "lists_consulted": {
         "type": "array",
         "items": { "type": "string" },
-        "description": "Lists that actually matched this address, not every list checked."
+        "description": "Every sanctions/scam list this address was checked against, whether or not it matched — currently mew, ofac, scamsniffer. The same on every record in a run. An empty array here would mean nothing was checked; the run fails instead of emitting one. Use lists_matched for hits."
+      },
+      "lists_matched": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Only the lists that matched this address. Empty for a clean address — that is a finding (checked, no hit), not an absence of checking; see lists_consulted for what was checked."
       },
       "is_contract": {
-        "type": "boolean"
+        "type": ["boolean", "null"],
+        "description": "null when rpc_ok is false: the on-chain read did not land, so this is unknown, not \"not a contract\"."
       },
       "mutable_verdict": {
         "type": "string",
-        "enum": ["SAFE_TO_HOLD", "MONITOR", "EXIT_RISK", "DO_NOT_HOLD"]
+        "enum": ["SAFE_TO_HOLD", "MONITOR", "EXIT_RISK", "DO_NOT_HOLD"],
+        "description": "Never null. When rpc_ok is false this is the fixed floor MONITOR — a \"could not assess\" verdict that can never read as safe, the counterpart of CAUTION on the sanctions side."
       },
       "mutable_risk_score": {
-        "type": "number",
-        "description": "0-100."
+        "type": ["number", "null"],
+        "description": "0-100. null when rpc_ok is false — no read, no score."
       },
       "can_turn_hostile": {
-        "type": "boolean"
+        "type": ["boolean", "null"],
+        "description": "null when rpc_ok is false: unknown, not true and not false."
       },
       "time_to_rug": {
-        "type": "string",
-        "enum": ["instant", "delayed", "impossible", "unknown"]
+        "type": ["string", "null"],
+        "enum": ["instant", "delayed", "impossible", "unknown", null],
+        "description": "null when rpc_ok is false (nothing was read). \"unknown\" is a real value from a successful read that could not be classified, not the same as null."
       },
       "owner_powers": {
         "type": "array",
         "items": { "type": "string" },
-        "description": "e.g. OWNER_CAN_REPLACE_ALL_CONTRACT_LOGIC, or an *_UNKNOWN code when a read didn't land."
+        "description": "e.g. OWNER_CAN_REPLACE_ALL_CONTRACT_LOGIC. Never null. When rpc_ok is false it holds a single *_UNKNOWN code (RPC_UNAVAILABLE_RESULT_UNKNOWN or PARTIAL_READ_RESULT_UNKNOWN) saying why nothing could be read."
       },
       "controls": {
         "type": "object",
-        "description": "owner, ownership_renounced, is_upgradeable_proxy, proxy_admin, implementation, has_pause, is_paused, pending_owner."
+        "description": "Always an object with all eight keys, so consumers can index into it safely. When rpc_ok is false every key is null — no default is substituted for an unread value. The block is all-or-nothing: if any verdict-feeding read failed, all eight are null, even ones that did land.",
+        "properties": {
+          "owner": { "type": ["string", "null"], "description": "Owner address, or null if there is none or it was not read." },
+          "ownership_renounced": { "type": ["boolean", "null"], "description": "null when rpc_ok is false, not false." },
+          "is_upgradeable_proxy": { "type": ["boolean", "null"], "description": "null when rpc_ok is false, not false." },
+          "proxy_admin": { "type": ["string", "null"] },
+          "implementation": { "type": ["string", "null"] },
+          "has_pause": { "type": ["boolean", "null"], "description": "null when rpc_ok is false, not false." },
+          "is_paused": { "type": ["boolean", "null"] },
+          "pending_owner": { "type": ["string", "null"] }
+        }
       },
       "rpc_ok": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "false means the on-chain reads did not all land. Every contract-read field is then null (is_contract, mutable_risk_score, can_turn_hostile, time_to_rug, each controls key) and mutable_verdict is MONITOR. A null here means \"we could not read this\", never a value we observed."
       },
       "arc_network": {
         "type": "string",

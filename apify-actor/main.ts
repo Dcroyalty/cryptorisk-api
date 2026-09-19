@@ -8,8 +8,9 @@
 // output into one record, and charges per address screened.
 
 import { Actor, log } from "apify";
+import { sql } from "@/lib/db";
 import { scoreAddress } from "@/lib/score-address";
-import { analyzeLiveRisk, type Chain } from "@/lib/live-risk";
+import { analyzeLiveRisk, type Chain, type LiveRisk } from "@/lib/live-risk";
 import { isEvmAddress } from "@/lib/sources";
 import { isArcMainnetLive } from "@/lib/arc";
 import { RISK_DISCLAIMER } from "@/lib/disclaimer";
@@ -25,6 +26,57 @@ interface Input {
 function sanctionsSourceOf(reasons: { code: string; source: string }[]): string | null {
   const hit = reasons.find((r) => r.code === "SANCTIONED");
   return hit ? hit.source : null;
+}
+
+// Every list scoreAddress() checks an address against: the distinct sources in
+// bad_addresses. Read from the table rather than hardcoded so it stays true when a
+// list is added or dropped. scoreAddress()'s own `sources` is only the lists that
+// MATCHED, which reads as "nothing was checked" on a clean address — that is
+// lists_matched here, not lists_consulted.
+async function loadConsultedLists(): Promise<string[]> {
+  const rows = (await sql`SELECT DISTINCT source FROM bad_addresses ORDER BY source`) as { source: string }[];
+  return rows.map((r) => r.source);
+}
+
+// lib/live-risk's unknownResult() fills the contract-read fields with defaults
+// (is_contract:false, can_turn_hostile:true, ownership_renounced:false, score 50)
+// when the chain couldn't be read, or when only some of the reads landed. Those
+// look like observations and are not. When rpc_ok is false every observed value is
+// null — "we couldn't read this" — including is_contract even if eth_getCode landed
+// before a later read failed: the block is all-or-nothing.
+// Kept as-is: mutable_verdict (MONITOR is a floor, like CAUTION on the sanctions
+// side, never a clean read) and owner_powers (the *_UNKNOWN code is the explicit
+// "couldn't read" marker).
+function contractReads(live: LiveRisk) {
+  if (live.rpc_ok) {
+    return {
+      is_contract: live.is_contract,
+      mutable_verdict: live.verdict,
+      mutable_risk_score: live.mutable_risk_score,
+      can_turn_hostile: live.can_turn_hostile,
+      time_to_rug: live.time_to_rug,
+      owner_powers: live.powers,
+      controls: live.controls,
+    };
+  }
+  return {
+    is_contract: null,
+    mutable_verdict: live.verdict,
+    mutable_risk_score: null,
+    can_turn_hostile: null,
+    time_to_rug: null,
+    owner_powers: live.powers,
+    controls: {
+      owner: null,
+      ownership_renounced: null,
+      is_upgradeable_proxy: null,
+      proxy_admin: null,
+      implementation: null,
+      has_pause: null,
+      is_paused: null,
+      pending_owner: null,
+    },
+  };
 }
 
 async function main(): Promise<void> {
@@ -55,6 +107,14 @@ async function main(): Promise<void> {
   // in every deployment. If it isn't here, say so on every record for this
   // run rather than silently scoring against Arc testnet as if it were mainnet.
   const arcLive = chain === "arc" ? isArcMainnetLive() : null;
+
+  // No lists loaded would mean every address comes back CLEAN with nothing behind
+  // it — the silent false-clean this actor exists to avoid. Fail the run instead.
+  const listsConsulted = await loadConsultedLists();
+  if (listsConsulted.length === 0) {
+    await Actor.fail("bad_addresses has no lists loaded — refusing to screen against an empty sanctions/scam dataset.");
+    return;
+  }
 
   let processed = 0;
 
@@ -102,15 +162,10 @@ async function main(): Promise<void> {
       sanctions_reasons: sanctions.reasons,
       sanctions_source: sanctionsSourceOf(sanctions.reasons), // real list name, or null — never "OFAC" for a non-OFAC hit
       wallet_signals: sanctions.signals,               // wallet_age_days, tx_count, signals_ok, ...
-      lists_consulted: sanctions.sources,
-      // --- live on-chain contract control reads ---
-      is_contract: live.is_contract,
-      mutable_verdict: live.verdict,                   // SAFE_TO_HOLD | MONITOR | EXIT_RISK | DO_NOT_HOLD
-      mutable_risk_score: live.mutable_risk_score,
-      can_turn_hostile: live.can_turn_hostile,
-      time_to_rug: live.time_to_rug,
-      owner_powers: live.powers,                       // e.g. OWNER_CAN_REPLACE_ALL_CONTRACT_LOGIC, or an *_UNKNOWN code when a read didn't land
-      controls: live.controls,
+      lists_consulted: listsConsulted,                 // every list checked, hit or not
+      lists_matched: sanctions.sources,                // only the lists that matched this address
+      // --- live on-chain contract control reads (all null when rpc_ok is false) ---
+      ...contractReads(live),
       rpc_ok: live.rpc_ok,
       ...(chain === "arc" ? { arc_network: arcLive ? "mainnet" : "testnet" } : {}),
       disclaimer: RISK_DISCLAIMER,
