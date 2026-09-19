@@ -134,7 +134,7 @@ An address that isn't valid EVM format gets back `{ "valid": false, "error": "in
 
 ## Pricing
 
-**$0.02 per address screened.** Invalid-format addresses aren't charged — no work was done. Pay-per-event, no subscription.
+**$0.03 per address screened — $30 per 1,000.** Invalid-format addresses aren't charged — no work was done. Pay-per-event, no subscription.
 
 ## What this is not
 
