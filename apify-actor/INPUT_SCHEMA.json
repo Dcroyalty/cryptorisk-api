@@ -6,10 +6,14 @@
     "addresses": {
       "title": "Addresses",
       "type": "array",
-      "description": "EVM addresses to screen (0x..., 40 hex chars). Up to 1000 per run. An invalid entry returns an explanatory record instead of failing the run — you are not charged for it.",
+      "description": "EVM addresses to screen (0x..., 40 hex chars). Up to 1000 per run. An invalid entry returns an explanatory record instead of failing the run — you are not charged for it. The pre-filled pair is one address that is on no list and one on the OFAC SDN list, so a first run shows both outcomes.",
       "editor": "stringList",
       "items": { "type": "string" },
-      "minItems": 1
+      "minItems": 1,
+      "prefill": [
+        "0x3e5c63644e683549055b9be8653de26e0b4cd36e",
+        "0x0330070fd38ec3bb94f58fa55d40368271e9e54a"
+      ]
     },
     "chain": {
       "title": "Chain",
@@ -18,7 +22,8 @@
       "editor": "select",
       "enum": ["ethereum", "base", "arc"],
       "enumTitles": ["Ethereum", "Base", "Arc (Circle L1)"],
-      "default": "ethereum"
+      "default": "ethereum",
+      "prefill": "ethereum"
     }
   },
   "required": ["addresses"]

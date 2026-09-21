@@ -6,36 +6,58 @@
 // each file's header. This file does not reimplement any scoring logic; it
 // validates input, calls the two existing engines per address, merges their
 // output into one record, and charges per address screened.
+//
+// NEVER EXIT FAILED ON A HANDLED CONDITION. Apify's automated QA runs the actor
+// with the INPUT_SCHEMA prefill values and marks it "Under maintenance" on any
+// run that is not SUCCEEDED within 5 minutes. So every path below that is not a
+// genuine crash — bad/empty/oversized input, a missing DATABASE_URL, a Neon
+// failure, an empty lists table, an RPC/explorer hang, a charge limit — pushes a
+// dataset item that says what happened and exits SUCCEEDED (exit code 0). Only an
+// unexpected exception reaches Actor.fail(). None of these records is a verdict:
+// an address we could not screen is reported as NOT screened, never as clean.
 
 import { Actor, log } from "apify";
-import { sql } from "@/lib/db";
-import { scoreAddress } from "@/lib/score-address";
 import { analyzeLiveRisk, type Chain, type LiveRisk } from "@/lib/live-risk";
 import { isEvmAddress } from "@/lib/sources";
 import { isArcMainnetLive } from "@/lib/arc";
 import { RISK_DISCLAIMER } from "@/lib/disclaimer";
+import type { RiskResult } from "@/lib/scoring";
+
+// NOTE: "@/lib/db" throws at import time when DATABASE_URL is unset, and
+// "@/lib/score-address" imports it. Both are therefore loaded with a dynamic
+// import() inside main(), where the failure becomes a record instead of a crash on
+// module load — without touching the byte-identical lib/ copies.
 
 const MAX_ADDRESSES = 1000;
 const CHARGE_EVENT = "address-screened";
+// lib/sources.ts fetches the block explorer with no timeout, so one hung explorer
+// could stall a run past Apify's 5-minute QA limit. Bound each address here.
+const ADDRESS_TIMEOUT_MS = 45_000;
+const DB_TIMEOUT_MS = 30_000;
+// Stop instead of emitting an error record per remaining address when every
+// address is failing the same way (database down, provider outage).
+const MAX_CONSECUTIVE_FAILURES = 3;
 
 interface Input {
-  addresses?: string[];
-  chain?: "ethereum" | "base" | "arc";
+  addresses?: string[] | string;
+  chain?: string;
 }
+
+class TimeoutError extends Error {}
+
+function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new TimeoutError(`${what} did not answer within ${Math.round(ms / 1000)}s`)), ms);
+  });
+  return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
+}
+
+const messageOf = (e: unknown) => String((e as Error)?.message ?? e ?? "unknown error").slice(0, 500);
 
 function sanctionsSourceOf(reasons: { code: string; source: string }[]): string | null {
   const hit = reasons.find((r) => r.code === "SANCTIONED");
   return hit ? hit.source : null;
-}
-
-// Every list scoreAddress() checks an address against: the distinct sources in
-// bad_addresses. Read from the table rather than hardcoded so it stays true when a
-// list is added or dropped. scoreAddress()'s own `sources` is only the lists that
-// MATCHED, which reads as "nothing was checked" on a clean address — that is
-// lists_matched here, not lists_consulted.
-async function loadConsultedLists(): Promise<string[]> {
-  const rows = (await sql`SELECT DISTINCT source FROM bad_addresses ORDER BY source`) as { source: string }[];
-  return rows.map((r) => r.source);
 }
 
 // lib/live-risk's unknownResult() fills the contract-read fields with defaults
@@ -82,25 +104,98 @@ function contractReads(live: LiveRisk) {
 async function main(): Promise<void> {
   await Actor.init();
 
-  const input = (await Actor.getInput<Input>()) ?? {};
-  const chain = (input.chain ?? "ethereum") as Chain;
-  const rawAddresses = Array.isArray(input.addresses) ? input.addresses : [];
+  let pushed = 0;
+  let errors = 0;
+  // Only set once validated: the dataset schema enumerates chain, so a bad value must never be echoed into a record.
+  let recordChain: Chain | undefined;
 
-  if (!["ethereum", "base", "arc"].includes(chain)) {
-    await Actor.fail(`chain must be "ethereum", "base", or "arc" — got "${String(input.chain)}".`);
-    return;
+  /** Push a record that explains what happened. `address` stays a string (dataset schema). */
+  const notice = async (address: string, error: string, message: string, extra: { hint?: string; valid?: boolean } = {}) => {
+    await Actor.pushData({
+      address,
+      ...(recordChain ? { chain: recordChain } : {}),
+      ...extra,
+      error,
+      message,
+      checked_at: new Date().toISOString(),
+    });
+    pushed++;
+    errors++;
+  };
+
+  /** Every path ends here: guarantee at least one dataset item, then exit SUCCEEDED. */
+  const finish = async (statusMessage: string): Promise<void> => {
+    if (pushed === 0) {
+      await Actor.pushData({ address: "", error: "no_output", message: "The run completed without producing any results.", checked_at: new Date().toISOString() });
+      pushed++;
+    }
+    log.info(statusMessage);
+    await Actor.exit({ statusMessage, exitCode: 0 });
+  };
+
+  const input = (await Actor.getInput<Input>()) ?? {};
+  const chainInput = typeof input.chain === "string" && input.chain.trim() ? input.chain.trim().toLowerCase() : "ethereum";
+  const rawAddresses = Array.isArray(input.addresses) ? input.addresses : typeof input.addresses === "string" ? [input.addresses] : [];
+
+  if (!["ethereum", "base", "arc"].includes(chainInput)) {
+    await notice("", "invalid_chain", `chain must be "ethereum", "base", or "arc" — got "${String(input.chain).slice(0, 60)}". Nothing was screened.`, {
+      hint: 'Use one of: "ethereum", "base", "arc".',
+    });
+    return finish("Nothing screened: invalid chain (see the dataset item).");
   }
+  const chain = chainInput as Chain;
+  recordChain = chain;
 
   if (rawAddresses.length === 0) {
-    await Actor.fail('Input must include a non-empty "addresses" array.');
-    return;
+    await notice("", "no_addresses", 'Input must include a non-empty "addresses" array, so nothing was screened.', {
+      hint: 'Example input: { "addresses": ["0xd8da6bf26964af9d7eed9e03e53415d37aa96045"], "chain": "ethereum" }',
+    });
+    return finish('Nothing screened: no "addresses" in the input (see the dataset item).');
   }
 
-  if (rawAddresses.length > MAX_ADDRESSES) {
-    await Actor.fail(
-      `Got ${rawAddresses.length} addresses — this actor caps at ${MAX_ADDRESSES} per run. Split into multiple runs.`,
-    );
-    return;
+  let addresses = rawAddresses;
+  if (addresses.length > MAX_ADDRESSES) {
+    const skipped = addresses.length - MAX_ADDRESSES;
+    addresses = addresses.slice(0, MAX_ADDRESSES);
+    await notice("", "too_many_addresses", `Got ${MAX_ADDRESSES + skipped} addresses; this Actor caps at ${MAX_ADDRESSES} per run. The first ${MAX_ADDRESSES} were screened; ${skipped} were not.`, {
+      hint: "Split the remaining addresses into another run.",
+    });
+  }
+
+  // Without the database there are no sanctions/scam lists, and screening without them
+  // would return every address as clean — the silent false-clean this actor exists to
+  // avoid. So: say so and screen nothing.
+  if (!process.env.DATABASE_URL?.trim()) {
+    await notice("", "missing_database_url", "DATABASE_URL is not set for this Actor, so the sanctions/scam lists could not be read and nothing was screened.", {
+      hint: "Add DATABASE_URL under this Actor's Settings -> Environment variables in the Apify Console, then run again.",
+    });
+    return finish("Nothing screened: DATABASE_URL is not configured (see the dataset item).");
+  }
+
+  let scoreAddress: typeof import("@/lib/score-address").scoreAddress;
+  let listsConsulted: string[];
+  try {
+    const { sql } = await import("@/lib/db");
+    ({ scoreAddress } = await import("@/lib/score-address"));
+    // Every list scoreAddress() checks an address against: the distinct sources in
+    // bad_addresses. Read from the table rather than hardcoded so it stays true when a
+    // list is added or dropped. scoreAddress()'s own `sources` is only the lists that
+    // MATCHED, which reads as "nothing was checked" on a clean address — that is
+    // lists_matched here, not lists_consulted.
+    const rows = (await withTimeout(Promise.resolve(sql`SELECT DISTINCT source FROM bad_addresses ORDER BY source`), DB_TIMEOUT_MS, "The database")) as { source: string }[];
+    listsConsulted = rows.map((r) => r.source);
+  } catch (e) {
+    await notice("", "database_unavailable", `The sanctions/scam list database could not be read, so nothing was screened: ${messageOf(e)}`, {
+      hint: "Check DATABASE_URL under this Actor's Settings -> Environment variables and that the Neon database is reachable, then run again.",
+    });
+    return finish("Nothing screened: the list database is unavailable (see the dataset item).");
+  }
+
+  if (listsConsulted.length === 0) {
+    await notice("", "no_lists_loaded", "bad_addresses has no lists loaded, so nothing was screened — refusing to report addresses as clean against an empty sanctions/scam dataset.", {
+      hint: "The list refresh on uxus.finance must run before this Actor can screen.",
+    });
+    return finish("Nothing screened: no sanctions/scam lists are loaded (see the dataset item).");
   }
 
   // Same chain-network honesty as the live site: Arc mainnet isn't configured
@@ -108,28 +203,23 @@ async function main(): Promise<void> {
   // run rather than silently scoring against Arc testnet as if it were mainnet.
   const arcLive = chain === "arc" ? isArcMainnetLive() : null;
 
-  // No lists loaded would mean every address comes back CLEAN with nothing behind
-  // it — the silent false-clean this actor exists to avoid. Fail the run instead.
-  const listsConsulted = await loadConsultedLists();
-  if (listsConsulted.length === 0) {
-    await Actor.fail("bad_addresses has no lists loaded — refusing to screen against an empty sanctions/scam dataset.");
-    return;
-  }
-
   let processed = 0;
+  let consecutiveFailures = 0;
 
-  for (const raw of rawAddresses) {
-    const trimmed = String(raw ?? "").trim();
+  for (let i = 0; i < addresses.length; i++) {
+    const trimmed = String(addresses[i] ?? "").trim();
 
     if (!isEvmAddress(trimmed)) {
       await Actor.pushData({
-        address: raw,
+        address: trimmed,
         chain,
         valid: false,
         error: "invalid_address",
         message: "Not a valid 0x-prefixed, 40-hex-char EVM address — not screened, not charged.",
         checked_at: new Date().toISOString(),
       });
+      pushed++;
+      errors++;
       continue; // no charge — no work was done
     }
 
@@ -141,10 +231,29 @@ async function main(): Promise<void> {
     // own bad_addresses table, not assumed.
     const address = trimmed.toLowerCase();
 
-    const [sanctions, live] = await Promise.all([
-      scoreAddress(address, chain, "wallet"),
-      analyzeLiveRisk(address, chain),
-    ]);
+    let sanctions: RiskResult;
+    let live: LiveRisk;
+    try {
+      [sanctions, live] = await withTimeout(Promise.all([scoreAddress(address, chain, "wallet"), analyzeLiveRisk(address, chain)]), ADDRESS_TIMEOUT_MS, "Screening");
+      consecutiveFailures = 0;
+    } catch (e) {
+      consecutiveFailures++;
+      const timedOut = e instanceof TimeoutError;
+      await notice(address, timedOut ? "screening_timeout" : "screening_failed", `${timedOut ? messageOf(e) : `Screening failed: ${messageOf(e)}`}. This address was NOT screened — do not read this record as clean.`, {
+        valid: true,
+        hint: "Not charged. Retry this address in a new run; a repeated failure usually means the list database or a data provider is down.",
+      });
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        const left = addresses.length - i - 1;
+        if (left > 0) {
+          await notice("", "screening_aborted", `${MAX_CONSECUTIVE_FAILURES} addresses in a row failed, so the ${left} remaining address(es) were not attempted.`, {
+            hint: "Retry those addresses in a new run.",
+          });
+        }
+        break;
+      }
+      continue; // no charge — no verdict was produced
+    }
 
     const degraded = sanctions.degraded || !live.rpc_ok;
 
@@ -171,16 +280,30 @@ async function main(): Promise<void> {
       disclaimer: RISK_DISCLAIMER,
       checked_at: new Date().toISOString(),
     });
-
-    await Actor.charge({ eventName: CHARGE_EVENT, count: 1 });
+    pushed++;
     processed++;
+
+    // The verdict is already delivered; a charging problem must never fail the run.
+    try {
+      const charge = await Actor.charge({ eventName: CHARGE_EVENT, count: 1 });
+      if (charge?.eventChargeLimitReached) {
+        const left = addresses.length - i - 1;
+        if (left > 0) {
+          await notice("", "charge_limit_reached", `The maximum charge for this run was reached, so the ${left} remaining address(es) were not screened.`, {
+            hint: "Raise the run's maximum cost and screen the remaining addresses again.",
+          });
+        }
+        break;
+      }
+    } catch (e) {
+      log.warning(`Actor.charge failed (result kept, run continues): ${messageOf(e)}`);
+    }
   }
 
-  log.info(`Screened ${processed}/${rawAddresses.length} address(es) on ${chain}.`);
-
-  await Actor.exit();
+  await finish(`Screened ${processed}/${addresses.length} address${addresses.length === 1 ? "" : "es"} on ${chain}${errors ? `; ${errors} error record${errors === 1 ? "" : "s"} in the dataset` : ""}.`);
 }
 
+// A genuine crash (a bug, out of memory, the dataset itself unwritable) is the ONLY thing that may fail the run.
 main().catch(async (err) => {
   log.exception(err as Error, "Unhandled error in main()");
   await Actor.fail(err instanceof Error ? err.message : String(err));

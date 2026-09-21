@@ -5,23 +5,31 @@
     "properties": {
       "address": {
         "type": "string",
-        "description": "The EVM address screened (or the raw invalid input, on an invalid_address record)."
+        "description": "The EVM address screened (or the raw invalid input, on an invalid_address record). Empty on a record about the whole run."
       },
       "chain": {
         "type": "string",
-        "enum": ["ethereum", "base", "arc"]
+        "enum": [
+          "ethereum",
+          "base",
+          "arc"
+        ]
       },
       "valid": {
         "type": "boolean",
-        "description": "false only when the input wasn't a valid 0x + 40-hex-char address. Not charged."
+        "description": "false only when the input wasn't a valid 0x + 40-hex-char address. Not charged. Absent on run-level records."
       },
       "error": {
         "type": "string",
-        "description": "\"invalid_address\", present only when valid is false."
+        "description": "Present only on a record that explains why an address (or the whole run) was NOT screened — never a verdict. Codes: invalid_address, invalid_chain, no_addresses, too_many_addresses, missing_database_url, database_unavailable, no_lists_loaded, screening_timeout, screening_failed, screening_aborted, charge_limit_reached, no_output. The run still SUCCEEDS; only a genuine crash fails it."
       },
       "message": {
         "type": "string",
-        "description": "Present only when valid is false."
+        "description": "Present only on an error record: what happened."
+      },
+      "hint": {
+        "type": "string",
+        "description": "Present on most error records: what to do about it."
       },
       "degraded": {
         "type": "boolean",
@@ -29,7 +37,11 @@
       },
       "sanctions_verdict": {
         "type": "string",
-        "enum": ["PROCEED", "CAUTION", "BLOCK"]
+        "enum": [
+          "PROCEED",
+          "CAUTION",
+          "BLOCK"
+        ]
       },
       "sanctions_risk_score": {
         "type": "number",
@@ -37,22 +49,35 @@
       },
       "sanctions_flags": {
         "type": "array",
-        "items": { "type": "string" }
+        "items": {
+          "type": "string"
+        }
       },
       "sanctions_reasons": {
         "type": "array",
         "items": {
           "type": "object",
           "properties": {
-            "code": { "type": "string" },
-            "severity": { "type": "number" },
-            "detail": { "type": "string" },
-            "source": { "type": "string" }
+            "code": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "number"
+            },
+            "detail": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            }
           }
         }
       },
       "sanctions_source": {
-        "type": ["string", "null"],
+        "type": [
+          "string",
+          "null"
+        ],
         "description": "The list behind a SANCTIONED finding — \"ofac\" for an actual SDN hit, never \"ofac\" for a non-OFAC designation. null when there is no sanctions finding, including when the address is only on a scam/phishing registry: those hits are reported as SCAM_LIST_MATCH in sanctions_reasons (each with its registry as `source`) and in lists_matched."
       },
       "wallet_signals": {
@@ -61,53 +86,126 @@
       },
       "lists_consulted": {
         "type": "array",
-        "items": { "type": "string" },
-        "description": "Every sanctions/scam list this address was checked against, whether or not it matched — currently mew, ofac, scamsniffer. The same on every record in a run. An empty array here would mean nothing was checked; the run fails instead of emitting one. Use lists_matched for hits."
+        "items": {
+          "type": "string"
+        },
+        "description": "Every sanctions/scam list this address was checked against, whether or not it matched — currently mew, ofac, scamsniffer. The same on every record in a run. An empty array here would mean nothing was checked; the run emits a no_lists_loaded record instead of any verdict. Use lists_matched for hits."
       },
       "lists_matched": {
         "type": "array",
-        "items": { "type": "string" },
+        "items": {
+          "type": "string"
+        },
         "description": "Only the lists that matched this address. Empty for a clean address — that is a finding (checked, no hit), not an absence of checking; see lists_consulted for what was checked."
       },
       "is_contract": {
-        "type": ["boolean", "null"],
+        "type": [
+          "boolean",
+          "null"
+        ],
         "description": "null when rpc_ok is false: the on-chain read did not land, so this is unknown, not \"not a contract\"."
       },
       "mutable_verdict": {
         "type": "string",
-        "enum": ["SAFE_TO_HOLD", "MONITOR", "EXIT_RISK", "DO_NOT_HOLD"],
+        "enum": [
+          "SAFE_TO_HOLD",
+          "MONITOR",
+          "EXIT_RISK",
+          "DO_NOT_HOLD"
+        ],
         "description": "Never null. When rpc_ok is false this is the fixed floor MONITOR — a \"could not assess\" verdict that can never read as safe, the counterpart of CAUTION on the sanctions side."
       },
       "mutable_risk_score": {
-        "type": ["number", "null"],
+        "type": [
+          "number",
+          "null"
+        ],
         "description": "0-100. null when rpc_ok is false — no read, no score."
       },
       "can_turn_hostile": {
-        "type": ["boolean", "null"],
+        "type": [
+          "boolean",
+          "null"
+        ],
         "description": "null when rpc_ok is false: unknown, not true and not false."
       },
       "time_to_rug": {
-        "type": ["string", "null"],
-        "enum": ["instant", "delayed", "impossible", "unknown", null],
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "instant",
+          "delayed",
+          "impossible",
+          "unknown",
+          null
+        ],
         "description": "null when rpc_ok is false (nothing was read). \"unknown\" is a real value from a successful read that could not be classified, not the same as null."
       },
       "owner_powers": {
         "type": "array",
-        "items": { "type": "string" },
+        "items": {
+          "type": "string"
+        },
         "description": "e.g. OWNER_CAN_REPLACE_ALL_CONTRACT_LOGIC. Never null. When rpc_ok is false it holds a single *_UNKNOWN code (RPC_UNAVAILABLE_RESULT_UNKNOWN or PARTIAL_READ_RESULT_UNKNOWN) saying why nothing could be read."
       },
       "controls": {
         "type": "object",
         "description": "Always an object with all eight keys, so consumers can index into it safely. When rpc_ok is false every key is null — no default is substituted for an unread value. The block is all-or-nothing: if any verdict-feeding read failed, all eight are null, even ones that did land.",
         "properties": {
-          "owner": { "type": ["string", "null"], "description": "Owner address, or null if there is none or it was not read." },
-          "ownership_renounced": { "type": ["boolean", "null"], "description": "null when rpc_ok is false, not false." },
-          "is_upgradeable_proxy": { "type": ["boolean", "null"], "description": "null when rpc_ok is false, not false." },
-          "proxy_admin": { "type": ["string", "null"] },
-          "implementation": { "type": ["string", "null"] },
-          "has_pause": { "type": ["boolean", "null"], "description": "null when rpc_ok is false, not false." },
-          "is_paused": { "type": ["boolean", "null"] },
-          "pending_owner": { "type": ["string", "null"] }
+          "owner": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Owner address, or null if there is none or it was not read."
+          },
+          "ownership_renounced": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "null when rpc_ok is false, not false."
+          },
+          "is_upgradeable_proxy": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "null when rpc_ok is false, not false."
+          },
+          "proxy_admin": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "implementation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "has_pause": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "null when rpc_ok is false, not false."
+          },
+          "is_paused": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "pending_owner": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       },
       "rpc_ok": {
@@ -116,7 +214,10 @@
       },
       "arc_network": {
         "type": "string",
-        "enum": ["mainnet", "testnet"],
+        "enum": [
+          "mainnet",
+          "testnet"
+        ],
         "description": "Present only when chain is \"arc\" — whether Arc mainnet is actually configured on this deployment or the run silently used testnet."
       },
       "disclaimer": {
@@ -132,7 +233,16 @@
     "overview": {
       "title": "Overview",
       "transformation": {
-        "fields": ["address", "chain", "sanctions_verdict", "sanctions_risk_score", "mutable_verdict", "mutable_risk_score", "degraded", "checked_at"]
+        "fields": [
+          "address",
+          "chain",
+          "sanctions_verdict",
+          "sanctions_risk_score",
+          "mutable_verdict",
+          "mutable_risk_score",
+          "degraded",
+          "checked_at"
+        ]
       },
       "display": {
         "component": "table",

@@ -119,7 +119,7 @@ An address that's on a list still returns that hit when the sources are down —
 
 ### Which lists were checked vs. which matched
 
-- **`lists_consulted`** — every list the address was checked against, hit or not (currently `mew`, `ofac`, `scamsniffer`). It's the same on every record in a run, so a clean address shows what "clean" was checked against. If no lists are loaded the run fails rather than return unsupported "clean" results.
+- **`lists_consulted`** — every list the address was checked against, hit or not (currently `mew`, `ofac`, `scamsniffer`). It's the same on every record in a run, so a clean address shows what "clean" was checked against. If no lists are loaded (or the list database can't be reached) the run returns an explanatory `no_lists_loaded` / `database_unavailable` record instead of any verdict, rather than return unsupported "clean" results.
 - **`lists_matched`** — only the lists that matched this address. `[]` on a clean address means checked, no hit.
 - **`sanctions_source`** — the list behind a `SANCTIONED` finding: `"ofac"` for an actual SDN hit, never `"ofac"` for anything else. It is `null` when the address is only on a scam/phishing registry — those come back as a `SCAM_LIST_MATCH` reason (with the registry as its `source`), `BLOCK`, and an entry in `lists_matched`.
 
@@ -131,6 +131,29 @@ An address that's on a list still returns that hit when the sources are down —
 | `chain` | `"ethereum"` \| `"base"` \| `"arc"` | no (default `ethereum`) | Which chain to read on-chain signals from. |
 
 An address that isn't valid EVM format gets back `{ "valid": false, "error": "invalid_address", ... }` instead of failing the run — and isn't charged.
+
+Both fields are pre-filled in the Console form — one address on no list and one on the OFAC SDN list, on `ethereum` — so pressing **Start** shows a clean result and a `BLOCK` side by side in well under a minute.
+
+## Errors never fail the run
+
+The Actor always finishes **SUCCEEDED** and always writes at least one dataset item. Anything that goes wrong is a record with an `error` code, a `message`, and usually a `hint` — never a verdict, and never a silent "clean". An address that could not be screened is reported as **not screened**.
+
+| `error` | Meaning |
+|---|---|
+| `invalid_address` | Not a 0x + 40-hex address. Not screened. |
+| `invalid_chain` | `chain` was not `ethereum`, `base` or `arc`. Nothing screened. |
+| `no_addresses` | Input had no `addresses`. |
+| `too_many_addresses` | More than 1,000 addresses; the first 1,000 were screened. |
+| `missing_database_url` | `DATABASE_URL` is not set on the Actor, so the sanctions/scam lists can't be read. Nothing screened. |
+| `database_unavailable` | The list database could not be reached or rejected the connection. Nothing screened. |
+| `no_lists_loaded` | The lists table is empty; screening it would report everything clean, so nothing is screened. |
+| `screening_timeout` | One address took more than 45 s (a data provider hung). That address was not screened. |
+| `screening_failed` | One address could not be screened (message says why). |
+| `screening_aborted` | Three addresses in a row failed, so the rest were not attempted. |
+| `charge_limit_reached` | The run's maximum charge was reached; remaining addresses were not screened. |
+| `no_output` | Safety net: the run produced nothing else. |
+
+A reachable-but-degraded data source (block explorer or RPC down) is different: that still returns a full record with `degraded: true` and `null` on-chain fields, as described above. Only a genuine crash (a bug, out-of-memory) exits FAILED. Error records are never billed as `address-screened`; under pay-per-event, Apify's standard per-dataset-item event still applies to every item pushed.
 
 ## Pricing
 
