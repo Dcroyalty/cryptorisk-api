@@ -13,10 +13,18 @@
         "items": {
           "type": "object",
           "properties": {
-            "title": { "type": "string" },
-            "url": { "type": "string" },
-            "description": { "type": "string" },
-            "score": { "type": "number" }
+            "title": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "score": {
+              "type": "number"
+            }
           }
         }
       },
@@ -26,13 +34,30 @@
         "items": {
           "type": "object",
           "properties": {
-            "title": { "type": "string" },
-            "url": { "type": "string" },
-            "description": { "type": "string" },
-            "position": { "type": ["number", "null"] },
-            "sitelinks": { "type": "array" },
-            "attributes": { "type": "object" },
-            "date": { "type": "string" }
+            "title": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "position": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "sitelinks": {
+              "type": "array"
+            },
+            "attributes": {
+              "type": "object"
+            },
+            "date": {
+              "type": "string"
+            }
           }
         }
       },
@@ -42,17 +67,27 @@
         "items": {
           "type": "object",
           "properties": {
-            "question": { "type": "string" },
-            "snippet": { "type": "string" },
-            "title": { "type": "string" },
-            "url": { "type": "string" }
+            "question": {
+              "type": "string"
+            },
+            "snippet": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            }
           }
         }
       },
       "related_searches": {
         "type": "array",
         "description": "Confirmed to populate live. Query-refinement suggestions.",
-        "items": { "type": "string" }
+        "items": {
+          "type": "string"
+        }
       },
       "ads": {
         "type": "array",
@@ -63,11 +98,17 @@
         "description": "Passed through verbatim when the upstream response includes them. Not observed to populate across 13 test queries on 2 accounts."
       },
       "knowledge_graph": {
-        "type": ["object", "null"],
+        "type": [
+          "object",
+          "null"
+        ],
         "description": "Populated when Google returns an entity panel and Serper surfaces it. Not observed to populate across 13 test queries on 2 accounts, including canonical trigger queries."
       },
       "answer_box": {
-        "type": ["object", "null"],
+        "type": [
+          "object",
+          "null"
+        ],
         "description": "Populated when Google returns a direct-answer box and Serper surfaces it. Not observed to populate across 13 test queries on 2 accounts."
       },
       "ai_overview": {
@@ -99,7 +140,7 @@
       },
       "error": {
         "type": "string",
-        "description": "Present only on a failed query record (request_failed or upstream_error) instead of the fields above. Not charged."
+        "description": "Present on records that describe a condition instead of results: missing_api_key, no_queries, too_many_queries, request_failed, request_timeout, upstream_auth_error, upstream_credits_exhausted, upstream_rate_limited, upstream_unavailable, upstream_error, invalid_upstream_response, charge_limit_reached, no_output. The run still SUCCEEDS."
       },
       "status": {
         "type": "number",
@@ -108,6 +149,10 @@
       "message": {
         "type": "string",
         "description": "Error detail, present only on a failed query record."
+      },
+      "hint": {
+        "type": "string",
+        "description": "What to do about an error record (present on error records only)."
       }
     }
   },
@@ -115,7 +160,15 @@
     "overview": {
       "title": "Overview",
       "transformation": {
-        "fields": ["query", "results_count", "organic_count", "people_also_ask_count", "related_searches_count", "latency_ms", "checked_at"]
+        "fields": [
+          "query",
+          "results_count",
+          "organic_count",
+          "people_also_ask_count",
+          "related_searches_count",
+          "latency_ms",
+          "checked_at"
+        ]
       },
       "display": {
         "component": "table",

@@ -61,7 +61,28 @@ Note `knowledge_graph`, `answer_box`, and `shopping` are `null`/`[]` here — fo
 | `page` | integer | no (default 1) | 1-based result page. Confirmed working — page 2 returns genuinely different results than page 1. |
 | `device` | string | no | Forwarded to Serper as-is. Accepted without error but no observed effect in testing — not confirmed to do anything. |
 
-A query that fails upstream (Serper error, network failure) gets a `{ "error": ... }` record instead of failing the whole run — and isn't charged.
+Every field is pre-filled in the Console form (`queries: ["web scraping tools"]`, `num: 3`, `country: us`, `language: en`, `page: 1`, `device: desktop`), so pressing **Start** runs a small, fast, cheap search.
+
+## Errors never fail the run
+
+The Actor always finishes **SUCCEEDED** and always writes at least one dataset item. Anything that goes wrong is reported as a record with an `error` code, a human-readable `message`, and usually a `hint` (and the upstream HTTP `status` when there is one), instead of a failed run:
+
+| `error` | Meaning |
+|---|---|
+| `missing_api_key` | `SERPER_API_KEY` is not set on the Actor — no search was run. |
+| `no_queries` | Input had no non-empty `queries`. |
+| `too_many_queries` | More than 1,000 queries; the first 1,000 ran. |
+| `upstream_auth_error` | Serper rejected the key (401/403). The run stops after this one record. |
+| `upstream_credits_exhausted` | The Serper account is out of credits. The run stops after this one record. |
+| `upstream_rate_limited` | Serper returned 429 twice (one automatic retry is made). |
+| `upstream_unavailable` | Serper returned a 5xx twice. |
+| `upstream_error` | Any other non-2xx from Serper; `message` carries its reply. |
+| `request_timeout` / `request_failed` | The request timed out (30 s) or the network failed. |
+| `invalid_upstream_response` | Serper's reply could not be read. |
+| `charge_limit_reached` | The run's maximum charge was reached; remaining queries were skipped. |
+| `no_output` | Safety net: the run produced nothing else. |
+
+Only a genuine crash (a bug, out-of-memory) exits FAILED. Error records are not billed as `query-executed` events; under pay-per-event, Apify's standard per-dataset-item event (`apify-default-dataset-item`) still applies to every item pushed, error records included.
 
 ## Pricing
 
