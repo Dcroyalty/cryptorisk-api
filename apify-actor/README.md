@@ -130,7 +130,7 @@ An address that's on a list still returns that hit when the sources are down —
 | `addresses` | array of strings | yes | EVM addresses, `0x` + 40 hex chars. Up to 1,000 per run. |
 | `chain` | `"ethereum"` \| `"base"` \| `"arc"` | no (default `ethereum`) | Which chain to read on-chain signals from. |
 
-An address that isn't valid EVM format gets back `{ "valid": false, "error": "invalid_address", ... }` instead of failing the run — and isn't charged.
+An address that isn't valid EVM format gets back `{ "valid": false, "error": "invalid_address", ... }` instead of failing the run — and isn't charged. Validation includes the EIP-55 checksum: an all-lowercase (or all-uppercase) address is taken as written, but a mixed-case address must carry a correct checksum, so a mistyped checksummed address is rejected instead of being screened as some other address.
 
 Both fields are pre-filled in the Console form — one address on no list and one on the OFAC SDN list, on `ethereum` — so pressing **Start** shows a clean result and a `BLOCK` side by side in well under a minute.
 

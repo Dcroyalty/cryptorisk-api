@@ -215,7 +215,7 @@ async function main(): Promise<void> {
         chain,
         valid: false,
         error: "invalid_address",
-        message: "Not a valid 0x-prefixed, 40-hex-char EVM address — not screened, not charged.",
+        message: "Not a valid 0x-prefixed, 40-hex-char EVM address (a mixed-case address must also carry a correct EIP-55 checksum, so a typo is caught here) — not screened, not charged.",
         checked_at: new Date().toISOString(),
       });
       pushed++;

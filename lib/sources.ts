@@ -2,10 +2,34 @@
 // These run on Vercel (open internet). Each is wrapped so a failure degrades
 // EXPLICITLY (signals_ok:false) rather than silently reading as "no history".
 
+import { keccak_256 } from "@noble/hashes/sha3";
 import { arcExplorerUrl } from "./arc";
 
 const EVM = /^0x[0-9a-fA-F]{40}$/;
-export const isEvmAddress = (a: string) => EVM.test(a);
+
+/** The EIP-55 checksummed spelling of a 40-hex address body: a hex letter is upper-case when the matching nibble of keccak256(lower-case body) is >= 8. */
+function eip55Body(body: string): string {
+  const lower = body.toLowerCase();
+  const hash = keccak_256(new TextEncoder().encode(lower));
+  let out = "";
+  for (let i = 0; i < 40; i++) {
+    const nibble = (hash[i >> 1] >> (i % 2 === 0 ? 4 : 0)) & 0x0f;
+    out += nibble >= 8 ? lower[i].toUpperCase() : lower[i];
+  }
+  return out;
+}
+
+/**
+ * A well-formed EVM address. All-lowercase or all-uppercase hex carries no checksum, so it is accepted as written.
+ * A MIXED-case address is an EIP-55 checksummed address and its checksum must verify: a typo in one is rejected here,
+ * before any lookup, instead of being screened as if it were a different (usually clean) address.
+ */
+export function isEvmAddress(a: string): boolean {
+  if (typeof a !== "string" || !EVM.test(a)) return false;
+  const body = a.slice(2);
+  if (body === body.toLowerCase() || body === body.toUpperCase()) return true;
+  return eip55Body(body) === body;
+}
 
 export interface WalletSignals {
   wallet_age_days: number | null;
