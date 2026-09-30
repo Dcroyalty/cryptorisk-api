@@ -3,11 +3,13 @@
   "info": {
     "title": "UXUS — Agent Services",
     "version": "1.2.0",
-    "description": "Pay-per-call primitives for AI agents. LLM inference, web scraping, structured extraction, embeddings, live search, and EVM wallet/token risk scoring. Paid in USDC on Base via the x402 protocol (v2). No accounts, no API keys.",
+    "description": "Pay-per-call primitives for AI agents. LLM inference, web scraping, structured extraction, embeddings, live search, and EVM wallet/token risk scoring. Paid in USDC on Base via the x402 protocol (v1, settled by the Coinbase CDP facilitator). No accounts, no API keys.",
     "contact": {
       "name": "UXUS",
-      "url": "https://uxus.finance"
-    }
+      "url": "https://uxus.finance",
+      "email": "support@uxus.finance"
+    },
+    "x-guidance": "Paid routes ($0.01 USDC on Base via x402 v1, no account or API key): GET /api/risk/pro?address=0x... to screen a wallet or token before transacting (OFAC, scam lists, honeypot signals, PROCEED|CAUTION|BLOCK); GET /api/risk/live/pro for owner/rug powers on a token; GET /api/search?q=; GET /api/scrape?url=; POST /api/extract {schema, text|url}; POST /api/embed {input}; POST /api/llm {prompt}. Free: GET /api/lookup?address= (any EVM or XRPL address), /api/risk, /api/entity, /api/resolve, and the MCP server at /api/mcp."
   },
   "servers": [
     {
@@ -20,7 +22,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "x402-payment",
-        "description": "x402 payment, protocol v2. An unpaid request returns 402 with the payment requirement base64-encoded in the PAYMENT-REQUIRED response header and mirrored as JSON in the body. Network: Base (eip155:8453). Asset: USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913). Pay to 0xe0ed7a30589fec49e98f2085c7162b90fdbb83de. Sign with an x402-capable client and retry with the X-PAYMENT header."
+        "description": "x402 payment, protocol v1 (scheme \"exact\"). An unpaid request returns 402 with the payment requirements as JSON in the body ({ x402Version: 1, accepts: [...] }), also base64-encoded in the PAYMENT-REQUIRED response header. network: \"base\" (chain id 8453). Settled by the Coinbase CDP facilitator. Asset: USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913). Pay to 0xe0ed7a30589fec49e98f2085c7162b90fdbb83de. Sign with an x402-capable client and retry with the X-PAYMENT header."
       }
     },
     "schemas": {
@@ -44,18 +46,15 @@
       },
       "PaymentRequired": {
         "type": "object",
-        "description": "x402 v2 payment requirement. Also delivered base64-encoded in the PAYMENT-REQUIRED response header.",
+        "description": "x402 v1 payment requirements (the /api/risk/bazaar route alone speaks v2). Also delivered base64-encoded in the PAYMENT-REQUIRED response header.",
         "properties": {
           "x402Version": {
             "type": "integer",
-            "example": 2
+            "example": 1
           },
           "error": {
             "type": "string",
-            "example": "Payment required"
-          },
-          "resource": {
-            "type": "object"
+            "example": "X-PAYMENT header is required"
           },
           "accepts": {
             "type": "array",
@@ -68,11 +67,16 @@
                 },
                 "network": {
                   "type": "string",
-                  "example": "eip155:8453"
+                  "example": "base"
                 },
-                "amount": {
+                "maxAmountRequired": {
                   "type": "string",
+                  "description": "USDC atomic units (6 decimals).",
                   "example": "10000"
+                },
+                "resource": {
+                  "type": "string",
+                  "example": "https://uxus.finance/api/risk/pro"
                 },
                 "asset": {
                   "type": "string",
@@ -1471,10 +1475,10 @@
     },
     "responses": {
       "PaymentRequired": {
-        "description": "Payment required. The x402 v2 challenge is in the PAYMENT-REQUIRED header (base64) and mirrored in the body.",
+        "description": "Payment required. The x402 v1 challenge is the JSON body, mirrored base64-encoded in the PAYMENT-REQUIRED header.",
         "headers": {
           "PAYMENT-REQUIRED": {
-            "description": "Base64-encoded x402 v2 payment requirement JSON.",
+            "description": "Base64-encoded copy of the x402 v1 payment requirements JSON body.",
             "schema": {
               "type": "string"
             }
@@ -1514,6 +1518,7 @@
     "/api/llm": {
       "post": {
         "operationId": "llmInference",
+        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
         "summary": "LLM inference ($0.01 USDC on Base)",
         "description": "Send a prompt or messages[] and get a completion, routed across a 5-model fallback chain. The unpaid GET on this path returns only price and parameter docs.",
         "security": [
@@ -1605,6 +1610,7 @@
     "/api/scrape": {
       "get": {
         "operationId": "scrapeUrl",
+        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
         "summary": "Scrape any URL to clean markdown ($0.01 USDC on Base)",
         "description": "Fetch a URL past common bot-blocking and return title, description, and body as markdown, text, or html.",
         "security": [
@@ -1673,6 +1679,7 @@
     "/api/extract": {
       "post": {
         "operationId": "extractStructured",
+        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
         "summary": "Text or URL to structured JSON ($0.01 USDC on Base)",
         "description": "Return a JSON object shaped to the schema you supply, extracted from raw text or a fetched page. The unpaid GET on this path returns only an example.",
         "security": [
@@ -1751,6 +1758,7 @@
     "/api/embed": {
       "post": {
         "operationId": "createEmbeddings",
+        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
         "summary": "Text to embedding vectors ($0.01 USDC on Base)",
         "description": "Return one 1024-dim jina-embeddings-v3 vector per input string (up to 64). The unpaid GET on this path returns only the model name.",
         "security": [
@@ -1824,6 +1832,7 @@
     "/api/search": {
       "get": {
         "operationId": "webSearch",
+        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
         "summary": "Live web search ($0.01 USDC on Base)",
         "description": "Live web search — no API key, no account, no signup. Returns { query, results: [{ title, url, description, score }], ads, people_also_ask, related_searches, knowledge_graph, answer_box, shopping, ai_overview, provider, latency_ms }. score is 1.0 for the top result descending toward 0.1. Structured SERP blocks are populated when the Google-backed provider (Serper) answers; empty/null on fallback to Brave or DuckDuckGo — provider always says which one served the request.",
         "security": [
@@ -1906,6 +1915,7 @@
     "/api/risk/pro": {
       "get": {
         "operationId": "walletRiskFull",
+        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
         "summary": "Full EVM wallet/token risk report ($0.01 USDC on Base)",
         "description": "OFAC sanctions, scam/phishing lists, honeypot and rug signals. 0-100 score with PROCEED/CAUTION/BLOCK verdict, plus per-signal reasons, the raw signals object, and sources. Free /api/risk returns score, level, verdict, flags only.",
         "security": [
@@ -2630,6 +2640,7 @@
     "/api/risk/live/pro": {
       "get": {
         "operationId": "riskLiveFull",
+        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
         "summary": "Full mutable-risk report ($0.01 USDC on Base)",
         "description": "Every owner power with a plain-English explanation, the raw controls object (owner, EIP-1967 implementation + admin slots, pause state, pending owner), and the on-chain read methodology. Free /api/risk/live returns verdict, score, time_to_rug only.",
         "security": [
