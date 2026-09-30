@@ -70,22 +70,47 @@ export async function getWalletSignals(
 // tripped). Under a burst that turned over half of lookups into
 // degraded/CAUTION. Retry a 429 only when the window reopens within ~2.5s;
 // otherwise fail fast to the degraded verdict instead of adding latency.
-// A free Blockscout account key lifts the limit — the fix (see withBlockscoutKey).
+// Second path: the Blockscout PRO API with a key (see proFallbackUrl) takes over
+// when the per-IP instance limit is hit.
 const EXPLORER_429_RETRIES = 2;
 const MAX_429_WAIT_MS = 2500;
 // Heavy wallets (thousands of txs) can take 60s+ keyless; cap it so one lookup
 // can't hold a function open indefinitely. Timeout -> degraded, never PROCEED.
 const EXPLORER_TIMEOUT_MS = 25_000;
 
-// Blockscout keys are per instance (My Account -> API keys on that explorer),
-// so each instance gets its own env var; a Base key is never sent to Ethereum.
+// Two kinds of Blockscout key exist, told apart by prefix:
+//  • PRO API key ("proapi_...", from dev.blockscout.com): valid ONLY on
+//    api.blockscout.com/v2/api?chain_id=... (all chains, free plan 5 req/s,
+//    100K credits/day). An explorer instance silently IGNORES it (verified
+//    2026-09-30: base.blockscout.com still reports the keyless 10/window limit).
+//  • Instance key (base.blockscout.com -> My Account -> API keys): appended to
+//    that instance's own /api calls. BLOCKSCOUT_ETH_API_KEY is the eth.blockscout.com one.
+const isProKey = (k: string | undefined): k is string => !!k && k.startsWith("proapi_");
+
 function withBlockscoutKey(url: string): string {
   const key = url.startsWith("https://base.blockscout.com/")
     ? process.env.BLOCKSCOUT_API_KEY
     : url.startsWith("https://eth.blockscout.com/")
       ? process.env.BLOCKSCOUT_ETH_API_KEY
       : undefined;
-  return key ? `${url}&apikey=${encodeURIComponent(key)}` : url;
+  return key && !isProKey(key) ? `${url}&apikey=${encodeURIComponent(key)}` : url;
+}
+
+// The PRO API is the fallback when the keyless per-IP instance limit is hit
+// (every Vercel egress IP gets its own instance allowance, so trying the
+// instance first spreads a burst; the PRO key's 5 req/s is shared).
+function proFallbackUrl(chainId: number, address: string): string | null {
+  const key = [process.env.BLOCKSCOUT_API_KEY, process.env.BLOCKSCOUT_ETH_API_KEY].find(isProKey);
+  if (!key) return null;
+  return `https://api.blockscout.com/v2/api?chain_id=${chainId}&module=account&action=txlist&address=${address}&sort=asc&page=1&offset=10000&apikey=${encodeURIComponent(key)}`;
+}
+
+// Only a rate-limit / lockout falls back — not a timeout or other failure (a
+// heavy wallet that timed out on the instance would just time out again).
+async function withProFallback(first: Fetched, chainId: number, address: string): Promise<WalletSignals> {
+  if (first.signals.signals_ok || !first.limited) return first.signals;
+  const pro = proFallbackUrl(chainId, address);
+  return pro ? (await fetchExplorer(pro)).signals : first.signals;
 }
 
 // Circuit breaker: once an explorer says our IP is locked out for longer than
@@ -93,10 +118,16 @@ function withBlockscoutKey(url: string): string {
 // Hammering a locked window only extends it for every other request.
 const explorerLockedUntil = new Map<string, number>();
 
+type Fetched = { signals: WalletSignals; limited: boolean };
+
 async function fetchSignals(rawUrl: string): Promise<WalletSignals> {
+  return (await fetchExplorer(rawUrl)).signals;
+}
+
+async function fetchExplorer(rawUrl: string): Promise<Fetched> {
   const url = withBlockscoutKey(rawUrl);
   const host = new URL(url).host;
-  if ((explorerLockedUntil.get(host) ?? 0) > Date.now()) return { ...FAILED };
+  if ((explorerLockedUntil.get(host) ?? 0) > Date.now()) return { signals: { ...FAILED }, limited: true };
   for (let attempt = 0; ; attempt++) {
     try {
       const r = await fetch(url, { headers: { "user-agent": "uxus-risk" }, signal: AbortSignal.timeout(EXPLORER_TIMEOUT_MS) });
@@ -112,11 +143,12 @@ async function fetchSignals(rawUrl: string): Promise<WalletSignals> {
         const reset = Number(r.headers.get("x-ratelimit-reset"));
         // Cap at 5 min so a bogus header can't disable the explorer for long.
         explorerLockedUntil.set(host, Date.now() + Math.min(Number.isFinite(reset) && reset > 0 ? reset : 10_000, 300_000));
+        return { signals: { ...FAILED }, limited: true };
       }
-      if (!r.ok) return { ...FAILED };
-      return signalsFromExplorer(await r.json());
+      if (!r.ok) return { signals: { ...FAILED }, limited: false };
+      return { signals: signalsFromExplorer(await r.json()), limited: false };
     } catch {
-      return { ...FAILED };
+      return { signals: { ...FAILED }, limited: false };
     }
   }
 }
@@ -130,16 +162,18 @@ async function ethSignals(address: string): Promise<WalletSignals> {
     const s = await fetchSignals(url);
     if (s.signals_ok) return s;
   }
-  return fetchSignals(
+  const s = await fetchExplorer(
     `https://eth.blockscout.com/api?module=account&action=txlist&address=${address}&sort=asc&page=1&offset=10000`,
   );
+  return withProFallback(s, 1, address);
 }
 
 async function baseSignals(address: string): Promise<WalletSignals> {
-  // Blockscout Base (Etherscan-compatible), keyless
-  return fetchSignals(
+  // Blockscout Base instance (Etherscan-compatible, keyless), then the PRO API.
+  const s = await fetchExplorer(
     `https://base.blockscout.com/api?module=account&action=txlist&address=${address}&sort=asc&page=1&offset=10000`,
   );
+  return withProFallback(s, 8453, address);
 }
 
 async function arcSignals(address: string): Promise<WalletSignals> {

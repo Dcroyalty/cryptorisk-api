@@ -6,13 +6,15 @@ hear about it. Last reviewed 2026-09-30.
 
 ## How you'll find out something is wrong
 
+**healthchecks.io is the only alert channel.** There is no webhook (`ERROR_WEBHOOK_URL` is deliberately unset).
+
 | Signal | What it covers | Needs |
 |---|---|---|
-| **Watchdog message** (daily 08:00 UTC) on `ERROR_WEBHOOK_URL` | Every check below that says "watchdog". One consolidated message when anything is `warn` or `FAIL`; a short "all green" check-in every Monday. | `ERROR_WEBHOOK_URL` = a Discord or Slack incoming-webhook URL |
-| **healthchecks.io email** | The crons stopped, Vercel is down, the DB is down, or the webhook is broken. The watchdog is the only success pinger; refresh-lists pings `/fail` on its own failure. | `HEALTHCHECK_PING_URL` = the check's ping URL. Period **1 day**, grace **3 hours**. |
+| **healthchecks.io "down" email** after a `/fail` ping | Any RED watchdog check (daily 08:00 UTC), or the 06:00 list refresh / Shield sweep failing. The email includes the ping body: a plain-text list of every RED check (and any warnings) with the reason. | `HEALTHCHECK_PING_URL` = the check's ping URL. Period **1 day**, grace **3 hours**. |
+| **healthchecks.io "down" email** after missed pings | The watchdog stopped running, both crons stopped, Vercel or the DB is down. The watchdog is the only success pinger. | same |
 | Vercel "cron failed" email | Either cron route returned 500 | Vercel account notifications on |
 
-**If the Monday "all green" message stops arriving, something is broken even if nothing alerted.**
+Warnings (e.g. a credit balance getting low) do **not** email you: they appear in the ping body on healthchecks.io and in the `cron_runs` table. Glance at the check's last ping once a week.
 
 ## Scheduled jobs (`vercel.json`)
 
@@ -39,7 +41,7 @@ Both require `CRON_SECRET` (set). Manual run: `curl -H "Authorization: Bearer $C
 | **Serper credit** (purchased credits can expire — check the expiry shown on the Serper dashboard) | `/api/search` falls back to non-Google providers (structured blocks go empty); the Apify search actor's Google results stop | Watchdog: warn < 500, FAIL < 50 |
 | Jina embeddings quota | `/api/embed` errors after settlement | **Not watched** (no balance API). Check the Jina dashboard monthly. |
 | Neon storage (512 MB) | Writes fail | Watchdog |
-| Blockscout keyless rate limit (10 req/window/IP) | Under a traffic burst, EVM lookups return `degraded` / CAUTION (never a false PROCEED) | Mitigated by a 429 circuit breaker; **fixed by adding `BLOCKSCOUT_API_KEY`** (free: base.blockscout.com → sign in → My Account → API keys). Optional `BLOCKSCOUT_ETH_API_KEY` from eth.blockscout.com for `?chain=ethereum`. |
+| Blockscout keyless rate limit (10 req/window/IP) | Under a traffic burst, EVM lookups return `degraded` / CAUTION (never a false PROCEED) | Keyless instance first (every Vercel IP has its own allowance), then — once an IP is rate-limited — the **Blockscout PRO API** with `BLOCKSCOUT_API_KEY` (a `proapi_…` key from dev.blockscout.com; free plan 5 req/s, 100K credits/day, all chains). A non-`proapi_` value is treated as a base.blockscout.com instance key instead. Circuit breaker stops calls to a locked-out host. |
 
 ## Upstreams that can die
 

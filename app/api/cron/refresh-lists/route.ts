@@ -9,8 +9,9 @@
 //    exists for manual runs) so vercel.json has a cron slot for the watchdog.
 //
 // Each step records a heartbeat in cron_runs; /api/cron/watchdog alerts if
-// either goes stale. A failure here alerts immediately and pings the dead-man's
-// switch with /fail, and the route returns 500 so Vercel marks the run failed.
+// either goes stale. A failure here pings HEALTHCHECK_PING_URL/fail at once
+// (healthchecks.io emails the step-by-step body), and the route returns 500 so
+// Vercel marks the run failed.
 //
 // Auth: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`. Required —
 // this route mutates production data and must not be publicly triggerable.
@@ -19,7 +20,7 @@ import { sql } from "@/lib/db";
 import { refreshBadAddresses } from "@/lib/refresh-lists";
 import * as Shield from "@/lib/shield";
 import { recordRun } from "@/lib/cron-runs";
-import { notifyError, pingHealthcheck } from "@/lib/notify";
+import { pingHealthcheck } from "@/lib/notify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -68,13 +69,19 @@ async function run(req: NextRequest) {
 
   if (!ok) {
     console.error("[cron/refresh-lists] FAILED", JSON.stringify(body));
-    await notifyError("cron/refresh-lists", "daily list refresh or Shield sweep failed", {
-      ofac: report.ofac,
-      scamsniffer: report.scamsniffer,
-      mew: report.mew,
-      shield_sweep: sweep,
-    });
-    await pingHealthcheck("/fail", JSON.stringify(body));
+    const step = (name: string, r: unknown) =>
+      r && typeof r === "object" && "error" in r ? `FAIL ${name}: ${(r as { error: string }).error}` : `ok   ${name}`;
+    await pingHealthcheck(
+      "/fail",
+      [
+        "uxus.finance daily refresh FAILED",
+        step("ofac", report.ofac),
+        step("scamsniffer", report.scamsniffer),
+        step("mew", report.mew),
+        sweep.ok ? "ok   shield-sweep" : `FAIL shield-sweep: ${sweep.error}`,
+        `ran_at ${body.refreshed_at}`,
+      ].join("\n"),
+    );
   } else {
     console.log("[cron/refresh-lists] ok", JSON.stringify(body));
   }

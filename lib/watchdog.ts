@@ -1,7 +1,7 @@
 // lib/watchdog.ts — daily health sweep, run by /api/cron/watchdog.
 //
-// Turns every "this quietly broke" failure mode into a message on
-// ERROR_WEBHOOK_URL (Discord/Slack) plus a /fail ping on HEALTHCHECK_PING_URL:
+// Turns every "this quietly broke" failure mode into a /fail ping on
+// HEALTHCHECK_PING_URL (healthchecks.io emails it — the only alert channel):
 //   • cron heartbeats — refresh-lists and the Shield sweep ran and succeeded
 //   • OFAC — DB is in exact parity with upstream; upstream feed itself alive
 //   • scam lists — every upstream address is in the DB
@@ -23,7 +23,7 @@ import { EVENT_RETENTION_DAYS } from "@/lib/shield";
 import { sweepNodeHealth } from "@/lib/xrpl-nodes";
 import { stripe, STRIPE_ENABLED } from "@/lib/stripe";
 import { PAY_TO, CANONICAL_ORIGIN } from "@/lib/pay-to";
-import { alertingArmed, deadMansSwitchArmed } from "@/lib/notify";
+import { deadMansSwitchArmed } from "@/lib/notify";
 import { facilitator } from "@coinbase/x402";
 
 export type Level = "ok" | "warn" | "fail";
@@ -362,11 +362,9 @@ async function checkSerper(): Promise<Check> {
   }
 }
 
+// healthchecks.io is the only alert channel; ERROR_WEBHOOK_URL is deliberately unused.
 function checkAlerting(): Check[] {
   return [
-    alertingArmed()
-      ? { name: "alerting:webhook", level: "ok", detail: "ERROR_WEBHOOK_URL set." }
-      : { name: "alerting:webhook", level: "warn", detail: "ERROR_WEBHOOK_URL not set — failures only reach Vercel logs." },
     deadMansSwitchArmed()
       ? { name: "alerting:dead-mans-switch", level: "ok", detail: "HEALTHCHECK_PING_URL set." }
       : { name: "alerting:dead-mans-switch", level: "warn", detail: "HEALTHCHECK_PING_URL not set — nothing notices if the crons stop entirely." },
