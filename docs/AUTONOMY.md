@@ -39,7 +39,7 @@ Both require `CRON_SECRET` (set). Manual run: `curl -H "Authorization: Bearer $C
 | **Serper credit** (purchased credits can expire — check the expiry shown on the Serper dashboard) | `/api/search` falls back to non-Google providers (structured blocks go empty); the Apify search actor's Google results stop | Watchdog: warn < 500, FAIL < 50 |
 | Jina embeddings quota | `/api/embed` errors after settlement | **Not watched** (no balance API). Check the Jina dashboard monthly. |
 | Neon storage (512 MB) | Writes fail | Watchdog |
-| Blockscout keyless rate limit (10 req/window/IP) | Under a traffic burst, EVM lookups return `degraded` / CAUTION (never a false PROCEED) | Mitigated by 429 retry; **fixed by adding `BLOCKSCOUT_API_KEY`** (free, dev.blockscout.com) |
+| Blockscout keyless rate limit (10 req/window/IP) | Under a traffic burst, EVM lookups return `degraded` / CAUTION (never a false PROCEED) | Mitigated by a 429 circuit breaker; **fixed by adding `BLOCKSCOUT_API_KEY`** (free: base.blockscout.com → sign in → My Account → API keys). Optional `BLOCKSCOUT_ETH_API_KEY` from eth.blockscout.com for `?chain=ethereum`. |
 
 ## Upstreams that can die
 

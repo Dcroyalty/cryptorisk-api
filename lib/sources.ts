@@ -70,20 +70,33 @@ export async function getWalletSignals(
 // tripped). Under a burst that turned over half of lookups into
 // degraded/CAUTION. Retry a 429 only when the window reopens within ~2.5s;
 // otherwise fail fast to the degraded verdict instead of adding latency.
-// BLOCKSCOUT_API_KEY (free at dev.blockscout.com) lifts the limit — the fix.
+// A free Blockscout account key lifts the limit — the fix (see withBlockscoutKey).
 const EXPLORER_429_RETRIES = 2;
 const MAX_429_WAIT_MS = 2500;
 // Heavy wallets (thousands of txs) can take 60s+ keyless; cap it so one lookup
 // can't hold a function open indefinitely. Timeout -> degraded, never PROCEED.
 const EXPLORER_TIMEOUT_MS = 25_000;
 
+// Blockscout keys are per instance (My Account -> API keys on that explorer),
+// so each instance gets its own env var; a Base key is never sent to Ethereum.
 function withBlockscoutKey(url: string): string {
-  const key = process.env.BLOCKSCOUT_API_KEY;
-  return key && url.includes("blockscout.com/") ? `${url}&apikey=${encodeURIComponent(key)}` : url;
+  const key = url.startsWith("https://base.blockscout.com/")
+    ? process.env.BLOCKSCOUT_API_KEY
+    : url.startsWith("https://eth.blockscout.com/")
+      ? process.env.BLOCKSCOUT_ETH_API_KEY
+      : undefined;
+  return key ? `${url}&apikey=${encodeURIComponent(key)}` : url;
 }
+
+// Circuit breaker: once an explorer says our IP is locked out for longer than
+// we'd wait, stop calling it until the window reopens (per function instance).
+// Hammering a locked window only extends it for every other request.
+const explorerLockedUntil = new Map<string, number>();
 
 async function fetchSignals(rawUrl: string): Promise<WalletSignals> {
   const url = withBlockscoutKey(rawUrl);
+  const host = new URL(url).host;
+  if ((explorerLockedUntil.get(host) ?? 0) > Date.now()) return { ...FAILED };
   for (let attempt = 0; ; attempt++) {
     try {
       const r = await fetch(url, { headers: { "user-agent": "uxus-risk" }, signal: AbortSignal.timeout(EXPLORER_TIMEOUT_MS) });
@@ -94,6 +107,11 @@ async function fetchSignals(rawUrl: string): Promise<WalletSignals> {
           await new Promise((res) => setTimeout(res, wait + Math.random() * 400));
           continue;
         }
+      }
+      if (r.status === 429) {
+        const reset = Number(r.headers.get("x-ratelimit-reset"));
+        // Cap at 5 min so a bogus header can't disable the explorer for long.
+        explorerLockedUntil.set(host, Date.now() + Math.min(Number.isFinite(reset) && reset > 0 ? reset : 10_000, 300_000));
       }
       if (!r.ok) return { ...FAILED };
       return signalsFromExplorer(await r.json());
