@@ -217,6 +217,19 @@ const OLD_HOST = "cryptorisk-api.vercel.app";
 const OUTAGE_RE =
   /Failed to (verify|settle) payment: (5\d\d|429|408)\b|fetch failed|Unexpected token|not valid JSON|Unexpected end of JSON|ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up|UND_ERR/i;
 
+// The X-PAYMENT header is base64 JSON. x402-next decodes it BEFORE calling the
+// facilitator, and a malformed header throws the same JSON-parse errors a
+// broken facilitator response would. Only treat a parse error as an outage
+// when the header itself decodes — then the bad JSON came from the facilitator.
+function paymentHeaderDecodes(h: string): boolean {
+  try {
+    const p = JSON.parse(Buffer.from(h, "base64").toString("utf8"));
+    return !!p && typeof p === "object" && "payload" in p;
+  } catch {
+    return false;
+  }
+}
+
 function facilitatorOutage(body: string): string | null {
   try {
     const err = String(JSON.parse(body)?.error ?? "");
@@ -281,7 +294,8 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   // that as a plain 402, which a client reads as "your payment was refused" and
   // either gives up or re-signs forever. Say what actually happened instead:
   // 503 + Retry-After, nothing was charged, and where to go meanwhile.
-  if (req.headers.get("x-payment")) {
+  const xPayment = req.headers.get("x-payment");
+  if (xPayment && paymentHeaderDecodes(xPayment)) {
     const outage = facilitatorOutage(body);
     if (outage) {
       console.error("[x402] facilitator unavailable", pathname, outage);
