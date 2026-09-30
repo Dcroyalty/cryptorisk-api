@@ -21,8 +21,19 @@ export async function GET(req: Request) {
   let session;
   try {
     session = await stripe().checkout.sessions.retrieve(sessionId);
-  } catch {
-    return NextResponse.json({ error: "not_found", message: "Unrecognized session_id." }, { status: 404 });
+  } catch (e) {
+    // Only a Stripe "no such resource" means the session id is wrong. Anything
+    // else (Stripe outage, timeout) is transient — this customer may have just
+    // paid, so tell the success page to keep trying instead of "not found".
+    const err = e as { type?: string; code?: string };
+    if (err?.type === "StripeInvalidRequestError" && err?.code === "resource_missing") {
+      return NextResponse.json({ error: "not_found", message: "Unrecognized session_id." }, { status: 404 });
+    }
+    console.error("[billing/key] Stripe error", (e as Error)?.message ?? e);
+    return NextResponse.json(
+      { pending: true, error: "stripe_unavailable", message: "Payment provider is slow to respond — retrying." },
+      { status: 503, headers: { "Retry-After": "10" } },
+    );
   }
 
   const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;

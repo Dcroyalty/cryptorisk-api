@@ -122,6 +122,23 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // XRPL nodes disagree on the current ledger (no strict majority) — fail loud.
+  // A 200 with nulls could be cached or skimmed as "clean"; a 503 cannot.
+  if (r.flags.includes("XRPL_NO_MAJORITY")) {
+    return NextResponse.json(
+      {
+        error: "xrpl_no_consensus",
+        address: r.address,
+        chain: "xrpl",
+        detail:
+          "XRPL nodes currently disagree on the latest validated ledger, so account state cannot be trusted. Nothing was scored. Retry in a minute.",
+        flags: r.flags,
+        disclaimer: RISK_DISCLAIMER,
+      },
+      { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
+    );
+  }
+
   // RPC unreachable -> exists/risk come back null, not guessed. Flag it so a
   // consumer doesn't read null as "clean".
   const degraded = r.flags.includes("RPC_UNAVAILABLE");

@@ -12,6 +12,7 @@
     "@coinbase/x402": "^2.1.0",
     "@neondatabase/serverless": "^1.1.0",
     "@noble/hashes": "1.8.0",
+    "@vercel/analytics": "^2.0.1",
     "@x402/core": "^2.23.0",
     "@x402/evm": "^2.23.0",
     "@x402/extensions": "^2.23.0",

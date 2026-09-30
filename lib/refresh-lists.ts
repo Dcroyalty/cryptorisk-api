@@ -21,11 +21,11 @@ const lc = (a: string) => a.toLowerCase();
 // anything below this is a broken upstream, not a real delisting wave.
 export const MIN_OFAC = 50;
 
-const OFAC_URL =
+export const OFAC_URL =
   "https://raw.githubusercontent.com/0xB10C/ofac-sanctioned-digital-currency-addresses/lists/sanctioned_addresses_ETH.txt";
-const SCAMSNIFFER_URL =
+export const SCAMSNIFFER_URL =
   "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json";
-const MEW_URL =
+export const MEW_URL =
   "https://raw.githubusercontent.com/MyEtherWallet/ethereum-lists/master/src/addresses/addresses-darklist.json";
 
 async function getText(u: string): Promise<string> {

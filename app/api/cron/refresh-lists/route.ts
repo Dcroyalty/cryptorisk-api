@@ -1,16 +1,25 @@
-// app/api/cron/refresh-lists/route.ts — scheduled refresh of the sanctions +
-// scam lists in bad_addresses. Wired in vercel.json ("crons").
+// app/api/cron/refresh-lists/route.ts — daily data job. Wired in vercel.json.
 //
-// Auth: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}` automatically
-// when CRON_SECRET is set in the project env. We require it — this route mutates
-// production data and must not be publicly triggerable.
+// 1) Refresh the sanctions + scam lists in bad_addresses (lib/refresh-lists.ts).
+//    The OFAC step is a guarded full sync: if the upstream returns fewer than
+//    MIN_OFAC addresses it aborts and the table is left untouched.
+// 2) Shield housekeeping (Shield.sweep): prune expired nonces/sessions and
+//    shield_events older than 90 days — what makes the "90-day retention" claim
+//    a guarantee. Folded in here (it used to be /api/cron/sweep, which still
+//    exists for manual runs) so vercel.json has a cron slot for the watchdog.
 //
-// The OFAC step is a guarded full sync (see lib/refresh-lists.ts): if the
-// upstream returns fewer than MIN_OFAC addresses it aborts and the table is left
-// untouched, and this route returns 500 so Vercel flags the failed run.
+// Each step records a heartbeat in cron_runs; /api/cron/watchdog alerts if
+// either goes stale. A failure here alerts immediately and pings the dead-man's
+// switch with /fail, and the route returns 500 so Vercel marks the run failed.
+//
+// Auth: Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`. Required —
+// this route mutates production data and must not be publicly triggerable.
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { refreshBadAddresses } from "@/lib/refresh-lists";
+import * as Shield from "@/lib/shield";
+import { recordRun } from "@/lib/cron-runs";
+import { notifyError, pingHealthcheck } from "@/lib/notify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,17 +38,49 @@ async function run(req: NextRequest) {
   }
 
   const started = Date.now();
-  const report = await refreshBadAddresses(sql);
-  const body = { refreshed_at: new Date().toISOString(), duration_ms: Date.now() - started, ...report };
 
-  if (!report.ok) console.error("[cron/refresh-lists] FAILED", JSON.stringify(body));
-  else console.log("[cron/refresh-lists] ok", JSON.stringify(body));
+  let report: Awaited<ReturnType<typeof refreshBadAddresses>>;
+  try {
+    report = await refreshBadAddresses(sql);
+  } catch (e) {
+    const err = String((e as Error)?.message ?? e);
+    report = { ok: false, ofac: { error: err }, scamsniffer: { error: err }, mew: { error: err } };
+  }
+  await recordRun("refresh-lists", report.ok, report);
 
-  // 500 on any failure so Vercel marks the cron run failed and alerts.
-  return NextResponse.json(body, {
-    status: report.ok ? 200 : 500,
-    headers: { "Cache-Control": "no-store" },
-  });
+  let sweep: { ok: boolean; pruned?: unknown; error?: string };
+  try {
+    sweep = { ok: true, pruned: await Shield.sweep() };
+  } catch (e) {
+    sweep = { ok: false, error: String((e as Error)?.message ?? e) };
+  }
+  await recordRun("shield-sweep", sweep.ok, sweep);
+
+  const ok = report.ok && sweep.ok;
+  const body = {
+    refreshed_at: new Date().toISOString(),
+    duration_ms: Date.now() - started,
+    ...report,
+    lists_ok: report.ok,
+    ok, // overall: lists AND sweep
+    shield_sweep: { retention_days: Shield.EVENT_RETENTION_DAYS, ...sweep },
+  };
+
+  if (!ok) {
+    console.error("[cron/refresh-lists] FAILED", JSON.stringify(body));
+    await notifyError("cron/refresh-lists", "daily list refresh or Shield sweep failed", {
+      ofac: report.ofac,
+      scamsniffer: report.scamsniffer,
+      mew: report.mew,
+      shield_sweep: sweep,
+    });
+    await pingHealthcheck("/fail", JSON.stringify(body));
+  } else {
+    console.log("[cron/refresh-lists] ok", JSON.stringify(body));
+  }
+
+  // 500 on any failure so Vercel marks the cron run failed.
+  return NextResponse.json(body, { status: ok ? 200 : 500, headers: { "Cache-Control": "no-store" } });
 }
 
 export const GET = run;

@@ -9,7 +9,8 @@
 // message says so explicitly.
 //
 // Retention: shield_events rows older than 90 days are pruned by a daily cron
-// (/api/cron/sweep) and, opportunistically, on every /nonce call — alongside
+// (/api/cron/refresh-lists runs sweep() after the list refresh; /api/cron/sweep
+// remains for manual runs) and, opportunistically, on every /nonce call — alongside
 // expired nonces and sessions. So nothing older than 90 days is retained.
 import { randomBytes } from "node:crypto";
 import { verifyMessage, isAddress } from "viem";

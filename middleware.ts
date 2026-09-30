@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { paymentMiddleware, Network } from "x402-next";
 import { facilitator } from "@coinbase/x402";
 import { guard, KEY_FORMAT } from "@/lib/keys";
+import { PAY_TO, CANONICAL_ORIGIN } from "@/lib/pay-to";
 
-const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
 const N = "base" as Network;
-const CANONICAL_ORIGIN = "https://uxus.finance";
 
 // x402-next falls back to `${request.nextUrl.protocol}//${request.nextUrl.host}${pathname}`
 // for the x402 `resource` field whenever a route omits `resource` — see
@@ -210,6 +209,32 @@ const QUOTA_GATED_PATHS = new Set(["/api/risk/pro"]);
 // separate CDP resource even without this redirect — this closes the rest).
 const OLD_HOST = "cryptorisk-api.vercel.app";
 
+// Facilitator outage vs. a genuinely invalid payment. x402's facilitator client
+// throws "Failed to verify|settle payment: <HTTP status>" for a non-JSON/5xx
+// response, while a real rejection carries a snake_case invalidReason
+// ("Failed to verify payment: insufficient_funds") — only the former, plus
+// network/JSON-parse failures, counts as an outage.
+const OUTAGE_RE =
+  /Failed to (verify|settle) payment: (5\d\d|429|408)\b|fetch failed|Unexpected token|not valid JSON|Unexpected end of JSON|ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up|UND_ERR/i;
+
+function facilitatorOutage(body: string): string | null {
+  try {
+    const err = String(JSON.parse(body)?.error ?? "");
+    return OUTAGE_RE.test(err) ? err : null;
+  } catch {
+    return null;
+  }
+}
+
+// Where a caller can still get an answer while x402 settlement is down.
+const OUTAGE_ALTERNATIVES: Record<string, string> = {
+  "/api/risk/pro":
+    "Subscribers: send Authorization: Bearer <your uxus API key> — key access does not depend on the facilitator. Free: GET /api/risk?address=... (sanctions + scam lists, verdict only).",
+  "/api/risk/live/pro": "Free: GET /api/risk/live?address=... (verdict only).",
+  "/api/search": "Free: the search_web tool on the MCP endpoint POST /api/mcp.",
+  "/api/scrape": "Free: the scrape_url tool on the MCP endpoint POST /api/mcp.",
+};
+
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const url = new URL(req.url);
 
@@ -250,6 +275,29 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   if (res.status !== 402) return res;
 
   const body = await res.text();
+
+  // A payment was presented but the CDP facilitator itself failed (network
+  // error, 5xx/429, non-JSON body) — not a rejected payment. x402-next reports
+  // that as a plain 402, which a client reads as "your payment was refused" and
+  // either gives up or re-signs forever. Say what actually happened instead:
+  // 503 + Retry-After, nothing was charged, and where to go meanwhile.
+  if (req.headers.get("x-payment")) {
+    const outage = facilitatorOutage(body);
+    if (outage) {
+      console.error("[x402] facilitator unavailable", pathname, outage);
+      return NextResponse.json(
+        {
+          error: "payment_facilitator_unavailable",
+          detail:
+            "The x402 payment facilitator (Coinbase CDP) is not responding. Your payment was NOT settled — you have not been charged. Retry the same request in about a minute.",
+          retry_after_seconds: 60,
+          ...(OUTAGE_ALTERNATIVES[pathname] ? { meanwhile: OUTAGE_ALTERNATIVES[pathname] } : {}),
+        },
+        { status: 503, headers: { "Retry-After": "60", "Cache-Control": "no-store" } },
+      );
+    }
+  }
+
   const headers = new Headers(res.headers);
   headers.set("PAYMENT-REQUIRED", Buffer.from(body, "utf8").toString("base64"));
   headers.delete("content-length"); // recomputed from the (identical) body
@@ -262,6 +310,7 @@ export const config = {
   // above retires the whole cryptorisk-api.vercel.app alias, not just the
   // paywalled ones. Excludes Next's own static/image assets — redirecting
   // those too would just add pointless hops for anything already mid-load.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // _vercel/ (Web Analytics beacon) is platform-owned and never paid.
+  matcher: ["/((?!_next/static|_next/image|_vercel/|favicon.ico).*)"],
   runtime: "nodejs",
 };

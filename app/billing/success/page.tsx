@@ -20,19 +20,31 @@ export default function BillingSuccess() {
 
     let cancelled = false;
     let attempts = 0;
+    // ~3 minutes of retries with backoff: covers a slow Stripe webhook and a
+    // short Stripe / network blip. The customer has already paid here, so a
+    // transient failure must never read as a final error.
+    const MAX_ATTEMPTS = 20;
+    const giveUp = () => {
+      setState("error");
+      setMessage(
+        `Your payment went through, but your key isn't ready yet. This page keeps working — refresh it in a few minutes (bookmark it). ` +
+          `If it still isn't here, email support@uxus.finance with this reference: ${sessionId}`,
+      );
+    };
+    const retry = () => {
+      setState("pending");
+      if (attempts < MAX_ATTEMPTS) setTimeout(poll, Math.min(1500 * 2 ** Math.floor(attempts / 4), 15000));
+      else giveUp();
+    };
 
     async function poll() {
       attempts++;
       try {
         const r = await fetch(`/api/billing/key?session_id=${encodeURIComponent(sessionId as string)}`);
+        if (cancelled) return;
+        if (r.status === 202 || r.status >= 500) return retry();
         const j = await r.json();
         if (cancelled) return;
-        if (r.status === 202) {
-          setState("pending");
-          if (attempts < 8) setTimeout(poll, 1500);
-          else { setState("error"); setMessage("Still provisioning — refresh this page in a minute, or contact support."); }
-          return;
-        }
         if (!r.ok) {
           setState("error");
           setMessage(j.message || "Could not retrieve your key.");
@@ -41,7 +53,7 @@ export default function BillingSuccess() {
         setKey(j);
         setState("ready");
       } catch {
-        if (!cancelled) { setState("error"); setMessage("Request failed. Refresh to retry."); }
+        if (!cancelled) retry();
       }
     }
     poll();

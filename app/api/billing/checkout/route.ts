@@ -26,14 +26,27 @@ export async function POST(req: Request) {
   }
 
   const priceId = priceIdFor(plan);
-  const session = await stripe().checkout.sessions.create({
-    mode: "subscription",
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${SITE_URL}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${SITE_URL}/pricing`,
-    metadata: { plan },
-    subscription_data: { metadata: { plan } },
-  });
-
-  return NextResponse.json({ url: session.url });
+  try {
+    const session = await stripe().checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${SITE_URL}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE_URL}/pricing`,
+      metadata: { plan },
+      subscription_data: { metadata: { plan } },
+    });
+    return NextResponse.json({ url: session.url });
+  } catch (e) {
+    // Stripe down (or misconfigured). Never a bare 500 — the button shows this
+    // message, and it names the path that works without Stripe.
+    console.error("[billing/checkout] Stripe error", (e as Error)?.message ?? e);
+    return NextResponse.json(
+      {
+        error: "checkout_unavailable",
+        message:
+          "Card checkout is temporarily unavailable — nothing was charged. Try again in a few minutes, or use pay-per-call now: /api/risk/pro accepts $0.01 USDC on Base via x402, no account needed.",
+      },
+      { status: 503, headers: { "Retry-After": "120" } },
+    );
+  }
 }

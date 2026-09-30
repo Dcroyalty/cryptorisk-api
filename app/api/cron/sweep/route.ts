@@ -1,4 +1,5 @@
-// app/api/cron/sweep/route.ts — daily Shield housekeeping. Wired in vercel.json.
+// app/api/cron/sweep/route.ts — Shield housekeeping, for MANUAL runs. The daily
+// scheduled sweep now runs inside /api/cron/refresh-lists (one cron slot).
 //
 // Prunes expired nonces + sessions and shield_events older than 90 days. This is
 // what makes the "90-day retention" claim a guarantee rather than a side effect

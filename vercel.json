@@ -6,8 +6,8 @@
       "schedule": "0 6 * * *"
     },
     {
-      "path": "/api/cron/sweep",
-      "schedule": "30 6 * * *"
+      "path": "/api/cron/watchdog",
+      "schedule": "0 8 * * *"
     }
   ]
 }

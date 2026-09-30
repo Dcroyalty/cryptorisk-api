@@ -65,13 +65,41 @@ export async function getWalletSignals(
   }
 }
 
-async function fetchSignals(url: string): Promise<WalletSignals> {
-  try {
-    const r = await fetch(url, { headers: { "user-agent": "uxus-risk" } });
-    if (!r.ok) return { ...FAILED };
-    return signalsFromExplorer(await r.json());
-  } catch {
-    return { ...FAILED };
+// Keyless Blockscout allows 10 requests per window per IP and 429s past that
+// (x-ratelimit-reset is ms until the window reopens — up to minutes once
+// tripped). Under a burst that turned over half of lookups into
+// degraded/CAUTION. Retry a 429 only when the window reopens within ~2.5s;
+// otherwise fail fast to the degraded verdict instead of adding latency.
+// BLOCKSCOUT_API_KEY (free at dev.blockscout.com) lifts the limit — the fix.
+const EXPLORER_429_RETRIES = 2;
+const MAX_429_WAIT_MS = 2500;
+// Heavy wallets (thousands of txs) can take 60s+ keyless; cap it so one lookup
+// can't hold a function open indefinitely. Timeout -> degraded, never PROCEED.
+const EXPLORER_TIMEOUT_MS = 25_000;
+
+function withBlockscoutKey(url: string): string {
+  const key = process.env.BLOCKSCOUT_API_KEY;
+  return key && url.includes("blockscout.com/") ? `${url}&apikey=${encodeURIComponent(key)}` : url;
+}
+
+async function fetchSignals(rawUrl: string): Promise<WalletSignals> {
+  const url = withBlockscoutKey(rawUrl);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const r = await fetch(url, { headers: { "user-agent": "uxus-risk" }, signal: AbortSignal.timeout(EXPLORER_TIMEOUT_MS) });
+      if (r.status === 429 && attempt < EXPLORER_429_RETRIES) {
+        const reset = Number(r.headers.get("x-ratelimit-reset"));
+        const wait = Number.isFinite(reset) && reset > 0 ? reset : 1000;
+        if (wait <= MAX_429_WAIT_MS) {
+          await new Promise((res) => setTimeout(res, wait + Math.random() * 400));
+          continue;
+        }
+      }
+      if (!r.ok) return { ...FAILED };
+      return signalsFromExplorer(await r.json());
+    } catch {
+      return { ...FAILED };
+    }
   }
 }
 
