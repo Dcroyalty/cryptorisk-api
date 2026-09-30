@@ -24,6 +24,8 @@ import { sweepNodeHealth } from "@/lib/xrpl-nodes";
 import { stripe, STRIPE_ENABLED } from "@/lib/stripe";
 import { PAY_TO, CANONICAL_ORIGIN } from "@/lib/pay-to";
 import { deadMansSwitchArmed } from "@/lib/notify";
+import { configuredMode, trippedState } from "@/lib/x402v2/flag";
+import { validateRails, solanaPayTo } from "@/lib/x402v2/server";
 import { facilitator } from "@coinbase/x402";
 
 export type Level = "ok" | "warn" | "fail";
@@ -191,9 +193,12 @@ async function checkCdpFacilitator(): Promise<Check> {
     const headers = (await facilitator.createAuthHeaders!()) as Record<string, Record<string, string>>;
     const j = await getJson(`${facilitator.url}/supported`, { headers: headers.supported });
     const kinds: Array<{ network?: string; scheme?: string; x402Version?: number }> = j?.kinds ?? [];
+    const has = (v: number, net: string) => kinds.some((k) => k.scheme === "exact" && k.x402Version === v && k.network === net);
     const base = kinds.some((k) => k.scheme === "exact" && (k.network === "base" || k.network === "eip155:8453"));
+    // The multi-rail (v2) routes also need these; reported here so it's visible even while the flag is off.
+    const v2 = `v2 exact: base ${has(2, "eip155:8453")}, polygon ${has(2, "eip155:137")}, solana ${has(2, "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp")}`;
     return base
-      ? { name, level: "ok", detail: `CDP facilitator is up and supports exact/base (${kinds.length} kinds).` }
+      ? { name, level: "ok", detail: `CDP facilitator is up and supports exact/base (${kinds.length} kinds; ${v2}).` }
       : { name, level: "fail", detail: `CDP facilitator answered but no longer lists exact on base: ${JSON.stringify(kinds).slice(0, 300)}` };
   } catch (e) {
     return { name, level: "fail", detail: `CDP facilitator /supported failed (auth or outage): ${(e as Error).message}. Paid calls are returning 503 until it recovers.` };
@@ -284,6 +289,32 @@ async function checkXrpl(): Promise<Check> {
     };
   }
   return { name: "xrpl:nodes", level: "ok", detail: `${s.responded} nodes agree at ledger ${s.majorityLedgerIndex}.` };
+}
+
+// Multi-rail (x402 v2) routes: RED if the kill switch has tripped (v1 Base keeps
+// serving, but a human must look and clear it). The server is initialized even
+// while the flag is off, so a rail CDP stops supporting shows up before launch.
+async function checkMultiRail(): Promise<Check> {
+  const name = "x402v2:rails";
+  const mode = configuredMode();
+  const tripped = await trippedState();
+  if (tripped) {
+    return {
+      name,
+      level: "fail",
+      detail: `Multi-rail kill switch TRIPPED at ${tripped.at}: ${tripped.reason}. /api/v2/* is falling back to the v1 Base routes. After fixing, clear it: UPDATE x402_rail_state SET tripped_at = NULL, reason = NULL;`,
+    };
+  }
+  try {
+    const rails = await validateRails();
+    return { name, level: "ok", detail: `mode=${mode}; rails validated against CDP /supported: ${rails.join(", ")}${solanaPayTo() ? "" : " (Solana off: X402_SOLANA_PAY_TO unset)"}.` };
+  } catch (e) {
+    return {
+      name,
+      level: mode === "off" ? "warn" : "fail",
+      detail: `mode=${mode}; multi-rail server failed to initialize: ${(e as Error)?.message ?? e}`,
+    };
+  }
 }
 
 // Reports only the host shape, never the URL. Serverless functions should use
@@ -400,6 +431,7 @@ export async function runWatchdog(): Promise<{ level: Level; checks: Check[] }> 
     guarded("domain:expiry", checkDomain),
     guarded("credit:openrouter", checkOpenRouter),
     guarded("credit:serper", checkSerper),
+    guarded("x402v2:rails", checkMultiRail),
     Promise.resolve([...checkAlerting(), checkDbConnection()]),
   ]);
   const checks = groups.flat();

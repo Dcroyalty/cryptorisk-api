@@ -53,6 +53,23 @@ Both require `CRON_SECRET` (set). Manual run: `curl -H "Authorization: Bearer $C
 | XRPL public nodes | `/api/lookup` for r-addresses | Node pool of 8 with lag/amendment-block cooling (floor of 3). No ledger majority → 503 `xrpl_no_consensus`. Watchdog warns on bad nodes, FAILs on no majority. |
 | Apify actors | Store listings go "Under maintenance" if Apify's daily QA run fails | Watchdog reads each actor's public page + API daily |
 
+## Multi-rail payments (x402 v2: Base + Polygon + Solana)
+
+`/api/v2/*` are twins of the seven paid routes that accept USDC on Base, Polygon or Solana through the CDP
+facilitator (x402 v2). They never touch the v1 Base routes: the v1 routes, `middleware.ts` and their CDP
+Bazaar records are unchanged. v2 settles **after** the handler succeeds, so a buyer is never charged for an error.
+
+- **Flag** `X402_MULTIRAIL`: unset/`off` (default) → every `/api/v2/*` request 307-redirects to its v1 Base twin;
+  `test` → live only for requests with `x-uxus-rail-test: $X402_MULTIRAIL_TEST_TOKEN`; `on` → live for everyone.
+  Env changes need a redeploy.
+- **Kill switch**: 3 infrastructure errors (facilitator down, rail validation against CDP `/supported` failing,
+  settlement unavailable) within 10 minutes trips it → every instance falls back to v1 Base, and the watchdog
+  goes RED (`x402v2:rails`, healthchecks.io emails you). It stays off until you clear it after fixing the cause:
+  `UPDATE x402_rail_state SET tripped_at = NULL, reason = NULL;`
+- **Solana** is offered only when `X402_SOLANA_PAY_TO` is set. That address must already hold a USDC token
+  account (it must have received USDC once) — x402 Solana transfers cannot create one.
+- **Test a rail for real** (spends $0.01): `node scripts/test-multirail.mjs polygon|solana|base`.
+
 ## Credentials
 
 | Secret | Expires? | If it stops working |
