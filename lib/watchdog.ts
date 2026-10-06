@@ -374,23 +374,56 @@ async function checkOpenRouter(): Promise<Check> {
   }
 }
 
+// Serper credit. Only FAIL emails (warnings stay in logs), so every "act now" condition is a FAIL, raised with
+// weeks of lead time: a balance floor, a projected run-out from the measured burn rate (a small balance log,
+// one row per watchdog run, 45 days kept), and — if SERPER_CREDITS_EXPIRE_AT is set from the Serper dashboard
+// (YYYY-MM-DD) — the credit expiry date. Serper doesn't document whether free credits expire; paid packs last 6 months.
+const SERPER_FAIL_BALANCE = 500;
+const SERPER_LEAD_DAYS = 30;
+
+async function serperBurnPerDay(balance: number): Promise<{ perDay: number; spanDays: number } | null> {
+  await sql`CREATE TABLE IF NOT EXISTS serper_balance_log (at timestamptz PRIMARY KEY DEFAULT now(), balance integer NOT NULL)`;
+  await sql`INSERT INTO serper_balance_log (balance) VALUES (${balance})`;
+  await sql`DELETE FROM serper_balance_log WHERE at < now() - interval '45 days'`;
+  const rows = (await sql`SELECT at, balance FROM serper_balance_log ORDER BY at ASC`) as { at: string; balance: number }[];
+  if (rows.length < 2) return null;
+  const first = rows[0], last = rows[rows.length - 1];
+  const spanDays = (Date.parse(last.at) - Date.parse(first.at)) / DAY;
+  if (spanDays < 3) return null; // too little history to project
+  // Spend only (a top-up between samples would otherwise read as negative burn).
+  let spent = 0;
+  for (let i = 1; i < rows.length; i++) spent += Math.max(0, rows[i - 1].balance - rows[i].balance);
+  return { perDay: spent / spanDays, spanDays };
+}
+
 async function checkSerper(): Promise<Check> {
   const name = "credit:serper";
   const key = process.env.SERPER_API_KEY;
   if (!key) return { name, level: "warn", detail: "SERPER_API_KEY not set — /api/search falls back to non-Google providers." };
+  let bal: number;
   try {
     const j = await getJson("https://google.serper.dev/account", { headers: { "X-API-KEY": key } });
-    const bal = Number(j?.balance);
-    if (!Number.isFinite(bal)) return { name, level: "warn", detail: `Unexpected Serper /account response: ${JSON.stringify(j).slice(0, 200)}` };
-    const detail = `Serper balance ${bal} searches (/api/search + the Apify search actor, if it uses this key).`;
-    return bal < 50
-      ? { name, level: "fail", detail: `${detail} Top up now.` }
-      : bal < 500
-        ? { name, level: "warn", detail: `${detail} Top up soon.` }
-        : { name, level: "ok", detail };
+    bal = Number(j?.balance);
+    if (!Number.isFinite(bal)) return { name, level: "fail", detail: `Unexpected Serper /account response: ${JSON.stringify(j).slice(0, 200)}` };
   } catch (e) {
     return { name, level: "warn", detail: `Could not read Serper balance: ${(e as Error).message}` };
   }
+  const reasons: string[] = [];
+  const burn = await serperBurnPerDay(bal).catch(() => null);
+  const daysLeft = burn && burn.perDay > 0 ? bal / burn.perDay : null;
+  const expRaw = process.env.SERPER_CREDITS_EXPIRE_AT;
+  const expMs = expRaw ? Date.parse(expRaw) : NaN;
+  const daysToExpiry = Number.isFinite(expMs) ? (expMs - Date.now()) / DAY : null;
+  if (bal < SERPER_FAIL_BALANCE) reasons.push(`balance under ${SERPER_FAIL_BALANCE}`);
+  if (daysLeft != null && daysLeft < SERPER_LEAD_DAYS) reasons.push(`runs out in ~${Math.floor(daysLeft)} days at the current burn`);
+  if (daysToExpiry != null && daysToExpiry < SERPER_LEAD_DAYS) reasons.push(`credits expire ${expRaw} (${Math.floor(daysToExpiry)} days)`);
+  const detail =
+    `Serper balance ${bal} searches (/api/search + the Apify search actor, if it uses this key); ` +
+    (burn ? `burn ${burn.perDay.toFixed(1)}/day over ${burn.spanDays.toFixed(0)}d${daysLeft != null ? `, ~${Math.floor(daysLeft)} days left` : ""}` : "burn rate: collecting history") +
+    (daysToExpiry != null ? `; expires ${expRaw}` : expRaw ? `; SERPER_CREDITS_EXPIRE_AT unreadable (${expRaw})` : "; expiry unknown (set SERPER_CREDITS_EXPIRE_AT from the Serper dashboard)") + ".";
+  return reasons.length
+    ? { name, level: "fail", detail: `${detail} Top up now: ${reasons.join("; ")}.` }
+    : { name, level: "ok", detail };
 }
 
 // healthchecks.io is the only alert channel; ERROR_WEBHOOK_URL is deliberately unused.

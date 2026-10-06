@@ -38,7 +38,7 @@ Both require `CRON_SECRET` (set). Manual run: `curl -H "Authorization: Bearer $C
 | Item | Breaks | Watched? |
 |---|---|---|
 | **OpenRouter credit** | `/api/llm`, `/api/extract` error **after the buyer's USDC has settled** (x402 v1 settles before the route runs) | Watchdog: warn < $2, FAIL < $0.25 |
-| **Serper credit** (purchased credits can expire — check the expiry shown on the Serper dashboard) | `/api/search` falls back to non-Google providers (structured blocks go empty); the Apify search actor's Google results stop | Watchdog: warn < 500, FAIL < 50 |
+| **Serper credit** (purchased credits can expire — check the expiry shown on the Serper dashboard) | `/api/search` falls back to non-Google providers (structured blocks go empty); the Apify search actor's Google results stop | Watchdog FAILs (emails via healthchecks.io) when balance < 500, OR projected run-out < 30 days at the measured burn, OR `SERPER_CREDITS_EXPIRE_AT` (YYYY-MM-DD, copy from the Serper dashboard) is < 30 days away |
 | Jina embeddings quota | `/api/embed` errors after settlement | **Not watched** (no balance API). Check the Jina dashboard monthly. |
 | Neon storage (512 MB) | Writes fail | Watchdog |
 | Blockscout keyless rate limit (10 req/window/IP) | Under a traffic burst, EVM lookups return `degraded` / CAUTION (never a false PROCEED) | Keyless instance first (every Vercel IP has its own allowance), then — once an IP is rate-limited — the **Blockscout PRO API** with `BLOCKSCOUT_API_KEY` (a `proapi_…` key from dev.blockscout.com; free plan 5 req/s, 100K credits/day, all chains). A non-`proapi_` value is treated as a base.blockscout.com instance key instead. Circuit breaker stops calls to a locked-out host. |

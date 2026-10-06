@@ -1,6 +1,8 @@
-# Google Search Scraper — Organic, PAA & Related Searches
+# Google Search Results via Serper API — Organic, PAA & Related
 
 Give it a query. Get back organic results, People Also Ask, and related searches — confirmed live, every time, not a maybe.
+
+**How it works:** this Actor does not scrape Google. It calls the Serper Google Search API (a paid third-party API) with your query and maps the JSON it returns into the dataset format below. No browser, no proxies, no HTML parsing.
 
 ## What this actually delivers (and how we know)
 
@@ -14,18 +16,18 @@ Result: `organic`, `people_also_ask`, and `related_searches` populated on every 
 
 ## What you get back, per query — real, captured output
 
-This is an actual run of this actor against `"elon musk"`, unedited except for trimming the organic list to save space (the real run returned 9 organic results; 3 are shown):
+This is the shape of an actual run against `"elon musk"`, trimmed to save space (the real run returned 9 organic results). Result titles, URLs and snippets are replaced with placeholders here; a real run returns the actual values:
 
 ```json
 {
   "query": "elon musk",
   "results": [
-    { "title": "Elon Musk", "url": "https://en.wikipedia.org/wiki/Elon_Musk", "description": "Elon Reeve Musk is a businessman and former public official who is the chief executive officer (CEO) and largest shareholder of Tesla and SpaceX. Musk has ...", "score": 1 },
-    { "title": "Elon Musk (@elonmusk) / X", "url": "https://x.com/elonmusk", "description": "Listen to Elon. Purchase Suicidal Empathy now, and contribute to the defence of the West! 1.6K · 4.1K · 29K · 6.4M · @elonmusk · Elon Musk · X.", "score": 0.889 },
-    { "title": "Elon Musk", "url": "https://www.tesla.com/elon-musk", "description": "As the co-founder and CEO of Tesla, Elon leads all product design, engineering and global manufacturing of the company's electric vehicles, battery products and ...", "score": 0.778 }
+    { "title": "<result 1 title>", "url": "<result 1 URL>", "description": "<result 1 snippet>", "score": 1 },
+    { "title": "<result 2 title>", "url": "<result 2 URL>", "description": "<result 2 snippet>", "score": 0.889 },
+    { "title": "<result 3 title>", "url": "<result 3 URL>", "description": "<result 3 snippet>", "score": 0.778 }
   ],
   "organic": [
-    { "title": "Elon Musk", "url": "https://en.wikipedia.org/wiki/Elon_Musk", "description": "Elon Reeve Musk is a businessman and former public official who is the chief executive officer (CEO) and largest shareholder of Tesla and SpaceX. Musk has ...", "position": 1 }
+    { "title": "<result 1 title>", "url": "<result 1 URL>", "description": "<result 1 snippet>", "position": 1 }
   ],
   "ads": [],
   "people_also_ask": [
@@ -44,7 +46,7 @@ This is an actual run of this actor against `"elon musk"`, unedited except for t
 }
 ```
 
-Note `knowledge_graph`, `answer_box`, and `shopping` are `null`/`[]` here — for "elon musk," a query that triggers a knowledge panel on google.com directly. That's the honest, representative case, not the exception.
+Note `knowledge_graph`, `answer_box`, and `shopping` are `null`/`[]` here — for "elon musk," a query that triggers a knowledge panel when searched on Google directly. That's the honest, representative case, not the exception.
 
 ## The optional fields — one honest mention
 

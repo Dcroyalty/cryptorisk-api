@@ -9,7 +9,7 @@
       },
       "results": {
         "type": "array",
-        "description": "Organic results in the stable {title,url,description,score} shape shared with uxus.finance's hosted /api/search.",
+        "description": "Organic results in the stable {title,url,description,score} shape used across this publisher's search tools.",
         "items": {
           "type": "object",
           "properties": {

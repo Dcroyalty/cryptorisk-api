@@ -6,7 +6,7 @@ Give it an EVM address. It checks the **OFAC SDN list**, **community scam/phishi
 
 There are a handful of OFAC/crypto-sanctions actors on the Store already. Look at what they actually do: submit an address, get back `sanctioned: true/false` against one static list. That's it — one signal, one lookup.
 
-This actor runs the same production scoring engine behind [uxus.finance](https://uxus.finance), and it checks four things, not one:
+This actor runs a production scoring engine, and it checks four things, not one:
 
 - **OFAC SDN list** — the real US Treasury sanctions list, refreshed daily
 - **Community scam/phishing registries** — addresses reported malicious outside of OFAC (a different, and differently-labeled, risk)

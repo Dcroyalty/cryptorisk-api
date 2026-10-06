@@ -1,6 +1,6 @@
 {
   "actorOutputSchemaVersion": 1,
-  "title": "Output of Google Search Scraper",
+  "title": "Output of Google Search Results via Serper API",
   "properties": {
     "searchResults": {
       "type": "string",
