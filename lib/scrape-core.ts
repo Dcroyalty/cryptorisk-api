@@ -1,5 +1,5 @@
-// lib/scrape-core.ts — URL -> clean content, shared by the paid /api/scrape
-// route and the free MCP scrape_url tool. Own compute, no upstream cost.
+// lib/scrape-core.ts — URL -> clean content, behind the paid /api/scrape
+// route. Own compute, no upstream cost.
 
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";

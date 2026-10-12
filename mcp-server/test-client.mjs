@@ -26,12 +26,12 @@ console.log(" ", (await client.callTool({ name: "health", arguments: {} })).cont
 console.log("\n✓ tools/call search_web {query:'x402 payment protocol', count:3}:");
 const s = await client.callTool({ name: "search_web", arguments: { query: "x402 payment protocol", count: 3 } });
 const sj = JSON.parse(s.content[0].text);
-console.log(`  provider=${sj.provider} results=${sj.results?.length} scores=[${(sj.results || []).map((r) => r.score).join(", ")}]`);
+console.log(`  paid=${sj.paid} resource=${sj.resource} price=${JSON.stringify(sj.price)}`);
 
 console.log("\n✓ tools/call scrape_url {url:'https://example.com'}:");
 const sc = await client.callTool({ name: "scrape_url", arguments: { url: "https://example.com" } });
 const scj = JSON.parse(sc.content[0].text);
-console.log(`  status=${scj.status} title=${JSON.stringify(scj.title)} chars=${scj.chars}`);
+console.log(`  paid=${scj.paid} resource=${scj.resource} price=${JSON.stringify(scj.price)}`);
 
 console.log("\n✓ tools/call check_entity {address: Tornado.Cash Donate}:");
 const ce = await client.callTool({ name: "check_entity", arguments: { address: "0x8589427373d6d84e98730d7795d8f6f8731fda16", chain: "ethereum" } });

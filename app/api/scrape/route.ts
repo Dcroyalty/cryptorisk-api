@@ -1,5 +1,5 @@
 // app/api/scrape/route.ts — x402 Scrape Gateway. $0.01 USDC/call on Base.
-// Fetch + extraction live in lib/scrape-core.ts (shared with the free MCP tool).
+// Fetch + extraction live in lib/scrape-core.ts.
 import { NextRequest, NextResponse } from "next/server";
 import { scrapeUrl, ScrapeError } from "@/lib/scrape-core";
 

@@ -1,5 +1,5 @@
-// lib/search-core.ts — the web-search provider chain, shared by the paid
-// /api/search route and the free MCP search_web tool.
+// lib/search-core.ts — the web-search provider chain behind the paid
+// /api/search route.
 // Providers tried in order: Serper (2,500/mo free) -> Brave (free tier) ->
 // DuckDuckGo (keyless, unlimited). Works with no keys at all via DDG.
 //

@@ -5,13 +5,11 @@
 // - GET   /api/mcp   Accept: text/event-stream -> keepalive SSE stream (no server msgs).
 //                    otherwise -> plain metadata JSON for humans/curl.
 //
-// v1 exposes FREE tools only — there is no stable paid-MCP convention and a tool
-// a client cannot pay for looks broken. Free results whose paid HTTP counterpart
-// adds real capability carry an `upgrade` field: endpoint, price, what it adds.
-// A funnel, not a paywall.
+// Free tools run inline. search_web and scrape_url are PAID: they return only the x402 payment resource
+// (endpoint, price, how to pay) and never run the search or the fetch — the same code path is sold at
+// /api/search and /api/scrape, so running it here for free would undercut both. Free results whose paid
+// HTTP counterpart adds real capability carry an `upgrade` field: endpoint, price, what it adds.
 import { NextRequest } from "next/server";
-import { searchWeb, SearchError } from "@/lib/search-core";
-import { scrapeUrl, ScrapeError } from "@/lib/scrape-core";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +19,7 @@ const BASE = "https://uxus.finance";
 const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
 const SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 const LATEST_PROTOCOL = "2025-06-18";
-const SERVER_INFO = { name: "uxus-agent-services", title: "UXUS Agent Services", version: "1.1.0" };
+const SERVER_INFO = { name: "uxus-agent-services", title: "UXUS Agent Services", version: "1.2.0" };
 
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -39,7 +37,26 @@ const RISK_UPGRADE = {
     "per-signal reasons with severity, the raw signals object (token buy/sell tax, mint/proxy/hidden-owner flags, or wallet age + tx count), and the source list behind every flag",
 };
 
-// ---- tool catalogue (priority order: search + extraction first, risk is saturated) ----
+// ---- paid tools: the payment resource, never the result ----
+const PAID_HOW =
+  "GET the resource with no payment header to receive the 402 challenge, pay it with your own wallet (x402 v1, exact scheme, X-PAYMENT header), and repeat the GET with the header. No API key or account.";
+function paidResource(path: string, query: Record<string, string | undefined>, returns: string) {
+  const url = new URL(`${BASE}${path}`);
+  for (const [k, v] of Object.entries(query)) if (v) url.searchParams.set(k, v);
+  return {
+    paid: true,
+    resource: url.toString(),
+    method: "GET",
+    price: "0.01 USDC on Base (x402 v1, X-PAYMENT header)",
+    pay_to: PAY_TO,
+    how: PAID_HOW,
+    returns,
+    discovery: `${BASE}/.well-known/x402.json`,
+  };
+}
+const str = (v: unknown) => (v === undefined || v === null || v === "" ? undefined : String(v));
+
+// ---- tool catalogue ----
 type ToolDef = {
   name: string;
   description: string;
@@ -60,7 +77,7 @@ const TOOLS: ToolDef[] = [
   {
     name: "search_web",
     description:
-      "Live web search. Query the web and get ranked results — no API key, no account, no signup. Params: query (string, required); count (integer 1-20, default 10); country/language/page/device (optional). Returns { query, results: [{ title, url, description, score }], ads, people_also_ask, related_searches, knowledge_graph, answer_box, shopping, ai_overview, provider, latency_ms }; score is 1.0 for the top result descending toward 0.1. Structured blocks (ads/PAA/related/knowledge_graph/answer_box/shopping/ai_overview) are populated when the Google-backed provider answers; empty/null on fallback. For grounding an answer in current information, comparison-shopping, or finding source URLs to read.",
+      "Live web search: ranked results plus Google's answer box, knowledge graph, people-also-ask and related searches when the Google-backed provider answers. This is a PAID x402 call: $0.01 USDC on Base at GET /api/search. This tool returns the payment resource to call; it does not run the search. Params: query (string, required); count (integer 1-20, default 10); country/language/page/device (optional).",
     inputSchema: {
       type: "object",
       properties: {
@@ -75,23 +92,19 @@ const TOOLS: ToolDef[] = [
       additionalProperties: false,
     },
     run: async (a) => {
-      try {
-        return await searchWeb(String(a.query ?? ""), Number(a.count) || 10, {
-          country: a.country ? String(a.country) : undefined,
-          language: a.language ? String(a.language) : undefined,
-          page: a.page ? Number(a.page) : undefined,
-          device: a.device ? String(a.device) : undefined,
-        });
-      } catch (e) {
-        if (e instanceof SearchError) return { error: "search_failed", detail: e.message };
-        throw e;
-      }
+      const query = String(a.query ?? "").trim();
+      if (!query) return { error: "query is required. Nothing was searched or charged." };
+      return paidResource(
+        "/api/search",
+        { q: query, count: str(a.count), country: str(a.country), language: str(a.language), page: str(a.page), device: str(a.device) },
+        "{ query, results: [{ title, url, description, score }], people_also_ask, related_searches, knowledge_graph, answer_box, shopping, provider, latency_ms }",
+      );
     },
   },
   {
     name: "scrape_url",
     description:
-      "Fetch a web page and return clean, LLM-ready content — no API key, no account, no signup. Gets past common bot-blocking. Params: url (absolute http/https URL, required); format (markdown | text | html, default markdown); max_chars (integer, default 40000, max 120000). Returns { url, status, title, description, format, content, truncated, chars }. Non-HTML URLs return raw content. For reading an article, doc page, or listing before summarising or extracting.",
+      "Any web page as clean, LLM-ready markdown, text or html. This is a PAID x402 call: $0.01 USDC on Base at GET /api/scrape. This tool returns the payment resource to call; it does not fetch the page. Params: url (absolute http/https URL, required); format (markdown | text | html, default markdown); max_chars (integer, default 40000, max 120000).",
     inputSchema: {
       type: "object",
       properties: {
@@ -103,12 +116,13 @@ const TOOLS: ToolDef[] = [
       additionalProperties: false,
     },
     run: async (a) => {
-      try {
-        return await scrapeUrl(String(a.url ?? ""), String(a.format ?? "markdown"), Number(a.max_chars) || 40000);
-      } catch (e) {
-        if (e instanceof ScrapeError) return { error: e.code, detail: e.message };
-        throw e;
-      }
+      const target = String(a.url ?? "").trim();
+      if (!/^https?:\/\//i.test(target)) return { error: "url must be an absolute http/https URL. Nothing was fetched or charged." };
+      return paidResource(
+        "/api/scrape",
+        { url: target, format: str(a.format), max_chars: str(a.max_chars) },
+        "{ url, status, title, description, format, content, truncated, chars, latency_ms }",
+      );
     },
   },
   {
@@ -193,6 +207,8 @@ const TOOLS: ToolDef[] = [
   },
 ];
 
+const PAID_TOOLS = ["search_web", "scrape_url"];
+
 const RESOURCES = [
   { uri: `${BASE}/openapi.json`, name: "openapi.json", title: "OpenAPI spec", mimeType: "application/json",
     description: "Full REST API spec for every uxus.finance endpoint, free and paid." },
@@ -221,7 +237,7 @@ async function dispatch(method: string, params: Record<string, unknown>, id: Rpc
         capabilities: { tools: { listChanged: false }, resources: { listChanged: false }, prompts: { listChanged: false } },
         serverInfo: SERVER_INFO,
         instructions:
-          "Free agent primitives on Base. All tools run inline, no key or account. search_web and scrape_url are the flagship tools. Results whose paid HTTP counterpart adds capability carry an `upgrade` field.",
+          "Wallet and address tools for agents, no key or account. Free tools run inline: lookup_wallet, resolve_name, check_entity, caller_id, health. search_web and scrape_url are paid ($0.01 USDC on Base via x402): they return the payment resource to call, not the result. Free results whose paid HTTP counterpart adds capability carry an `upgrade` field.",
       });
     }
     case "ping":
@@ -362,7 +378,9 @@ export async function GET(req: NextRequest): Promise<Response> {
     stdio: "npx uxus-mcp  (zero config, proxies to this endpoint)",
     tools: TOOLS.map((t) => t.name),
     resources: RESOURCES.map((r) => r.uri),
-    note: "Free tools only. Paid HTTP endpoints (search, scrape, risk, llm, extract, embed) settle via x402 — see /.well-known/x402.json.",
+    free_tools: TOOLS.map((t) => t.name).filter((n) => !PAID_TOOLS.includes(n)),
+    paid_tools: PAID_TOOLS,
+    note: "Free tools run inline. Paid tools (search_web, scrape_url) return their x402 payment resource, $0.01 USDC on Base; the other paid HTTP endpoints (risk, llm, extract, embed) are in /.well-known/x402.json.",
     payment: { protocol: "x402", network: "base", asset: "USDC", pay_to: PAY_TO },
   });
 }

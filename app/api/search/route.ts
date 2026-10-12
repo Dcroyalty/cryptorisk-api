@@ -1,5 +1,5 @@
 // app/api/search/route.ts — x402 Search Gateway. $0.01 USDC/call on Base.
-// Provider chain + scoring live in lib/search-core.ts (shared with the free MCP tool).
+// Provider chain + scoring live in lib/search-core.ts.
 import { NextRequest, NextResponse } from "next/server";
 import { searchWeb, SearchError } from "@/lib/search-core";
 

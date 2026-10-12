@@ -246,8 +246,6 @@ const OUTAGE_ALTERNATIVES: Record<string, string> = {
   "/api/risk/pro":
     "Subscribers: send Authorization: Bearer <your uxus API key> — key access does not depend on the facilitator. Free: GET /api/risk?address=... (sanctions + scam lists, verdict only).",
   "/api/risk/live/pro": "Free: GET /api/risk/live?address=... (verdict only).",
-  "/api/search": "Free: the search_web tool on the MCP endpoint POST /api/mcp.",
-  "/api/scrape": "Free: the scrape_url tool on the MCP endpoint POST /api/mcp.",
 };
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
