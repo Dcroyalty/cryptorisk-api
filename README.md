@@ -13,8 +13,8 @@ keys, no signup. A funded wallet is the whole integration.
 | `POST /api/extract` | $0.01 | messy text/URL → JSON in your schema |
 | `POST /api/embed` | $0.01 | text → 1024-dim vectors (jina-embeddings-v3) |
 | `GET /api/search` | $0.01 | live web search |
-| `GET /api/risk/pro` | $0.01 | full wallet/token risk report |
-| `GET /api/risk/live/pro` | $0.01 | mutable-risk report — can the owner still turn a token hostile? |
+| `GET /api/risk/pro` | $0.02 | one call, one verdict: PROCEED / CAUTION / BLOCK + summary + reasons |
+| `GET /api/risk/live/pro` | $0.02 | one-call verdict on a token's owner powers (can it still be paused, upgraded or rugged?) + reasons |
 | `GET /api/risk` · `/api/risk/live` | free | risk score + verdict (no reasons/signals) |
 | `GET /api/lookup` | free | universal address lookup, EVM + XRPL, chain auto-detected |
 | `GET /api/entity` | free | entity attribution — what *is* this address |

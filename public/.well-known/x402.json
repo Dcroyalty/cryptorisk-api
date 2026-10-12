@@ -1,148 +1,361 @@
 {
   "x402Version": 1,
   "name": "UXUS Agent Services",
-  "description": "Pay-per-call primitives for AI agents on Base. Inference, scraping, extraction, embeddings, search, and wallet risk scoring. No accounts, no API keys — just a USDC wallet.",
+  "description": "Pay-per-call tools for AI agents. Headline: one-call risk verdicts, PROCEED / CAUTION / BLOCK with reasons, for any EVM wallet or token ($0.02). Also search, scrape, extract, embed and LLM at $0.01. USDC on Base via x402, no account or API key.",
   "contact": "https://uxus.finance",
   "resources": [
     {
       "resource": "https://uxus.finance/api/llm",
-      "type": "http", "method": "POST",
-      "description": "Returns the completion text, the model that produced it (from a 5-model fallback chain), token usage, and latency_ms.",
-      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
-      "input": { "body": { "prompt": "string", "messages": "array (optional)", "model": "string (optional)", "max_tokens": "number (optional, max 2000)" } },
+      "type": "http",
+      "method": "POST",
+      "description": "LLM chat completion. $0.01 USDC per call on Base, no API key. POST JSON { prompt } or { messages: [{ role, content }] }; optional model (OpenRouter slug) and max_tokens (default 800, max 2000). Falls back across up to 5 models so one outage does not fail the call. Returns { content, model, usage, latency_ms }.",
+      "pricing": [
+        {
+          "amount": "0.01",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "body": {
+          "prompt": "string",
+          "messages": "array (optional)",
+          "model": "string (optional)",
+          "max_tokens": "number (optional, max 2000)"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/scrape",
-      "type": "http", "method": "GET",
-      "description": "Returns the fetched page past bot-blocking: title, meta description, body as markdown/text/html, a character count, and a truncation flag.",
-      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "url": "required", "format": "markdown|text|html", "max_chars": "number" } },
+      "type": "http",
+      "method": "GET",
+      "description": "Any URL as clean, LLM-ready content. $0.01 USDC per call on Base, no API key. GET ?url=... (required), format=markdown|text|html (default markdown), max_chars (default 40000, max 120000). Returns { title, description, content, status, truncated, chars, latency_ms }. Non-HTML URLs come back as raw content.",
+      "pricing": [
+        {
+          "amount": "0.01",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "url": "required",
+          "format": "markdown|text|html",
+          "max_chars": "number"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/extract",
-      "type": "http", "method": "POST",
-      "description": "Returns a JSON object populated to the schema you post, extracted from your text or URL, plus the model that produced it.",
-      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
-      "input": { "body": { "schema": "object (required)", "text": "string", "url": "string" } },
+      "type": "http",
+      "method": "POST",
+      "description": "Structured JSON from a web page or text, with exactly the fields you ask for. $0.01 USDC per call on Base, no API key. POST JSON { schema: { field: type, ... } (required), plus url or text }. Returns { data } with your schema's keys (null when a field is not in the source), the model used and latency_ms. Page fetch capped at 10 s, whole call at 45 s, so it never hangs.",
+      "pricing": [
+        {
+          "amount": "0.01",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "body": {
+          "schema": "object (required)",
+          "text": "string",
+          "url": "string"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/embed",
-      "type": "http", "method": "POST",
-      "description": "Returns one 1024-dim jina-embeddings-v3 vector per input string (up to 64), with the dimension count and token usage.",
-      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
-      "input": { "body": { "input": "string or string[]" } },
+      "type": "http",
+      "method": "POST",
+      "description": "Text embeddings. $0.01 USDC per call on Base, no API key. POST JSON { input: a string or up to 64 strings }. Model jina-embeddings-v3, 1024 dimensions. Returns { embeddings (one vector per input), dimensions, count, usage, latency_ms }.",
+      "pricing": [
+        {
+          "amount": "0.01",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "body": {
+          "input": "string or string[]"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/search",
-      "type": "http", "method": "GET",
-      "description": "Live web search with no API key, no account, no signup. Returns { query, results: [{ title, url, description, score }], ads, people_also_ask, related_searches, knowledge_graph, answer_box, shopping, ai_overview, provider, latency_ms }; score is 1.0 for the top result descending toward 0.1. Structured SERP blocks (ads/People Also Ask/related searches/knowledge graph/answer box/shopping/AI Overview) are populated when the Google-backed provider answers; empty/null on fallback.",
-      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "q": "Search query. Required.", "count": "Number of results, 1-20. Default 10.", "country": "2-letter country code. Optional.", "language": "2+ letter language code. Optional.", "page": "1-based result page. Optional.", "device": "Forwarded to the upstream provider if set. Optional." } },
+      "type": "http",
+      "method": "GET",
+      "description": "Live web search results. $0.01 USDC per call on Base, no API key. GET ?q=... (required), count 1-20 (default 10), optional country, language, page. Returns results[{ title, url, description, score }], plus Google's answer box, knowledge graph, people-also-ask, related searches and shopping when the Google-backed provider answers (empty on fallback).",
+      "pricing": [
+        {
+          "amount": "0.01",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "q": "Search query. Required.",
+          "count": "Number of results, 1-20. Default 10.",
+          "country": "2-letter country code. Optional.",
+          "language": "2+ letter language code. Optional.",
+          "page": "1-based result page. Optional.",
+          "device": "Forwarded to the upstream provider if set. Optional."
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/risk/pro",
-      "type": "http", "method": "GET",
-      "description": "Adds to the free /api/risk (score, level, verdict, flags): per-signal reasons with severity, the raw signals object (token tax/mint/proxy/hidden-owner flags, or wallet age + tx counts), and the sources behind every flag.",
-      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "address": "required 0x address", "chain": "ethereum|base", "type": "wallet|token" } },
+      "type": "http",
+      "method": "GET",
+      "description": "One call, one verdict: PROCEED, CAUTION or BLOCK for any EVM wallet or token, with the reasons attached. $0.02 USDC per call on Base, no API key or account. GET ?address=0x... (required), chain=base|ethereum, type=wallet|token. Checks the OFAC SDN list (synced daily), scam and phishing lists, and honeypot, tax and mint signals. Returns verdict, a one-line summary, reasons[] strongest first, risk_score 0-100 and sources. Never PROCEED when a source could not be checked.",
+      "pricing": [
+        {
+          "amount": "0.02",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "address": "required 0x address",
+          "chain": "ethereum|base",
+          "type": "wallet|token"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/risk",
-      "type": "http", "method": "GET",
-      "description": "Returns risk_score (0-100), risk_level, a PROCEED/CAUTION/BLOCK verdict, and flags for any EVM wallet or token. No reasons, signals, or sources — /api/risk/pro adds those.",
-      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "type": "http",
+      "method": "GET",
+      "description": "FREE verdict only: PROCEED / CAUTION / BLOCK, risk_score, risk_level and flags for an EVM wallet or token. The reasons, summary and sources are in /api/risk/pro ($0.02).",
+      "pricing": [
+        {
+          "amount": "0",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/catalog",
-      "type": "http", "method": "GET",
+      "type": "http",
+      "method": "GET",
       "description": "Returns every service with its id, method, URL, price, and parameter list in one JSON call — the machine-readable storefront index.",
-      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "pricing": [
+        {
+          "amount": "0",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/mcp",
-      "type": "http", "method": "POST",
+      "type": "http",
+      "method": "POST",
       "description": "MCP server over JSON-RPC 2.0. Returns tool results inline for free tools; for paid tools returns the x402 endpoint, price, and pay-to address. GET returns server metadata.",
-      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
+      "pricing": [
+        {
+          "amount": "0",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/risk/live",
-      "type": "http", "method": "GET",
+      "type": "http",
+      "method": "GET",
       "description": "Returns the mutable-risk verdict, mutable_risk_score (0-100), can_turn_hostile, and time_to_rug for a token. /api/risk/live/pro adds the per-power breakdown and raw controls.",
-      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "address": "required 0x address", "chain": "ethereum|base" } },
+      "pricing": [
+        {
+          "amount": "0",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "address": "required 0x address",
+          "chain": "ethereum|base"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/risk/live/pro",
-      "type": "http", "method": "GET",
-      "description": "Adds to the free /api/risk/live (verdict, mutable_risk_score, time_to_rug): every owner power explained in plain English, the raw controls object (owner, EIP-1967 implementation + admin slots, pause state, pending owner), and the on-chain reads to reproduce the score.",
-      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "address": "required 0x address", "chain": "ethereum|base" } },
+      "type": "http",
+      "method": "GET",
+      "description": "One call, one verdict on a token's owner powers: PROCEED, CAUTION or BLOCK, with the reasons attached. $0.02 USDC per call on Base, no API key. GET ?address=0x... (token contract, required), chain=base|ethereum. Reads the chain directly: owner, pause switch, pending owner, upgradeable proxy. Tells you whether the owner can still pause, upgrade or rug it. Returns verdict, a one-line summary, reasons[] strongest first, can_turn_hostile, time_to_rug and the raw controls.",
+      "pricing": [
+        {
+          "amount": "0.02",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "address": "required 0x address",
+          "chain": "ethereum|base"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/risk/bazaar",
-      "type": "http", "method": "GET",
-      "description": "The same full report as /api/risk/pro (reasons, signals, sources), settled through the x402 Bazaar / CDP resource-server flow. Returns the free score/verdict/flags summary when no payment is presented.",
-      "pricing": [{ "amount": "0.01", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "address": "required 0x address", "chain": "ethereum|base", "type": "wallet|token" } },
+      "type": "http",
+      "method": "GET",
+      "description": "Same one-call verdict as /api/risk/pro (PROCEED / CAUTION / BLOCK, summary, reasons strongest first), served through the x402 v2 Bazaar resource server. $0.02 USDC on Base, settled only after a successful answer.",
+      "pricing": [
+        {
+          "amount": "0.02",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "address": "required 0x address",
+          "chain": "ethereum|base",
+          "type": "wallet|token"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/launches",
-      "type": "http", "method": "GET",
+      "type": "http",
+      "method": "GET",
       "description": "Returns the newest DEX pools on Base/Ethereum (pair, token address, liquidity, FDV, 24h volume, age, flags), each with a riskCheck link into /api/risk/live.",
-      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "chain": "ethereum|base", "limit": "number, max 30", "minLiquidityUsd": "number" } },
+      "pricing": [
+        {
+          "amount": "0",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "chain": "ethereum|base",
+          "limit": "number, max 30",
+          "minLiquidityUsd": "number"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/lookup",
-      "type": "http", "method": "GET",
+      "type": "http",
+      "method": "GET",
       "description": "Returns one normalized envelope — address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, entity, upgrade — for any EVM 0x or XRPL classic r-address, chain auto-detected from the format.",
-      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "address": "required — EVM 0x address or XRPL classic r-address", "chain": "optional EVM hint: base (default) | ethereum" } },
+      "pricing": [
+        {
+          "amount": "0",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "address": "required — EVM 0x address or XRPL classic r-address",
+          "chain": "optional EVM hint: base (default) | ethereum"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/entity",
-      "type": "http", "method": "GET",
+      "type": "http",
+      "method": "GET",
       "description": "Returns { is_known, label, category } for an EVM address — what it IS (not who owns it). category is one of sanctioned, mixer, exchange, bridge, dex_router, scam, drainer, phishing, flagged, token_contract, protocol, unknown. \"sanctioned\" comes solely from the OFAC SDN list (same source as /api/risk); a non-OFAC blocklist hit is \"flagged\". Sourced from OFAC, ScamSniffer, MEW, eth-labels and curated Base/Tornado sets. Never guesses.",
-      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "address": "required 0x EVM address", "chain": "base (default) | ethereum" } },
+      "pricing": [
+        {
+          "amount": "0",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "address": "required 0x EVM address",
+          "chain": "base (default) | ethereum"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/resolve",
-      "type": "http", "method": "GET",
+      "type": "http",
+      "method": "GET",
       "description": "Bidirectional name <-> address resolution for ENS (name.eth) and Basenames (name.base.eth) via public RPC + the resolver contracts directly. Reverse records are forward-verified against the input address (anti-spoofing). Auto-detects direction. Returns { query, kind, namespace, chain, resolved, address, name, sources, lookup }. XRPL .xrp names are detected but return resolved:false (no canonical registry).",
-      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "q": "required — an ENS/Basename name, an EVM 0x address, or an XRPL classic r-address" } },
+      "pricing": [
+        {
+          "amount": "0",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "q": "required — an ENS/Basename name, an EVM 0x address, or an XRPL classic r-address"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/callerid",
-      "type": "http", "method": "GET",
+      "type": "http",
+      "method": "GET",
       "description": "Wallet caller ID for wallet messaging (XMTP, Push): should this wallet be answered. Composes entity attribution + risk score + on-chain history + forward-verified name into ANSWER | SCREEN | BLOCK with reasons[] and a confidence flag. BLOCK on sanctioned/drainer/phishing/scam/mixer or risk verdict BLOCK; ANSWER on a known exchange/dex_router/protocol or a verified ENS/Basename with risk PROCEED; SCREEN is the default for unknown addresses. confidence 'low' means an input could not be checked — degrades to SCREEN, never guesses.",
-      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "address": "required 0x EVM address", "chain": "base (default) | ethereum" } },
+      "pricing": [
+        {
+          "amount": "0",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "address": "required 0x EVM address",
+          "chain": "base (default) | ethereum"
+        }
+      },
       "output": "application/json"
     },
     {
       "resource": "https://uxus.finance/api/shield/check",
-      "type": "http", "method": "GET",
+      "type": "http",
+      "method": "GET",
       "description": "Per-user PRIVATE wallet blocklist — the first stateful product in the store. Your block never affects another user's results (no shared reputation, no aggregate scoring). Ownership is proved by signature, not an API key: GET /api/shield/nonce?owner=0x..., sign the returned message (EIP-191; v1 verifies EOA/ECDSA only — no ERC-1271/Safe yet), POST /api/shield/session { owner, signature } for a 60-minute bearer token. Then GET /api/shield/check?address=0x...&chain=base with that token returns { blocked, source, recommendation, reasons[], entity, name }: precedence is sanctioned entity (hard stop — cannot be allowlisted) > your allowlist > your manual block > auto-BLOCK from caller ID > the caller-ID recommendation. Writes: POST /api/shield/block|unblock|allow|unallow { owner, signature, address } (fresh nonce + signature each; the message binds the action and target). GET /api/shield/list and GET /api/shield/stats (7d / 30d / 90d, by action and entity category) also take the bearer token. Every /check is logged; shield_events are pruned daily (cron + opportunistic) so nothing older than 90 days is kept — 90-day retention, stated not buried. Free in v1.",
-      "pricing": [{ "amount": "0", "asset": "USDC", "network": "base" }],
-      "input": { "query": { "address": "required 0x EVM address to check against your list", "chain": "base (default) | ethereum" }, "headers": { "Authorization": "Bearer <session token from POST /api/shield/session>" } },
+      "pricing": [
+        {
+          "amount": "0",
+          "asset": "USDC",
+          "network": "base"
+        }
+      ],
+      "input": {
+        "query": {
+          "address": "required 0x EVM address to check against your list",
+          "chain": "base (default) | ethereum"
+        },
+        "headers": {
+          "Authorization": "Bearer <session token from POST /api/shield/session>"
+        }
+      },
       "output": "application/json"
     }
   ]

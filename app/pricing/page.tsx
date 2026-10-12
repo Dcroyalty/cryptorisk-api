@@ -124,7 +124,7 @@ export default function Pricing() {
         </div>
 
         <div className="x402note">
-          <b>Prefer pay-per-call?</b> That is not going away. <code>/api/risk/pro</code> is $0.01/call via the
+          <b>Prefer pay-per-call?</b> That is not going away. <code>/api/risk/pro</code> is $0.02/call via the
           x402 protocol, settled in USDC on Base — no account, no subscription, no card. Subscriptions above
           are a second option for buyers who want a card invoice instead of a crypto wallet.
         </div>

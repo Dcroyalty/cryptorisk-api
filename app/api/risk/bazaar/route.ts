@@ -2,6 +2,7 @@
 import { isEvmAddress } from "@/lib/sources";
 import { scoreAddress, chainId, SUPPORTED_CHAINS } from "@/lib/score-address";
 import { isArcMainnetLive, ARC_NOT_LIVE_MESSAGE } from "@/lib/arc";
+import { verdictFirst, VERDICT_PRICE } from "@/lib/verdict";
 import { HTTPFacilitatorClient } from "@x402/core/http";
 import { x402ResourceServer, x402HTTPResourceServer } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
@@ -31,18 +32,18 @@ const discovery = declareDiscoveryExtension({
     },
     required: ["address"],
   },
-  output: { example: { address: "0xd8da...6045", risk_score: 0, risk_level: "low", verdict: "PROCEED", flags: ["CLEAN"] } },
+  output: { example: { verdict: "PROCEED", summary: "PROCEED: no sanctions, scam-list or risk signal found.", reasons: [{ code: "CLEAN", severity: 0, detail: "no sanctions or scam-list matches", source: "uxus" }], risk_score: 0, risk_level: "low", flags: ["CLEAN"], address: "0xd8da...6045" } },
 });
 
 const routes = {
   "GET /api/risk/bazaar": {
-    accepts: [{ scheme: "exact", price: "$0.01", network: "eip155:8453", payTo: PAY_TO }],
+    accepts: [{ scheme: "exact", price: VERDICT_PRICE, network: "eip155:8453", payTo: PAY_TO }],
     resource: {
       url: RESOURCE_URL,
-      description: "Wallet & token risk score: OFAC sanctions, scam/phishing lists, honeypot detection for Ethereum & Base.",
+      description: "One call, one verdict: PROCEED, CAUTION or BLOCK for any EVM wallet or token, with a one-line summary and the reasons attached (OFAC sanctions, scam lists, honeypot, tax and mint signals). $0.02 USDC on Base, charged only after a successful answer.",
       mimeType: "application/json",
-      serviceName: "UXUS — Wallet & Token Risk",
-      tags: ["risk", "security", "wallet", "sanctions", "defi"],
+      serviceName: "UXUS Risk Verdict",
+      tags: ["verdict", "risk", "security", "wallet", "sanctions", "token"],
     },
     extensions: { ...discovery },
   },
@@ -75,7 +76,7 @@ async function runScore(req: NextRequest) {
   if (!isEvmAddress(raw)) return NextResponse.json({ error: "invalid_address", detail: "Provide a valid 0x EVM address" }, { status: 400 });
   if (!chainId(chain)) return NextResponse.json({ error: "unsupported_chain", detail: `Supported: ${SUPPORTED_CHAINS.join(", ")}` }, { status: 400 });
   if (chain === "arc" && !isArcMainnetLive()) return NextResponse.json({ error: "not_yet_live", message: ARC_NOT_LIVE_MESSAGE }, { status: 503 });
-  return await scoreAddress(raw.toLowerCase(), chain, type);
+  return verdictFirst(await scoreAddress(raw.toLowerCase(), chain, type));
 }
 
 export async function GET(req: NextRequest) {

@@ -3,7 +3,7 @@
   "info": {
     "title": "UXUS — Agent Services",
     "version": "1.2.0",
-    "description": "Pay-per-call primitives for AI agents. LLM inference, web scraping, structured extraction, embeddings, live search, and EVM wallet/token risk scoring. Paid in USDC on Base via the x402 protocol (v1, settled by the Coinbase CDP facilitator). No accounts, no API keys.",
+    "description": "Pay-per-call tools for AI agents, paid in USDC on Base via x402 (v1, settled by the Coinbase CDP facilitator). No account or API key. Headline: one-call risk verdicts (PROCEED / CAUTION / BLOCK with reasons) for any EVM wallet or token, $0.02. Also $0.01 each: live web search, URL scraping, structured extraction, embeddings and LLM completions. Free: verdict-only risk, address lookup, entity labels, ENS/Basename resolve.",
     "contact": {
       "name": "UXUS",
       "url": "https://uxus.finance",
@@ -681,53 +681,117 @@
       },
       "SearchPeopleAlsoAsk": {
         "type": "object",
-        "required": ["question"],
+        "required": [
+          "question"
+        ],
         "properties": {
-          "question": { "type": "string" },
-          "snippet": { "type": "string" },
-          "title": { "type": "string" },
-          "url": { "type": "string" }
+          "question": {
+            "type": "string"
+          },
+          "snippet": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
         }
       },
       "SearchKnowledgeGraph": {
         "type": "object",
         "nullable": true,
         "properties": {
-          "title": { "type": "string" },
-          "type": { "type": "string" },
-          "website": { "type": "string" },
-          "image_url": { "type": "string" },
-          "description": { "type": "string" },
-          "description_source": { "type": "string" },
-          "description_link": { "type": "string" },
-          "attributes": { "type": "object", "additionalProperties": { "type": "string" } }
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "description_source": {
+            "type": "string"
+          },
+          "description_link": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
         }
       },
       "SearchAnswerBox": {
         "type": "object",
         "nullable": true,
         "properties": {
-          "answer": { "type": "string" },
-          "title": { "type": "string" },
-          "url": { "type": "string" },
-          "snippet": { "type": "string" },
-          "snippet_highlighted": { "type": "array", "items": { "type": "string" } }
+          "answer": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "snippet": {
+            "type": "string"
+          },
+          "snippet_highlighted": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       },
       "SearchShoppingItem": {
         "type": "object",
         "properties": {
-          "title": { "type": "string" },
-          "source": { "type": "string" },
-          "url": { "type": "string" },
-          "price": { "type": "string" },
-          "delivery": { "type": "string" },
-          "image_url": { "type": "string" },
-          "rating": { "type": "number" },
-          "rating_count": { "type": "integer" },
-          "offers": { "type": "string" },
-          "product_id": { "type": "string" },
-          "position": { "type": "integer" }
+          "title": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "delivery": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "number"
+          },
+          "rating_count": {
+            "type": "integer"
+          },
+          "offers": {
+            "type": "string"
+          },
+          "product_id": {
+            "type": "string"
+          },
+          "position": {
+            "type": "integer"
+          }
         }
       },
       "SearchResponse": {
@@ -749,17 +813,23 @@
           },
           "ads": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/SearchAd" },
+            "items": {
+              "$ref": "#/components/schemas/SearchAd"
+            },
             "description": "Populated when provider is \"serper\"; empty on fallback."
           },
           "people_also_ask": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/SearchPeopleAlsoAsk" },
+            "items": {
+              "$ref": "#/components/schemas/SearchPeopleAlsoAsk"
+            },
             "description": "Populated when provider is \"serper\"; empty on fallback."
           },
           "related_searches": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Populated when provider is \"serper\"; empty on fallback."
           },
           "knowledge_graph": {
@@ -772,7 +842,9 @@
           },
           "shopping": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/SearchShoppingItem" },
+            "items": {
+              "$ref": "#/components/schemas/SearchShoppingItem"
+            },
             "description": "Populated when provider is \"serper\"; empty on fallback."
           },
           "ai_overview": {
@@ -1518,9 +1590,20 @@
     "/api/llm": {
       "post": {
         "operationId": "llmInference",
-        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
-        "summary": "LLM inference ($0.01 USDC on Base)",
-        "description": "Send a prompt or messages[] and get a completion, routed across a 5-model fallback chain. The unpaid GET on this path returns only price and parameter docs.",
+        "x-payment-info": {
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.010000"
+          },
+          "protocols": [
+            {
+              "x402": {}
+            }
+          ]
+        },
+        "summary": "LLM chat completion ($0.01 USDC on Base)",
+        "description": "LLM chat completion. $0.01 USDC per call on Base, no API key. POST JSON { prompt } or { messages: [{ role, content }] }; optional model (OpenRouter slug) and max_tokens (default 800, max 2000). Falls back across up to 5 models so one outage does not fail the call. Returns { content, model, usage, latency_ms }.",
         "security": [
           {
             "x402": []
@@ -1610,9 +1693,20 @@
     "/api/scrape": {
       "get": {
         "operationId": "scrapeUrl",
-        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
-        "summary": "Scrape any URL to clean markdown ($0.01 USDC on Base)",
-        "description": "Fetch a URL past common bot-blocking and return title, description, and body as markdown, text, or html.",
+        "x-payment-info": {
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.010000"
+          },
+          "protocols": [
+            {
+              "x402": {}
+            }
+          ]
+        },
+        "summary": "Any URL as clean markdown, text or HTML ($0.01 USDC on Base)",
+        "description": "Any URL as clean, LLM-ready content. $0.01 USDC per call on Base, no API key. GET ?url=... (required), format=markdown|text|html (default markdown), max_chars (default 40000, max 120000). Returns { title, description, content, status, truncated, chars, latency_ms }. Non-HTML URLs come back as raw content.",
         "security": [
           {
             "x402": []
@@ -1679,9 +1773,20 @@
     "/api/extract": {
       "post": {
         "operationId": "extractStructured",
-        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
-        "summary": "Text or URL to structured JSON ($0.01 USDC on Base)",
-        "description": "Return a JSON object shaped to the schema you supply, extracted from raw text or a fetched page. The unpaid GET on this path returns only an example.",
+        "x-payment-info": {
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.010000"
+          },
+          "protocols": [
+            {
+              "x402": {}
+            }
+          ]
+        },
+        "summary": "Structured JSON with exactly your fields, from a page or text ($0.01 USDC on Base)",
+        "description": "Structured JSON from a web page or text, with exactly the fields you ask for. $0.01 USDC per call on Base, no API key. POST JSON { schema: { field: type, ... } (required), plus url or text }. Returns { data } with your schema's keys (null when a field is not in the source), the model used and latency_ms. Page fetch capped at 10 s, whole call at 45 s, so it never hangs.",
         "security": [
           {
             "x402": []
@@ -1758,9 +1863,20 @@
     "/api/embed": {
       "post": {
         "operationId": "createEmbeddings",
-        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
-        "summary": "Text to embedding vectors ($0.01 USDC on Base)",
-        "description": "Return one 1024-dim jina-embeddings-v3 vector per input string (up to 64). The unpaid GET on this path returns only the model name.",
+        "x-payment-info": {
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.010000"
+          },
+          "protocols": [
+            {
+              "x402": {}
+            }
+          ]
+        },
+        "summary": "Text embeddings, 1024 dimensions ($0.01 USDC on Base)",
+        "description": "Text embeddings. $0.01 USDC per call on Base, no API key. POST JSON { input: a string or up to 64 strings }. Model jina-embeddings-v3, 1024 dimensions. Returns { embeddings (one vector per input), dimensions, count, usage, latency_ms }.",
         "security": [
           {
             "x402": []
@@ -1832,9 +1948,20 @@
     "/api/search": {
       "get": {
         "operationId": "webSearch",
-        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
-        "summary": "Live web search ($0.01 USDC on Base)",
-        "description": "Live web search — no API key, no account, no signup. Returns { query, results: [{ title, url, description, score }], ads, people_also_ask, related_searches, knowledge_graph, answer_box, shopping, ai_overview, provider, latency_ms }. score is 1.0 for the top result descending toward 0.1. Structured SERP blocks are populated when the Google-backed provider (Serper) answers; empty/null on fallback to Brave or DuckDuckGo — provider always says which one served the request.",
+        "x-payment-info": {
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.010000"
+          },
+          "protocols": [
+            {
+              "x402": {}
+            }
+          ]
+        },
+        "summary": "Live web search results ($0.01 USDC on Base)",
+        "description": "Live web search results. $0.01 USDC per call on Base, no API key. GET ?q=... (required), count 1-20 (default 10), optional country, language, page. Returns results[{ title, url, description, score }], plus Google's answer box, knowledge graph, people-also-ask, related searches and shopping when the Google-backed provider answers (empty on fallback).",
         "security": [
           {
             "x402": []
@@ -1864,28 +1991,37 @@
             "name": "country",
             "in": "query",
             "required": false,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "2-letter country code (Google gl param)."
           },
           {
             "name": "language",
             "in": "query",
             "required": false,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "2+ letter language code (Google hl param)."
           },
           {
             "name": "page",
             "in": "query",
             "required": false,
-            "schema": { "type": "integer", "minimum": 1 },
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
             "description": "1-based result page."
           },
           {
             "name": "device",
             "in": "query",
             "required": false,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "Forwarded to the upstream provider if set. Not confirmed to change results on every provider."
           }
         ],
@@ -1915,9 +2051,20 @@
     "/api/risk/pro": {
       "get": {
         "operationId": "walletRiskFull",
-        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
-        "summary": "Full EVM wallet/token risk report ($0.01 USDC on Base)",
-        "description": "OFAC sanctions, scam/phishing lists, honeypot and rug signals. 0-100 score with PROCEED/CAUTION/BLOCK verdict, plus per-signal reasons, the raw signals object, and sources. Free /api/risk returns score, level, verdict, flags only.",
+        "x-payment-info": {
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.020000"
+          },
+          "protocols": [
+            {
+              "x402": {}
+            }
+          ]
+        },
+        "summary": "One-call risk verdict: PROCEED / CAUTION / BLOCK with reasons ($0.02 USDC on Base)",
+        "description": "One call, one verdict: PROCEED, CAUTION or BLOCK for any EVM wallet or token, with the reasons attached. $0.02 USDC per call on Base, no API key or account. GET ?address=0x... (required), chain=base|ethereum, type=wallet|token. Checks the OFAC SDN list (synced daily), scam and phishing lists, and honeypot, tax and mint signals. Returns verdict, a one-line summary, reasons[] strongest first, risk_score 0-100 and sources. Never PROCEED when a source could not be checked.",
         "security": [
           {
             "x402": []
@@ -1983,7 +2130,7 @@
     "/api/risk": {
       "get": {
         "operationId": "walletRiskFree",
-        "summary": "FREE risk demo",
+        "summary": "FREE: verdict only (PROCEED / CAUTION / BLOCK), no reasons",
         "description": "Returns risk_score (0-100), risk_level, PROCEED/CAUTION/BLOCK verdict, and flags for any EVM wallet or token. No reasons, signals, or sources.",
         "security": [],
         "parameters": [
@@ -2640,9 +2787,20 @@
     "/api/risk/live/pro": {
       "get": {
         "operationId": "riskLiveFull",
-        "x-payment-info": { "price": { "mode": "fixed", "currency": "USD", "amount": "0.010000" }, "protocols": [{ "x402": {} }] },
-        "summary": "Full mutable-risk report ($0.01 USDC on Base)",
-        "description": "Every owner power with a plain-English explanation, the raw controls object (owner, EIP-1967 implementation + admin slots, pause state, pending owner), and the on-chain read methodology. Free /api/risk/live returns verdict, score, time_to_rug only.",
+        "x-payment-info": {
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.020000"
+          },
+          "protocols": [
+            {
+              "x402": {}
+            }
+          ]
+        },
+        "summary": "One-call token owner-power verdict: PROCEED / CAUTION / BLOCK with reasons ($0.02 USDC on Base)",
+        "description": "One call, one verdict on a token's owner powers: PROCEED, CAUTION or BLOCK, with the reasons attached. $0.02 USDC per call on Base, no API key. GET ?address=0x... (token contract, required), chain=base|ethereum. Reads the chain directly: owner, pause switch, pending owner, upgradeable proxy. Tells you whether the owner can still pause, upgrade or rug it. Returns verdict, a one-line summary, reasons[] strongest first, can_turn_hostile, time_to_rug and the raw controls.",
         "security": [
           {
             "x402": []
@@ -2698,7 +2856,7 @@
     "/api/risk/bazaar": {
       "get": {
         "operationId": "walletRiskBazaar",
-        "summary": "Wallet/token risk score via x402 Bazaar ($0.01 USDC on Base)",
+        "summary": "One-call risk verdict via the x402 Bazaar resource server ($0.02 USDC on Base)",
         "description": "The same full report as /api/risk/pro, served through the x402 Bazaar resource-server flow (eip155:8453). Returns the free summary when no payment is presented.",
         "security": [
           {

@@ -174,7 +174,7 @@ async function checkX402Challenge(): Promise<Check> {
     const problems: string[] = [];
     if (String(a?.payTo || "").toLowerCase() !== PAY_TO) problems.push(`payTo is ${a?.payTo}`);
     if (a?.network !== "base") problems.push(`network is ${a?.network}`);
-    if (a?.maxAmountRequired !== "10000") problems.push(`price is ${a?.maxAmountRequired} atomic`);
+    if (a?.maxAmountRequired !== "20000") problems.push(`price is ${a?.maxAmountRequired} atomic`);
     if (!r.headers.get("payment-required")) problems.push("PAYMENT-REQUIRED header missing");
     return problems.length
       ? { name, level: "fail", detail: `402 challenge is wrong: ${problems.join("; ")}.` }

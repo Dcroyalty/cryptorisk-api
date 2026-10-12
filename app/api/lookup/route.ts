@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
         degraded: full.degraded,
         disclaimer: RISK_DISCLAIMER,
         upgrade:
-          "GET /api/risk/pro?address=0x...&chain=ethereum|base for reasons, signals, and sources ($0.01/call via x402).",
+          "GET /api/risk/pro?address=0x...&chain=ethereum|base for a one-call verdict (PROCEED / CAUTION / BLOCK) with a summary, reasons and sources ($0.02/call via x402).",
       },
       {
         status: 200,

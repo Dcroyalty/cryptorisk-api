@@ -44,7 +44,7 @@ export async function POST(req: Request) {
       {
         error: "checkout_unavailable",
         message:
-          "Card checkout is temporarily unavailable — nothing was charged. Try again in a few minutes, or use pay-per-call now: /api/risk/pro accepts $0.01 USDC on Base via x402, no account needed.",
+          "Card checkout is temporarily unavailable — nothing was charged. Try again in a few minutes, or use pay-per-call now: /api/risk/pro accepts $0.02 USDC on Base via x402, no account needed.",
       },
       { status: 503, headers: { "Retry-After": "120" } },
     );

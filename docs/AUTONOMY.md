@@ -90,3 +90,16 @@ Bazaar records are unchanged. v2 settles **after** the handler succeeds, so a bu
 
 The Hobby plan's terms don't permit commercial use. If the project is on Hobby, move it to Pro
 before revenue matters — it also lifts the once-a-day cron limit and log retention.
+
+## Risk verdicts at $0.02 and paid-call failures (2026-10-12)
+
+- `/api/risk/pro`, `/api/risk/live/pro` and `/api/risk/bazaar` cost **$0.02** and lead every answer with `verdict`
+  (PROCEED / CAUTION / BLOCK), a one-line `summary` and `reasons[]` strongest first (`lib/verdict.ts`). Live-risk's old
+  hold scale stays as `hold_verdict` (SAFE_TO_HOLD→PROCEED, MONITOR→CAUTION, EXIT_RISK/DO_NOT_HOLD→BLOCK). The watchdog
+  expects 20000 atomic on `/api/risk/pro`.
+- **Bazaar listings refresh only when a payment settles.** After a description or price change, make one real paid call
+  per route (`TARGET_URL=… node scripts/self-pay-v1.mjs`).
+- `/api/extract` (our one returning customer) has hard time limits (page 10 s, model 20 s, total 45 s) and JSON mode.
+  x402 v1 charges before the handler runs, so every failed PAID call is recorded with the payer in
+  `paid_call_failures` (created on first use). Refund by hand (see /refunds), then set `refunded_at`:
+  `SELECT * FROM paid_call_failures WHERE refunded_at IS NULL;`

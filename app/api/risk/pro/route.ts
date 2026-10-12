@@ -2,6 +2,7 @@
 import { isEvmAddress } from "@/lib/sources";
 import { scoreAddress, chainId, SUPPORTED_CHAINS } from "@/lib/score-address";
 import { isArcMainnetLive, ARC_NOT_LIVE_MESSAGE } from "@/lib/arc";
+import { verdictFirst } from "@/lib/verdict";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,5 +18,6 @@ export async function GET(req: NextRequest) {
   if (chain === "arc" && !isArcMainnetLive()) return NextResponse.json({ error: "not_yet_live", message: ARC_NOT_LIVE_MESSAGE }, { status: 503 });
 
   const full = await scoreAddress(raw.toLowerCase(), chain, type);
-  return NextResponse.json(full, { status: 200 });
+  // One call, one verdict: verdict + summary + reasons first, the full report after.
+  return NextResponse.json(verdictFirst(full), { status: 200 });
 }

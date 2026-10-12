@@ -1,6 +1,6 @@
 # UXUS — Agent Services
 
-> Pay-per-call primitives for AI agents. Inference, scraping, extraction, embeddings, search, and wallet risk scoring. Paid with USDC on Base via x402 — no accounts, no API keys, no signup.
+> Pay-per-call tools for AI agents, paid with USDC on Base via x402 (no account, no API key). Headline: one call, one verdict: PROCEED / CAUTION / BLOCK with the reasons attached, for any EVM wallet or token ($0.02). Also search, scrape, extract, embeddings and LLM at $0.01.
 
 ## Why
 An agent with a USDC wallet can use every service here immediately. No provider accounts to create, no keys to rotate, no subscriptions. Payment is authentication.
@@ -46,10 +46,11 @@ answer box/shopping/AI Overview) are populated when the Google-backed provider
 (Serper) answers a request; they come back empty/null on fallback to Brave or
 DuckDuckGo — check `provider` to know which one served you.
 
-### Wallet & token risk — $0.01
+### Risk verdict — $0.02 (one call, one verdict)
 GET /api/risk/pro?address=0x...&chain=base&type=wallet
 Checks OFAC sanctions, 3,000+ scam/phishing addresses, honeypot and rug signals.
-Returns: { risk_score, risk_level, verdict, flags, reasons, signals, sources, degraded }
+Returns, in this order: { verdict: PROCEED|CAUTION|BLOCK, summary: one sentence why, reasons: [{code, severity, detail, source}] strongest first, risk_score, risk_level, flags, degraded, signals, sources }
+PROCEED = no sanctions, scam-list or risk signal. CAUTION = a warning sign, or a source could not be checked. BLOCK = sanctioned, scam-listed or high risk; do not send funds.
 degraded:true = a verdict input was unavailable (wallet-history explorer failed,
 or the token-security provider returned nothing) AND there was no list hit. The
 verdict is then CAUTION ("not fully assessed"), never PROCEED, with a

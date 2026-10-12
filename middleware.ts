@@ -16,10 +16,10 @@ const N = "base" as Network;
 const inner = paymentMiddleware(
   PAY_TO,
   {
-    "/api/risk/pro": { price: "$0.01", network: N,
+    "/api/risk/pro": { price: "$0.02", network: N,
       config: {
         resource: `${CANONICAL_ORIGIN}/api/risk/pro`,
-        description: "Full wallet & token risk report — no API key, no account, no signup; pay per call in USDC on Base. GET ?address=0x... (required), chain=ethereum|base (default base), type=wallet|token (default wallet). Checks OFAC sanctions, scam/phishing lists, and honeypot/tax/mint signals. Returns risk_score 0-100, risk_level, a PROCEED|CAUTION|BLOCK verdict, flags[], reasons[] with severity, raw signals, and sources[]. For agents screening a counterparty before they transact.",
+        description: "One call, one verdict: PROCEED, CAUTION or BLOCK for any EVM wallet or token, with the reasons attached. $0.02 USDC per call on Base, no API key or account. GET ?address=0x... (required), chain=base|ethereum, type=wallet|token. Checks the OFAC SDN list (synced daily), scam and phishing lists, and honeypot, tax and mint signals. Returns verdict, a one-line summary, reasons[] strongest first, risk_score 0-100 and sources. Never PROCEED when a source could not be checked.",
         inputSchema: {
           queryParams: {
             address: "0x EVM address (wallet or token contract). Required.",
@@ -30,18 +30,19 @@ const inner = paymentMiddleware(
         outputSchema: {
           type: "json",
           example: {
-            address: "0xd8da...6045", chain: "base", type: "wallet",
-            risk_score: 0, risk_level: "low", verdict: "PROCEED", flags: ["CLEAN"],
+            verdict: "PROCEED", summary: "PROCEED: no sanctions, scam-list or risk signal found.",
             reasons: [{ code: "CLEAN", severity: 0, detail: "no sanctions or scam-list matches", source: "uxus" }],
+            risk_score: 0, risk_level: "low", flags: ["CLEAN"], degraded: false,
+            address: "0xd8da...6045", chain: "base", type: "wallet",
             signals: { wallet_age_days: 1135, tx_count: 42 },
             sources: ["ofac", "scamsniffer", "mew"], checked_at: "2026-09-03T00:00:00Z",
           },
         },
       } },
-    "/api/risk/live/pro": { price: "$0.01", network: N,
+    "/api/risk/live/pro": { price: "$0.02", network: N,
       config: {
         resource: `${CANONICAL_ORIGIN}/api/risk/live/pro`,
-        description: "Mutable-risk report for a token — can the owner still turn it hostile? No API key, no account, no signup; pay per call in USDC on Base. GET ?address=0x... (required), chain=ethereum|base (default base). Direct on-chain reads only: eth_getCode, owner(), pendingOwner(), paused(), EIP-1967 slots. Returns mutable_risk_score, verdict, can_turn_hostile, time_to_rug, every owner power explained in plain English, and raw controls. For agents holding or about to buy a token.",
+        description: "One call, one verdict on a token's owner powers: PROCEED, CAUTION or BLOCK, with the reasons attached. $0.02 USDC per call on Base, no API key. GET ?address=0x... (token contract, required), chain=base|ethereum. Reads the chain directly: owner, pause switch, pending owner, upgradeable proxy. Tells you whether the owner can still pause, upgrade or rug it. Returns verdict, a one-line summary, reasons[] strongest first, can_turn_hostile, time_to_rug and the raw controls.",
         inputSchema: {
           queryParams: {
             address: "0x token contract address. Required.",
@@ -51,9 +52,10 @@ const inner = paymentMiddleware(
         outputSchema: {
           type: "json",
           example: {
-            address: "0x...", chain: "base", mutable_risk_score: 20, verdict: "CAUTION",
-            can_turn_hostile: true, time_to_rug: "immediate",
-            powers_explained: [{ code: "OWNER_RETAINS_PRIVILEGES", meaning: "Ownership not renounced; owner-only functions remain callable." }],
+            verdict: "CAUTION", summary: "CAUTION: Ownership is not renounced. Owner-only functions (fees, limits, blacklists) remain callable.",
+            reasons: [{ code: "OWNER_RETAINS_PRIVILEGES", severity: 4, detail: "Ownership is not renounced. Owner-only functions (fees, limits, blacklists) remain callable.", source: "onchain" }],
+            hold_verdict: "MONITOR", address: "0x...", chain: "base", mutable_risk_score: 20,
+            can_turn_hostile: true, time_to_rug: "delayed",
             controls: {}, tier: "pro",
           },
         },
@@ -61,7 +63,7 @@ const inner = paymentMiddleware(
     "/api/llm":      { price: "$0.01", network: N,
       config: {
         resource: `${CANONICAL_ORIGIN}/api/llm`,
-        description: "LLM chat completions for AI agents — no API key, no account, no signup; pay per call in USDC on Base. POST JSON { prompt } or { messages: [{ role, content }] }; optional model (OpenRouter slug), max_tokens (default 800, max 2000). Routes across a 5-model fallback chain so one unavailable model doesn't fail the call. Returns { model, content, usage, latency_ms }. For agents that need inference without holding an OpenAI or Anthropic key.",
+        description: "LLM chat completion. $0.01 USDC per call on Base, no API key. POST JSON { prompt } or { messages: [{ role, content }] }; optional model (OpenRouter slug) and max_tokens (default 800, max 2000). Falls back across up to 5 models so one outage does not fail the call. Returns { content, model, usage, latency_ms }.",
         inputSchema: {
           bodyType: "json",
           bodyFields: {
@@ -82,7 +84,7 @@ const inner = paymentMiddleware(
     "/api/scrape":   { price: "$0.01", network: N,
       config: {
         resource: `${CANONICAL_ORIGIN}/api/scrape`,
-        description: "Fetch any URL and get clean, LLM-ready page content — no API key, no account, no signup; pay per call in USDC on Base. Gets past common bot-blocking. Params: ?url=... (required), format=markdown|text|html (default markdown), max_chars=N (default 40000, max 120000). Returns { url, status, title, description, format, content, truncated, chars, latency_ms }; non-HTML URLs return raw content. For agents that need a page as text before summarising or extracting.",
+        description: "Any URL as clean, LLM-ready content. $0.01 USDC per call on Base, no API key. GET ?url=... (required), format=markdown|text|html (default markdown), max_chars (default 40000, max 120000). Returns { title, description, content, status, truncated, chars, latency_ms }. Non-HTML URLs come back as raw content.",
         inputSchema: {
           queryParams: {
             url: "Absolute URL to fetch. Required.",
@@ -108,7 +110,7 @@ const inner = paymentMiddleware(
     "/api/extract":  { price: "$0.01", network: N,
       config: {
         resource: `${CANONICAL_ORIGIN}/api/extract`,
-        description: "Pull structured JSON out of messy text or a web page — no API key, no account, no signup; pay per call in USDC on Base. POST JSON { schema: { field: type, ... } (required), and text or url }. If url is given the page is fetched and stripped first; an LLM fills the schema and missing fields come back null. Returns { data, model, latency_ms }. For agents turning an article, listing, or product page into typed fields.",
+        description: "Structured JSON from a web page or text, with exactly the fields you ask for. $0.01 USDC per call on Base, no API key. POST JSON { schema: { field: type, ... } (required), plus url or text }. Returns { data } with your schema's keys (null when a field is not in the source), the model used and latency_ms. Page fetch capped at 10 s, whole call at 45 s, so it never hangs.",
         inputSchema: {
           bodyType: "json",
           bodyFields: {
@@ -128,7 +130,7 @@ const inner = paymentMiddleware(
     "/api/embed":    { price: "$0.01", network: N,
       config: {
         resource: `${CANONICAL_ORIGIN}/api/embed`,
-        description: "Text embeddings for AI agents — no API key, no account, no signup; pay per call in USDC on Base. POST JSON { input: string or string[] (max 64 per call) }. Model is jina-embeddings-v3, 1024 dimensions, retrieval.passage task. Returns { model, embeddings (one vector per input), dimensions, count, usage, latency_ms }. For agents building a vector index or doing semantic search without a Jina or OpenAI key.",
+        description: "Text embeddings. $0.01 USDC per call on Base, no API key. POST JSON { input: a string or up to 64 strings }. Model jina-embeddings-v3, 1024 dimensions. Returns { embeddings (one vector per input), dimensions, count, usage, latency_ms }.",
         inputSchema: {
           bodyType: "json",
           bodyFields: {
@@ -147,7 +149,7 @@ const inner = paymentMiddleware(
     "/api/search":   { price: "$0.01", network: N,
       config: {
         resource: `${CANONICAL_ORIGIN}/api/search`,
-        description: "Live web search for AI agents — no API key, no account, no signup; pay per call in USDC on Base. GET ?q=YOUR+QUERY (required), count=N (1-20, default 10), country/language/page/device (optional). Returns { query, results: [{ title, url, description, score }], ads, people_also_ask, related_searches, knowledge_graph, answer_box, shopping, ai_overview, provider, latency_ms }. score is 1.0 for the top result descending toward 0.1. The structured blocks (ads/PAA/related/knowledge_graph/answer_box/shopping/ai_overview) are populated when the Google-backed provider answers; empty/null on fallback. For agents grounding an answer in current web data, comparison-shopping, or gathering source URLs to scrape.",
+        description: "Live web search results. $0.01 USDC per call on Base, no API key. GET ?q=... (required), count 1-20 (default 10), optional country, language, page. Returns results[{ title, url, description, score }], plus Google's answer box, knowledge graph, people-also-ask, related searches and shopping when the Google-backed provider answers (empty on fallback).",
         inputSchema: {
           queryParams: {
             q: "Search query. Required.",

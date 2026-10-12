@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     // CAUTION ("not fully assessed"), not PROCEED. Retry before acting.
     degraded: full.degraded,
     tier: "free",
-    upgrade: "Call /api/risk/pro for full reasons, signals, and sources ($0.01/call via x402).",
+    upgrade: "GET /api/risk/pro: the same verdict with a one-line summary, every reason, signals and sources ($0.02 per call, USDC on Base via x402).",
     disclaimer: full.disclaimer,
     checked_at: full.checked_at,
   }, { status: 200 });

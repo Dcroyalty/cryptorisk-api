@@ -8,7 +8,7 @@ const SERVICES = [
   { id: "extract", send: "schema + url/text",get: "JSON in your shape",      price: "0.01", note: "" },
   { id: "embed",   send: "text or text[]",   get: "1024-dim vectors",        price: "0.01", note: "batch to 64" },
   { id: "search",  send: "query",            get: "ranked results",          price: "0.01", note: "" },
-  { id: "risk/pro",send: "0x address",       get: "0–100 score + verdict",   price: "0.01", note: "sanctions, scam, honeypot" },
+  { id: "risk/pro",send: "0x address",       get: "PROCEED / CAUTION / BLOCK + reasons", price: "0.02", note: "one call, one verdict" },
 ];
 
 export default function Home() {

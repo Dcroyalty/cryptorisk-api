@@ -28,6 +28,7 @@ export const BASE = "eip155:8453";
 export const POLYGON = "eip155:137";
 export const SOLANA = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 const PRICE = "$0.01";
+const RISK_PRICE = "$0.02"; // one call, one verdict (2026-10-12)
 
 /** The Solana receive address, or null when unset / not a plausible base58 pubkey. */
 export function solanaPayTo(): string | null {
@@ -54,7 +55,7 @@ function buildRoutes() {
   const routes: Record<string, unknown> = {};
   for (const def of Object.values(RAIL_ROUTES)) {
     routes[routeKey(def)] = {
-      accepts: rails.map((r) => ({ scheme: "exact", price: PRICE, network: r.network, payTo: r.payTo })),
+      accepts: rails.map((r) => ({ scheme: "exact", price: def.id.startsWith("risk") ? RISK_PRICE : PRICE, network: r.network, payTo: r.payTo })),
       resource: {
         url: `${CANONICAL_ORIGIN}${def.v2Path}`,
         description: def.description,

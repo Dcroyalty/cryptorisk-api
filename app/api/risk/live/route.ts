@@ -14,6 +14,7 @@ import { NextResponse } from "next/server";
 import { analyzeLiveRisk, type Chain } from "@/lib/live-risk";
 import { isEvmAddress } from "@/lib/sources";
 import { RISK_DISCLAIMER } from "@/lib/disclaimer";
+import { liveVerdict } from "@/lib/verdict";
 import { isArcMainnetLive, ARC_NOT_LIVE_MESSAGE } from "@/lib/arc";
 
 export const runtime = "nodejs";
@@ -51,11 +52,12 @@ export async function GET(req: Request) {
         mutable_risk_score: r.mutable_risk_score,
         can_turn_hostile: r.can_turn_hostile,
         time_to_rug: r.time_to_rug,
-        verdict: r.verdict,
+        verdict: liveVerdict(r),
+        hold_verdict: r.verdict,
         powers_count: r.powers.length,
         tier: "free",
         upgrade:
-          "GET /api/risk/live/pro for the full powers[] + controls{} breakdown ($0.01/call via x402).",
+          "GET /api/risk/live/pro: the same verdict with a one-line summary, every owner power as a reason, and the raw controls ($0.02 per call, USDC on Base via x402).",
         note:
           "Snapshot scanners tell you if a token is safe now. This tells you whether the owner can make it unsafe in the next block.",
         rpc_ok: r.rpc_ok,

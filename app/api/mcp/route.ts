@@ -34,7 +34,7 @@ const CORS: Record<string, string> = {
 const RISK_UPGRADE = {
   tool: "risk_report (HTTP, paid)",
   endpoint: `${BASE}/api/risk/pro`,
-  price: "$0.01 USDC on Base (x402)",
+  price: "$0.02 USDC on Base (x402)",
   adds:
     "per-signal reasons with severity, the raw signals object (token buy/sell tax, mint/proxy/hidden-owner flags, or wallet age + tx count), and the source list behind every flag",
 };
