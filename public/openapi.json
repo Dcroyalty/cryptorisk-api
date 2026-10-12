@@ -9,7 +9,7 @@
       "url": "https://uxus.finance",
       "email": "support@uxus.finance"
     },
-    "x-guidance": "Paid routes ($0.01 USDC on Base via x402 v1, no account or API key): GET /api/risk/pro?address=0x... to screen a wallet or token before transacting (OFAC, scam lists, honeypot signals, PROCEED|CAUTION|BLOCK); GET /api/risk/live/pro for owner/rug powers on a token; GET /api/search?q=; GET /api/scrape?url=; POST /api/extract {schema, text|url}; POST /api/embed {input}; POST /api/llm {prompt}. Free: GET /api/lookup?address= (any EVM or XRPL address), /api/risk, /api/entity, /api/resolve, and the MCP server at /api/mcp."
+    "x-guidance": "Paid routes (USDC on Base via x402 v1, no account or API key). $0.02: GET /api/risk/pro?address=0x... to screen a wallet or token before transacting (OFAC, scam lists, honeypot signals, PROCEED|CAUTION|BLOCK with reasons); GET /api/risk/live/pro for owner/rug powers on a token. $0.01 each: GET /api/search?q=; GET /api/scrape?url=; POST /api/extract {schema, text|url}; POST /api/embed {input}; POST /api/llm {prompt}. Free: GET /api/lookup?address= (any EVM or XRPL address), /api/risk, /api/entity, /api/resolve, and the MCP server at /api/mcp."
   },
   "servers": [
     {

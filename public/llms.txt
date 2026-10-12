@@ -50,7 +50,7 @@ DuckDuckGo — check `provider` to know which one served you.
 GET /api/risk/pro?address=0x...&chain=base&type=wallet
 Checks OFAC sanctions, 3,000+ scam/phishing addresses, honeypot and rug signals.
 Returns, in this order: { verdict: PROCEED|CAUTION|BLOCK, summary: one sentence why, reasons: [{code, severity, detail, source}] strongest first, risk_score, risk_level, flags, degraded, signals, sources }
-PROCEED = no sanctions, scam-list or risk signal. CAUTION = a warning sign, or a source could not be checked. BLOCK = sanctioned, scam-listed or high risk; do not send funds.
+PROCEED = no sanctions, scam-list or risk signal. CAUTION = a warning sign (such as owner or issuer controls on a token), or a source could not be checked. BLOCK = sanctioned, scam-listed or a hard red flag; do not send funds. Admin powers alone are never BLOCK: USDC, EURC, RLUSD and other regulated stablecoins return CAUTION with the reason "issuer can freeze or upgrade; normal for regulated stablecoins".
 degraded:true = a verdict input was unavailable (wallet-history explorer failed,
 or the token-security provider returned nothing) AND there was no list hit. The
 verdict is then CAUTION ("not fully assessed"), never PROCEED, with a

@@ -95,7 +95,7 @@ before revenue matters — it also lifts the once-a-day cron limit and log reten
 
 - `/api/risk/pro`, `/api/risk/live/pro` and `/api/risk/bazaar` cost **$0.02** and lead every answer with `verdict`
   (PROCEED / CAUTION / BLOCK), a one-line `summary` and `reasons[]` strongest first (`lib/verdict.ts`). Live-risk's old
-  hold scale stays as `hold_verdict` (SAFE_TO_HOLD→PROCEED, MONITOR→CAUTION, EXIT_RISK/DO_NOT_HOLD→BLOCK). The watchdog
+  hold scale stays as `hold_verdict` (SAFE_TO_HOLD→PROCEED, everything else→CAUTION; BLOCK only when transfers are paused right now. Admin powers alone never BLOCK, and regulated stablecoins get the plain "issuer can freeze or upgrade" reason). The watchdog
   expects 20000 atomic on `/api/risk/pro`.
 - **Bazaar listings refresh only when a payment settles.** After a description or price change, make one real paid call
   per route (`TARGET_URL=… node scripts/self-pay-v1.mjs`).
