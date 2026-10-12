@@ -57,6 +57,7 @@ function paidResource(path: string, query: Record<string, string | undefined>, r
 const str = (v: unknown) => (v === undefined || v === null || v === "" ? undefined : String(v));
 
 // ---- tool catalogue ----
+// Changing this list (add, remove, rename, free <-> paid)? Update docs/MCP_LISTING.md in the same commit.
 type ToolDef = {
   name: string;
   description: string;
