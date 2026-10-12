@@ -24,5 +24,5 @@ The owner copies only this block and pastes it to another Claude, so it has to s
 # The mcp.so listing lives in docs/MCP_LISTING.md
 
 `docs/MCP_LISTING.md` is the canonical public listing for the MCP server (name, URL, repository, description, tool
-list). Whenever a tool in `app/api/mcp/route.ts` is added, removed, renamed, or changes between free and paid,
+list). Whenever a tool in `lib/mcp-tools.ts` is added, removed, renamed, or changes between free and paid,
 update that file in the same commit, and tell the owner the live mcp.so listing needs the new text.

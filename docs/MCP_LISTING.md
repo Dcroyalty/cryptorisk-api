@@ -1,7 +1,7 @@
 # mcp.so listing — UXUS Agent Services
 
-The canonical text for our MCP directory listing. It describes MCP server **v1.2.0** (`app/api/mcp/route.ts`,
-commit `1a004c4`, 2026-10-12). When a tool is added, removed, renamed, or changes between free and paid, update
+The canonical text for our MCP directory listing. It describes MCP server **v1.2.0** (tool list in `lib/mcp-tools.ts`,
+2026-10-12). When a tool is added, removed, renamed, or changes between free and paid, update
 this file in the same commit and resubmit the text to mcp.so.
 
 Submit at <https://mcp.so/submit> (sign-in required). GitHub issues on `chatmcp/mcpso` are not processed.
@@ -37,3 +37,11 @@ Tools: lookup_wallet, resolve_name, check_entity, caller_id, health (free); sear
 
 Rule: an MCP tool never gives away what an x402 endpoint sells. A paid tool returns
 `{ paid, resource, method, price, pay_to, how, returns, discovery }` and nothing else.
+
+## Where it is listed
+
+| Directory | How it is published | Identifier |
+|---|---|---|
+| Official MCP Registry | `server.json` + `.github/workflows/publish-mcp.yml` (GitHub OIDC, no secrets). Bump `version` in `server.json` and `SERVER_INFO` in `lib/mcp-tools.ts`, then `git tag vX.Y.Z && git push origin vX.Y.Z`. `description` must be 100 characters or fewer. | `io.github.Dcroyalty/uxus` |
+| Smithery | Owner runs `smithery mcp publish "https://uxus.finance/api/mcp" -n butterballslaw/uxus`. Smithery reads `/.well-known/mcp/server-card.json`, which is generated from the live tool list. | `butterballslaw/uxus` |
+| mcp.so | Paid submission only ($39); skipped 2026-10-12. | — |
