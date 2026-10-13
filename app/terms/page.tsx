@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { BASE_SITE_CSS } from "../site-style";
 import SiteFooter from "../components/SiteFooter";
-import { ENTITY_NAME, CONTACT_EMAIL } from "@/lib/legal";
+import { ENTITY_NAME, CONTACT_EMAIL, BILLING_PORTAL_URL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Terms of Service — UXUS",
@@ -22,7 +22,7 @@ export default function Terms() {
         </div>
 
         <h1>Terms of Service</h1>
-        <p className="updated">Last updated: September 12, 2026</p>
+        <p className="updated">Last updated: October 13, 2026</p>
 
         <p>
           These Terms of Service ("Terms") govern your access to and use of the UXUS wallet and token risk
@@ -75,7 +75,9 @@ export default function Terms() {
         <h2>6. Subscriptions and billing</h2>
         <p>
           Paid subscription tiers bill monthly in advance by card. See our{" "}
-          <a href="/refunds">Refund Policy</a> for cancellation and refund terms. Pay-per-call access via the
+          <a href="/refunds">Refund Policy</a> for cancellation and refund terms, and use{" "}
+          <a href={BILLING_PORTAL_URL}>Manage or cancel your subscription</a> to cancel, update your card or
+          download invoices at any time. Pay-per-call access via the
           x402 protocol is billed per request in USDC and is governed by these Terms as well.
         </p>
 

@@ -3,6 +3,7 @@ import { BASE_SITE_CSS } from "../site-style";
 import SiteFooter from "../components/SiteFooter";
 import SubscribeButton from "./SubscribeButton";
 import { STRIPE_ENABLED, type PlanId } from "@/lib/stripe";
+import { BILLING_PORTAL_URL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Pricing — UXUS",
@@ -77,6 +78,7 @@ export default function Pricing() {
         .x402note{background:var(--card);border:1px solid var(--rule);border-radius:3px;padding:18px 20px;
           font-size:13.5px;color:var(--muted)}
         .x402note b{color:var(--ink)}
+        .manage{font-size:13.5px;color:var(--muted);margin:-20px 0 28px}
       `,
         }}
       />
@@ -124,6 +126,13 @@ export default function Pricing() {
             </div>
           ))}
         </div>
+
+        {STRIPE_ENABLED && (
+          <p className="manage">
+            Already subscribed? <a href={BILLING_PORTAL_URL}>Manage or cancel your subscription</a> — enter
+            your billing email and Stripe sends you a sign-in link.
+          </p>
+        )}
 
         <div className="x402note">
           <b>Prefer pay-per-call?</b> That is not going away. <code>/api/risk/pro</code> is $0.02/call via the

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { BASE_SITE_CSS } from "../site-style";
 import SiteFooter from "../components/SiteFooter";
-import { CONTACT_EMAIL } from "@/lib/legal";
+import { CONTACT_EMAIL, BILLING_PORTAL_URL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Refund Policy — UXUS",
@@ -22,12 +22,13 @@ export default function Refunds() {
         </div>
 
         <h1>Refund Policy</h1>
-        <p className="updated">Last updated: September 12, 2026</p>
+        <p className="updated">Last updated: October 13, 2026</p>
 
         <h2>Subscriptions</h2>
         <p>
-          Starter and Pro are monthly subscriptions billed in advance by card. You can cancel at any time
-          from your account. Cancelling stops the next renewal — <strong>your subscription remains active
+          Starter and Pro are monthly subscriptions billed in advance by card. You can cancel at any time,
+          without contacting us: <a href={BILLING_PORTAL_URL}>Manage or cancel your subscription</a> — enter
+          the email you subscribed with and Stripe sends you a one-time sign-in link. Cancelling stops the next renewal — <strong>your subscription remains active
           through the end of the billing period you already paid for</strong>, and access continues until
           then.
         </p>
