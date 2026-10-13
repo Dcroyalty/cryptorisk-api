@@ -40,6 +40,10 @@ export interface WalletSignals {
   // response). null/zero fields are then UNKNOWN, not "this wallet has no history".
   // Same contract as live-risk's rpc_ok.
   signals_ok: boolean;
+  // Present only when the explorer was unavailable and the history came from
+  // the chain itself (see chainSignals): tx_count is then OUTGOING transactions
+  // only (the account nonce) and the two dates are accurate to about a day.
+  history_source?: "chain";
 }
 
 const FAILED: WalletSignals = {
@@ -145,6 +149,13 @@ async function fetchExplorer(rawUrl: string): Promise<Fetched> {
         explorerLockedUntil.set(host, Date.now() + Math.min(Number.isFinite(reset) && reset > 0 ? reset : 10_000, 300_000));
         return { signals: { ...FAILED }, limited: true };
       }
+      // A 403 is the explorer's Cloudflare bot challenge (base.blockscout.com
+      // answered every call that way on 2026-10-13). Same handling as a lockout:
+      // stop calling it for 5 min and let the next source answer.
+      if (r.status === 403) {
+        explorerLockedUntil.set(host, Date.now() + 300_000);
+        return { signals: { ...FAILED }, limited: true };
+      }
       if (!r.ok) return { signals: { ...FAILED }, limited: false };
       return { signals: signalsFromExplorer(await r.json()), limited: false };
     } catch {
@@ -169,11 +180,103 @@ async function ethSignals(address: string): Promise<WalletSignals> {
 }
 
 async function baseSignals(address: string): Promise<WalletSignals> {
-  // Blockscout Base instance (Etherscan-compatible, keyless), then the PRO API.
+  // Blockscout Base instance (Etherscan-compatible, keyless), then the PRO API,
+  // then the chain itself — so a blocked or slow explorer no longer means a
+  // degraded verdict.
   const s = await fetchExplorer(
     `https://base.blockscout.com/api?module=account&action=txlist&address=${address}&sort=asc&page=1&offset=10000`,
   );
-  return withProFallback(s, 8453, address);
+  const fromExplorer = await withProFallback(s, 8453, address);
+  if (fromExplorer.signals_ok) return fromExplorer;
+  return chainSignals(address).catch(() => fromExplorer);
+}
+
+// --- Base wallet history without an explorer ---
+// The account nonce is the number of transactions the address has sent, and an
+// archive node answers it for any past block. Search for the block where the
+// nonce first reached 1 (first activity) and where it reached today's value
+// (last activity). Scoring only needs days, so the search stops within a day.
+// Nonce 0 = never sent a transaction: a definitive "no outgoing history".
+const BASE_ARCHIVE_RPCS = ["https://mainnet.base.org", "https://base.gateway.tenderly.co", "https://base.drpc.org"];
+const CHAIN_RPC_TIMEOUT_MS = 6000;
+const CHAIN_PROBES = 3;
+const CHAIN_SEARCH_STOP_BLOCKS = 43_200; // one day of 2 s blocks
+let archiveRpcStart = 0;
+
+async function archiveRpc<T>(method: string, params: unknown[]): Promise<T> {
+  let last: unknown;
+  // Two passes over the pool: public nodes 429 in bursts and recover within a moment.
+  for (let i = 0; i < BASE_ARCHIVE_RPCS.length * 2; i++) {
+    if (i === BASE_ARCHIVE_RPCS.length) await new Promise((res) => setTimeout(res, 300));
+    const url = BASE_ARCHIVE_RPCS[(archiveRpcStart + i) % BASE_ARCHIVE_RPCS.length];
+    try {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+        signal: AbortSignal.timeout(CHAIN_RPC_TIMEOUT_MS),
+      });
+      if (!r.ok) throw new Error(`${url} ${r.status}`);
+      const j = (await r.json()) as { result?: T; error?: unknown };
+      if (j.error || j.result == null) throw new Error(`${url} rpc error`);
+      return j.result;
+    } catch (e) {
+      last = e;
+      archiveRpcStart = (archiveRpcStart + 1) % BASE_ARCHIVE_RPCS.length;
+    }
+  }
+  throw last;
+}
+
+const hexBlock = (n: number) => "0x" + n.toString(16);
+
+// Smallest probed block (within CHAIN_SEARCH_STOP_BLOCKS) at which the nonce is >= target.
+async function firstBlockWithNonce(address: string, target: number, latest: number): Promise<number> {
+  let lo = 0;
+  let hi = latest;
+  while (hi - lo > CHAIN_SEARCH_STOP_BLOCKS) {
+    const step = (hi - lo) / (CHAIN_PROBES + 1);
+    const points = Array.from({ length: CHAIN_PROBES }, (_, i) => Math.floor(lo + step * (i + 1)));
+    const nonces = await Promise.all(points.map((b) => archiveRpc<string>("eth_getTransactionCount", [address, hexBlock(b)])));
+    const k = nonces.findIndex((n) => parseInt(n, 16) >= target);
+    if (k === -1) lo = points[CHAIN_PROBES - 1];
+    else {
+      hi = points[k];
+      if (k > 0) lo = points[k - 1];
+    }
+  }
+  return hi;
+}
+
+async function chainSignals(address: string): Promise<WalletSignals> {
+  const [head, n] = await Promise.all([
+    archiveRpc<string>("eth_blockNumber", []),
+    archiveRpc<string>("eth_getTransactionCount", [address, "latest"]),
+  ]);
+  const latest = parseInt(head, 16);
+  const nonce = parseInt(n, 16);
+  if (!Number.isFinite(latest) || !Number.isFinite(nonce)) throw new Error("bad rpc answer");
+  if (nonce === 0) {
+    return { wallet_age_days: null, tx_count: 0, first_seen: null, last_seen: null, signals_ok: true, history_source: "chain" };
+  }
+  const [firstBlock, lastBlock] = await Promise.all([
+    firstBlockWithNonce(address, 1, latest),
+    nonce > 1 ? firstBlockWithNonce(address, nonce, latest) : Promise.resolve(null),
+  ]);
+  const [b1, b2] = await Promise.all(
+    [firstBlock, lastBlock ?? firstBlock].map((b) => archiveRpc<{ timestamp: string }>("eth_getBlockByNumber", [hexBlock(b), false])),
+  );
+  const firstTs = parseInt(b1.timestamp, 16) * 1000;
+  const lastTs = parseInt(b2.timestamp, 16) * 1000;
+  if (!Number.isFinite(firstTs) || !Number.isFinite(lastTs)) throw new Error("bad block timestamp");
+  return {
+    wallet_age_days: Math.floor((Date.now() - firstTs) / 86400000),
+    tx_count: nonce,
+    first_seen: new Date(firstTs).toISOString(),
+    last_seen: new Date(lastTs).toISOString(),
+    signals_ok: true,
+    history_source: "chain",
+  };
 }
 
 async function arcSignals(address: string): Promise<WalletSignals> {
