@@ -92,8 +92,10 @@ export default function Pricing() {
         <h1>Pricing</h1>
         <p className="lede">
           A free tier for casual checks, and flat monthly subscriptions for teams that want
-          predictable billing instead of pay-per-call. Card payments via Stripe are pending
-          approval — subscriptions below go live the moment that clears.
+          predictable billing instead of pay-per-call.{" "}
+          {STRIPE_ENABLED
+            ? "Subscribe by card through Stripe Checkout — your API key is issued as soon as payment clears, and you can cancel any time."
+            : "Card subscriptions are temporarily unavailable — pay-per-call below works now."}
         </p>
 
         <div className="tiers">
