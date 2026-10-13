@@ -157,7 +157,7 @@ A reachable-but-degraded data source (block explorer or RPC down) is different: 
 
 ## Pricing
 
-**$0.03 per address screened — $30 per 1,000.** Invalid-format addresses aren't charged — no work was done. Pay-per-event, no subscription.
+**$0.025 per address screened — $25 per 1,000.** Invalid-format addresses aren't charged — no work was done. Pay-per-event, no subscription.
 
 ## What this is not
 

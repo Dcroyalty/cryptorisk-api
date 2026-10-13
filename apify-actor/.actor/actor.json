@@ -2,6 +2,7 @@
   "actorSpecification": 1,
   "name": "wallet-sanctions-risk-screener",
   "title": "Wallet & Address Sanctions + Risk Screener",
+  "description": "Screens Ethereum-style wallet and contract addresses against the US OFAC sanctions list and known scam lists, checks who controls the contract and how old the wallet is, and returns a clear PROCEED, CAUTION or BLOCK verdict for each address.",
   "version": "0.1",
   "buildTag": "latest",
   "dockerfile": "../Dockerfile",
