@@ -88,7 +88,7 @@ Only a genuine crash (a bug, out-of-memory) exits FAILED. Error records are not 
 
 ## Pricing
 
-**$10.00 per 1,000 results returned** (pay-per-event, one `query-executed` event per query — at the default `num: 10` that's $0.10/query). This is well above the $0.11–$1.80-per-1,000 range typical for comparable SERP actors on the Store.
+**$0.01 per query — $10.00 per 1,000 queries.** Pay-per-event: one `query-executed` event per query, whatever `num` is, so at the default `num: 10` that works out to $1.00 per 1,000 results. Queries that return nothing aren't charged.
 
 ## What this is not
 
