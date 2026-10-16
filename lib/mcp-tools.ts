@@ -9,7 +9,7 @@ export const SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 export const LATEST_PROTOCOL = "2025-06-18";
 export const SERVER_INFO = { name: "uxus-agent-services", title: "UXUS Agent Services", version: "1.3.0" };
 export const SERVER_DESCRIPTION =
-  "Wallet and address tools for AI agents, no API key or account. Free: universal wallet lookup (EVM and XRPL) with a first-pass risk verdict, ENS and Basename resolution, entity labels, and a wallet caller-ID check (ANSWER, SCREEN or BLOCK). Paid: search_web and scrape_url cost $0.01 USDC on Base via x402, and lending_grade (A-F risk grade for an XRP Ledger lending vault or broker, live once XRPL lending is enabled) costs $0.02; each returns the payment resource to call.";
+  "Wallet and address tools for AI agents, no API key or account. Free: universal wallet lookup (EVM and XRPL) with a first-pass risk verdict, ENS and Basename resolution, entity labels, and a wallet caller-ID check (ANSWER, SCREEN or BLOCK). Paid: search_web and scrape_url cost $0.01 USDC on Base via x402, and lending_grade (A-F risk grade for an XRP Ledger lending vault or broker) costs $0.02 and goes live when XRPL lending is enabled on mainnet (until then its endpoint returns 503 with no charge); each returns the payment resource to call.";
 
 // ---- upgrade pointer (funnel) ----
 const RISK_UPGRADE = {
@@ -113,7 +113,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "lending_grade",
     description:
-      "A-F risk grade for one XRP Ledger lending vault or loan broker, from on-ledger data only (size, utilization, first-loss cover ratio, late/impaired/defaulted loans, unrealized loss, realized yield), with every rule that moved the grade. Not a credit rating. This is a PAID x402 call: $0.02 USDC on Base at GET /api/lending/grade. This tool returns the payment resource to call; it does not compute the grade. Until XRPL lending is enabled on mainnet it says so instead. Params: id (64-hex Vault or LoanBroker ID, required); type (vault | broker, optional).",
+      "A-F risk grade for one XRP Ledger lending vault or loan broker, from on-ledger data only (size, utilization, first-loss cover ratio, late/impaired/defaulted loans, unrealized loss, realized yield), with every rule that moved the grade. Not a credit rating. This is a PAID x402 call: $0.02 USDC on Base at GET /api/lending/grade. This tool returns the payment resource to call; it does not compute the grade. NOT LIVE YET: it goes live when XRPL lending (the LendingProtocol and SingleAssetVault amendments) is enabled on mainnet. Until then this tool returns available:false and GET /api/lending/grade returns 503 with no charge. Params: id (64-hex Vault or LoanBroker ID, required); type (vault | broker, optional).",
     inputSchema: {
       type: "object",
       properties: {
