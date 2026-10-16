@@ -1,5 +1,5 @@
 // app/api/lookup/route.ts — universal FREE reverse lookup.
-// GET /api/lookup?address=<any address, any chain>. No chain parameter: the
+// GET /api/lookup?address=<Ethereum or Base 0x address, or XRPL r-address>. No chain parameter: the
 // address format alone selects EVM or XRPL. ONE normalized envelope for every
 // chain — identical field names regardless of chain is the product.
 import { NextRequest, NextResponse } from "next/server";

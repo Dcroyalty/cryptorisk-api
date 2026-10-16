@@ -40,7 +40,7 @@ const routes = {
     accepts: [{ scheme: "exact", price: VERDICT_PRICE, network: "eip155:8453", payTo: PAY_TO }],
     resource: {
       url: RESOURCE_URL,
-      description: "One call, one verdict: PROCEED, CAUTION or BLOCK for any EVM wallet or token, with a one-line summary and the reasons attached (OFAC sanctions, scam lists, honeypot, tax and mint signals). $0.02 USDC on Base, charged only after a successful answer.",
+      description: "One call, one verdict: PROCEED, CAUTION or BLOCK for any Ethereum or Base wallet or token, with a one-line summary and the reasons attached (OFAC sanctions, scam lists, honeypot, tax and mint signals). $0.02 USDC on Base, charged only after a successful answer.",
       mimeType: "application/json",
       serviceName: "UXUS Risk Verdict",
       tags: ["verdict", "risk", "security", "wallet", "sanctions", "token"],

@@ -39,10 +39,16 @@ Paste each paid resource URL (it auto-detects the x402 schema):
 URL: https://x402-list.com  (look for "Submit" / "Add")
 Name: UXUS — Agent Services
 Website: https://uxus.finance
-Description: Pay-per-call primitives for AI agents on Base — inference,
-  scraping, extraction, embeddings, search, and wallet/token risk
-  (OFAC sanctions + scam + honeypot/rug detection). $0.01 USDC via x402.
-Networks: base
+Description (resubmission, 2026-10-16 — the Oct 14 update was rejected for saying "any EVM";
+  our risk endpoints cover Ethereum and Base only. One update per 7 days: send on or after Oct 21):
+  Pay-per-call tools for AI agents, paid in USDC on Base via x402 — no account
+  or API key. Headline: one-call risk verdict (PROCEED, CAUTION or BLOCK, with
+  the reasons) for Ethereum and Base wallets and tokens, $0.02: OFAC sanctions,
+  scam lists, honeypot, tax and mint signals. Also live web search, URL
+  scraping, structured extraction, embeddings and LLM at $0.01, and A-F risk
+  grades for ways to earn on XRP and RLUSD at $0.02.
+Chains covered by the risk endpoints: Ethereum, Base
+Payment network: base
 
 ========================================================================
 3. AWESOME-X402 (GitHub PR)

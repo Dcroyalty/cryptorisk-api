@@ -24,7 +24,7 @@ const inner = paymentMiddleware(
     "/api/risk/pro": { price: "$0.02", network: N,
       config: {
         resource: `${CANONICAL_ORIGIN}/api/risk/pro`,
-        description: "One call, one verdict: PROCEED, CAUTION or BLOCK for any EVM wallet or token, with the reasons attached. $0.02 USDC per call on Base, no API key or account. GET ?address=0x... (required), chain=base|ethereum, type=wallet|token. Checks the OFAC SDN list (synced daily), scam and phishing lists, and honeypot, tax and mint signals. Returns verdict, a one-line summary, reasons[] strongest first, risk_score 0-100 and sources. Never PROCEED when a source could not be checked.",
+        description: "One call, one verdict: PROCEED, CAUTION or BLOCK for any Ethereum or Base wallet or token, with the reasons attached. $0.02 USDC per call on Base, no API key or account. GET ?address=0x... (required), chain=base|ethereum, type=wallet|token. Checks the OFAC SDN list (synced daily), scam and phishing lists, and honeypot, tax and mint signals. Returns verdict, a one-line summary, reasons[] strongest first, risk_score 0-100 and sources. Never PROCEED when a source could not be checked.",
         inputSchema: {
           queryParams: {
             address: "0x EVM address (wallet or token contract). Required.",

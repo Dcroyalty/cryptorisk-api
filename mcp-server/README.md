@@ -1,6 +1,6 @@
 # uxus-mcp
 
-Zero-config MCP server for **UXUS Agent Services**. Free universal wallet lookup,
+Zero-config MCP server for **UXUS Agent Services**. Free wallet lookup (Ethereum, Base and XRPL),
 ENS/Basename resolution, entity attribution, and wallet caller ID. Web search and
 page scraping are paid ($0.01 USDC on Base via x402): those two tools return the
 payment resource to call. **No API key, no account, no signup.**
@@ -32,7 +32,7 @@ supports remote servers.
 |------|--------------|
 | `search_web` | **Paid** ($0.01 USDC on Base, x402). Returns the payment resource for a live web search; does not run it. |
 | `scrape_url` | **Paid** ($0.01 USDC on Base, x402). Returns the payment resource for URL → clean markdown / text / html; does not fetch it. |
-| `lookup_wallet` | Any address, any chain (EVM + XRPL, auto-detected) → one normalized risk + entity envelope. |
+| `lookup_wallet` | An Ethereum or Base 0x address, or an XRPL address (auto-detected) → one normalized risk + entity envelope. |
 | `resolve_name` | ENS / Basename ↔ address, bidirectional, reverse records forward-verified. |
 | `check_entity` | What *is* this address — sanctioned, mixer, exchange, scam, drainer, protocol… |
 | `caller_id` | Should this wallet be answered? `ANSWER \| SCREEN \| BLOCK` with reasons. |

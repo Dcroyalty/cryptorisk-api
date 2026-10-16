@@ -24,7 +24,7 @@ export const RAIL_ROUTES: Record<RailRouteId, RailRouteDef> = {
     method: "GET",
     v2Path: "/api/v2/risk/pro",
     v1Path: "/api/risk/pro",
-    description: `One call, one verdict: PROCEED, CAUTION or BLOCK for any EVM wallet or token, with the reasons attached. ${RISK_RAILS_NOTE} GET ?address=0x... (required), chain=base|ethereum, type=wallet|token. Checks OFAC sanctions, scam lists and honeypot, tax and mint signals. Returns verdict, a one-line summary, reasons[] strongest first, risk_score and sources.`,
+    description: `One call, one verdict: PROCEED, CAUTION or BLOCK for any Ethereum or Base wallet or token, with the reasons attached. ${RISK_RAILS_NOTE} GET ?address=0x... (required), chain=base|ethereum, type=wallet|token. Checks OFAC sanctions, scam lists and honeypot, tax and mint signals. Returns verdict, a one-line summary, reasons[] strongest first, risk_score and sources.`,
     discovery: {
       method: "GET",
       input: { address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", chain: "base" },

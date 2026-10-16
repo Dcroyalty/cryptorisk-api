@@ -3,13 +3,13 @@
   "info": {
     "title": "UXUS — Agent Services",
     "version": "1.2.0",
-    "description": "Pay-per-call tools for AI agents, paid in USDC on Base via x402 (v1, settled by the Coinbase CDP facilitator). No account or API key. Headline: one-call risk verdicts (PROCEED / CAUTION / BLOCK with reasons) for any EVM wallet or token, $0.02. Also $0.01 each: live web search, URL scraping, structured extraction, embeddings and LLM completions. Free: verdict-only risk, address lookup, entity labels, ENS/Basename resolve.",
+    "description": "Pay-per-call tools for AI agents, paid in USDC on Base via x402 (v1, settled by the Coinbase CDP facilitator). No account or API key. Headline: one-call risk verdicts (PROCEED / CAUTION / BLOCK with reasons) for any Ethereum or Base wallet or token, $0.02. Also $0.01 each: live web search, URL scraping, structured extraction, embeddings and LLM completions. Free: verdict-only risk, address lookup, entity labels, ENS/Basename resolve.",
     "contact": {
       "name": "UXUS",
       "url": "https://uxus.finance",
       "email": "support@uxus.finance"
     },
-    "x-guidance": "Paid routes (USDC on Base via x402 v1, no account or API key). $0.02: GET /api/risk/pro?address=0x... to screen a wallet or token before transacting (OFAC, scam lists, honeypot signals, PROCEED|CAUTION|BLOCK with reasons); GET /api/risk/live/pro for owner/rug powers on a token. $0.01 each: GET /api/search?q=; GET /api/scrape?url=; POST /api/extract {schema, text|url}; POST /api/embed {input}; POST /api/llm {prompt}. Free: GET /api/lookup?address= (any EVM or XRPL address), /api/risk, /api/entity, /api/resolve, and the MCP server at /api/mcp."
+    "x-guidance": "Paid routes (USDC on Base via x402 v1, no account or API key). $0.02: GET /api/risk/pro?address=0x... to screen a wallet or token before transacting (OFAC, scam lists, honeypot signals, PROCEED|CAUTION|BLOCK with reasons); GET /api/risk/live/pro for owner/rug powers on a token. $0.01 each: GET /api/search?q=; GET /api/scrape?url=; POST /api/extract {schema, text|url}; POST /api/embed {input}; POST /api/llm {prompt}. Free: GET /api/lookup?address= (an Ethereum or Base 0x address, or an XRPL address), /api/risk, /api/entity, /api/resolve, and the MCP server at /api/mcp."
   },
   "servers": [
     {
@@ -2064,7 +2064,7 @@
           ]
         },
         "summary": "One-call risk verdict: PROCEED / CAUTION / BLOCK with reasons ($0.02 USDC on Base)",
-        "description": "One call, one verdict: PROCEED, CAUTION or BLOCK for any EVM wallet or token, with the reasons attached. $0.02 USDC per call on Base, no API key or account. GET ?address=0x... (required), chain=base|ethereum, type=wallet|token. Checks the OFAC SDN list (synced daily), scam and phishing lists, and honeypot, tax and mint signals. Returns verdict, a one-line summary, reasons[] strongest first, risk_score 0-100 and sources. Never PROCEED when a source could not be checked.",
+        "description": "One call, one verdict: PROCEED, CAUTION or BLOCK for any Ethereum or Base wallet or token, with the reasons attached. $0.02 USDC per call on Base, no API key or account. GET ?address=0x... (required), chain=base|ethereum, type=wallet|token. Checks the OFAC SDN list (synced daily), scam and phishing lists, and honeypot, tax and mint signals. Returns verdict, a one-line summary, reasons[] strongest first, risk_score 0-100 and sources. Never PROCEED when a source could not be checked.",
         "security": [
           {
             "x402": []
@@ -2131,7 +2131,7 @@
       "get": {
         "operationId": "walletRiskFree",
         "summary": "FREE: verdict only (PROCEED / CAUTION / BLOCK), no reasons",
-        "description": "Returns risk_score (0-100), risk_level, PROCEED/CAUTION/BLOCK verdict, and flags for any EVM wallet or token. No reasons, signals, or sources.",
+        "description": "Returns risk_score (0-100), risk_level, PROCEED/CAUTION/BLOCK verdict, and flags for any Ethereum or Base wallet or token. No reasons, signals, or sources.",
         "security": [],
         "parameters": [
           {
@@ -2190,7 +2190,7 @@
     "/api/lookup": {
       "get": {
         "operationId": "universalLookup",
-        "summary": "FREE universal reverse lookup — any address, any chain",
+        "summary": "FREE reverse lookup — Ethereum and Base 0x addresses and XRPL r-addresses",
         "description": "Auto-detects the chain from the address format (EVM 0x address or XRPL classic r-address) — no chain parameter. One normalized envelope for every chain. EVM screening defaults to Base; ?chain=ethereum moves the wallet-history signal only (sanctions/scam lists are chain-agnostic). XRPL X-addresses are recognized but return 400 asking for the classic form.",
         "security": [],
         "parameters": [

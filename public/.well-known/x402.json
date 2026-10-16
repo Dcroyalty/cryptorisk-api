@@ -1,7 +1,7 @@
 {
   "x402Version": 1,
   "name": "UXUS Agent Services",
-  "description": "Pay-per-call tools for AI agents. Headline: one-call risk verdicts, PROCEED / CAUTION / BLOCK with reasons, for any EVM wallet or token ($0.02). Also search, scrape, extract, embed and LLM at $0.01. USDC on Base via x402, no account or API key.",
+  "description": "Pay-per-call tools for AI agents. Headline: one-call risk verdicts, PROCEED / CAUTION / BLOCK with reasons, for any Ethereum or Base wallet or token ($0.02). Also search, scrape, extract, embed and LLM at $0.01. USDC on Base via x402, no account or API key.",
   "contact": "https://uxus.finance",
   "resources": [
     {
@@ -115,7 +115,7 @@
       "resource": "https://uxus.finance/api/risk/pro",
       "type": "http",
       "method": "GET",
-      "description": "One call, one verdict: PROCEED, CAUTION or BLOCK for any EVM wallet or token, with the reasons attached. $0.02 USDC per call on Base, no API key or account. GET ?address=0x... (required), chain=base|ethereum, type=wallet|token. Checks the OFAC SDN list (synced daily), scam and phishing lists, and honeypot, tax and mint signals. Returns verdict, a one-line summary, reasons[] strongest first, risk_score 0-100 and sources. Never PROCEED when a source could not be checked.",
+      "description": "One call, one verdict: PROCEED, CAUTION or BLOCK for any Ethereum or Base wallet or token, with the reasons attached. $0.02 USDC per call on Base, no API key or account. GET ?address=0x... (required), chain=base|ethereum, type=wallet|token. Checks the OFAC SDN list (synced daily), scam and phishing lists, and honeypot, tax and mint signals. Returns verdict, a one-line summary, reasons[] strongest first, risk_score 0-100 and sources. Never PROCEED when a source could not be checked.",
       "pricing": [
         {
           "amount": "0.02",
@@ -260,7 +260,7 @@
       "resource": "https://uxus.finance/api/lookup",
       "type": "http",
       "method": "GET",
-      "description": "Returns one normalized envelope — address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, entity, upgrade — for any EVM 0x or XRPL classic r-address, chain auto-detected from the format.",
+      "description": "Returns one normalized envelope — address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, entity, upgrade — for any Ethereum or Base 0x address or XRPL classic r-address, chain auto-detected from the format.",
       "pricing": [
         {
           "amount": "0",

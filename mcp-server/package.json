@@ -1,7 +1,7 @@
 {
   "name": "uxus-mcp",
   "version": "1.0.0",
-  "description": "Zero-config MCP server for UXUS Agent Services — free universal wallet lookup, ENS/Basename resolution, entity attribution and wallet caller ID, plus pay-per-call web search and page scraping over x402 ($0.01 USDC on Base). No API key, no account, no signup.",
+  "description": "Zero-config MCP server for UXUS Agent Services — free wallet lookup (Ethereum, Base and XRPL), ENS/Basename resolution, entity attribution and wallet caller ID, plus pay-per-call web search and page scraping over x402 ($0.01 USDC on Base). No API key, no account, no signup.",
   "type": "module",
   "bin": {
     "uxus-mcp": "index.mjs"

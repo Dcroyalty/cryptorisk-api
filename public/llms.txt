@@ -1,6 +1,6 @@
 # UXUS — Agent Services
 
-> Pay-per-call tools for AI agents, paid with USDC on Base via x402 (no account, no API key). Headline: one call, one verdict: PROCEED / CAUTION / BLOCK with the reasons attached, for any EVM wallet or token ($0.02). Also search, scrape, extract, embeddings and LLM at $0.01.
+> Pay-per-call tools for AI agents, paid with USDC on Base via x402 (no account, no API key). Headline: one call, one verdict: PROCEED / CAUTION / BLOCK with the reasons attached, for any Ethereum or Base wallet or token ($0.02). Also search, scrape, extract, embeddings and LLM at $0.01.
 
 ## Why
 An agent with a USDC wallet can use every service here immediately. No provider accounts to create, no keys to rotate, no subscriptions. Payment is authentication.
@@ -62,7 +62,7 @@ response aborts rather than wiping the table).
 GET /api/risk?address=0x...&chain=base
 
 ### Universal lookup (free) — $0.00
-GET /api/lookup?address=<any address, any chain>
+GET /api/lookup?address=<Ethereum or Base 0x address, or XRPL r-address>
 No chain parameter — EVM and XRPL are auto-detected from the address format.
 Optional ?chain=ethereum hint (EVM only; default base).
 Returns: { address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, entity, upgrade }

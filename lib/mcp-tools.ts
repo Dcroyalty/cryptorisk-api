@@ -9,7 +9,7 @@ export const SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 export const LATEST_PROTOCOL = "2025-06-18";
 export const SERVER_INFO = { name: "uxus-agent-services", title: "UXUS Agent Services", version: "1.4.0" };
 export const SERVER_DESCRIPTION =
-  "Wallet and address tools for AI agents, no API key or account. Free: universal wallet lookup (EVM and XRPL) with a first-pass risk verdict, ENS and Basename resolution, entity labels, and a wallet caller-ID check (ANSWER, SCREEN or BLOCK). Paid: search_web and scrape_url cost $0.01 USDC on Base via x402, yield_grade (A-F risk grade for one way to earn on XRP or RLUSD, from the XRP Yield Desk) costs $0.02, and lending_grade (A-F risk grade for an XRP Ledger lending vault or broker) costs $0.02 and goes live when XRPL lending is enabled on mainnet (until then its endpoint returns 503 with no charge); each returns the payment resource to call.";
+  "Wallet and address tools for AI agents, no API key or account. Free: wallet lookup (Ethereum, Base and XRPL) with a first-pass risk verdict, ENS and Basename resolution, entity labels, and a wallet caller-ID check (ANSWER, SCREEN or BLOCK). Paid: search_web and scrape_url cost $0.01 USDC on Base via x402, yield_grade (A-F risk grade for one way to earn on XRP or RLUSD, from the XRP Yield Desk) costs $0.02, and lending_grade (A-F risk grade for an XRP Ledger lending vault or broker) costs $0.02 and goes live when XRPL lending is enabled on mainnet (until then its endpoint returns 503 with no charge); each returns the payment resource to call.";
 
 // ---- upgrade pointer (funnel) ----
 const RISK_UPGRADE = {
@@ -161,7 +161,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "lookup_wallet",
     description:
-      "Universal address lookup — any address, any chain, auto-detected. Params: address (EVM 0x address or XRPL classic r-address, required); chain (optional EVM history hint: base default, or ethereum). Detects EVM vs XRPL from the format. Returns one normalized envelope: { address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, entity, name }. Free. For a fast first-pass check on a counterparty wallet.",
+      "Address lookup for Ethereum and Base 0x addresses and XRPL r-addresses, auto-detected. Params: address (EVM 0x address or XRPL classic r-address, required); chain (optional EVM history hint: base default, or ethereum). Detects EVM vs XRPL from the format. Returns one normalized envelope: { address, chain, chain_detected, exists, risk_score, risk_level, verdict, flags, entity, name }. Free. For a fast first-pass check on a counterparty wallet.",
     inputSchema: {
       type: "object",
       properties: {

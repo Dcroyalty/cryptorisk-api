@@ -5,6 +5,7 @@
 import type Stripe from "stripe";
 import { mintKey, syncSubscriptionStatus, deactivateBySubscription } from "@/lib/keys";
 import { planFromPriceId, stripe } from "@/lib/stripe";
+import { recordCardDonation, DONATION_KIND } from "@/lib/grants-donations";
 
 // Deps are injectable so tests can stub the one real network call this makes
 // (retrieving the subscription for its period bounds) without hitting Stripe.
@@ -28,6 +29,11 @@ export async function handleStripeEvent(event: Stripe.Event, deps: BillingDeps =
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
+      // A card donation to the XRPLHub grants pool (app/api/billing/donate): record it, mint nothing.
+      if (session.mode === "payment" && session.metadata?.kind === DONATION_KIND) {
+        await recordCardDonation(session);
+        return;
+      }
       if (session.mode !== "subscription") return; // not one of our subscription checkouts
       const subscriptionId =
         typeof session.subscription === "string" ? session.subscription : session.subscription?.id;

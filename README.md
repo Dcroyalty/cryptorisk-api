@@ -16,7 +16,7 @@ keys, no signup. A funded wallet is the whole integration.
 | `GET /api/risk/pro` | $0.02 | one call, one verdict: PROCEED / CAUTION / BLOCK + summary + reasons |
 | `GET /api/risk/live/pro` | $0.02 | one-call verdict on a token's owner powers (can it still be paused, upgraded or rugged?) + reasons |
 | `GET /api/risk` · `/api/risk/live` | free | risk score + verdict (no reasons/signals) |
-| `GET /api/lookup` | free | universal address lookup, EVM + XRPL, chain auto-detected |
+| `GET /api/lookup` | free | address lookup for Ethereum, Base and XRPL, chain auto-detected |
 | `GET /api/entity` | free | entity attribution — what *is* this address |
 | `GET /api/resolve` | free | ENS / Basenames, forward + reverse (forward-verified) |
 | `GET /api/callerid` | free | should this wallet be answered? (for XMTP/Push) |
