@@ -31,7 +31,7 @@ export type PlanId = "starter" | "pro" | "xrplhub_pro";
 export const PLANS: Record<PlanId, { name: string; quota: number; priceId: string }> = {
   starter: { name: "Starter", quota: 5_000, priceId: "price_1UEgZXRoquiH1GTZH8j0yJfE" },
   pro: { name: "Pro", quota: 25_000, priceId: "price_1UEgbQRoquiH1GTZlAlmQkG0" },
-  xrplhub_pro: { name: "XRPLHub Pro", quota: 20_000, priceId: "" },
+  xrplhub_pro: { name: "XRPLHub Pro", quota: 20_000, priceId: "price_1UREcpRoquiH1GTZ4pun00co" },
 };
 
 // Archived prices that still map to a plan (a subscription started on one keeps working).
