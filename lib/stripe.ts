@@ -31,7 +31,7 @@ export type PlanId = "starter" | "pro" | "lending_pro";
 export const PLANS: Record<PlanId, { name: string; quota: number; priceId: string }> = {
   starter: { name: "Starter", quota: 5_000, priceId: "price_1UEgZXRoquiH1GTZH8j0yJfE" },
   pro: { name: "Pro", quota: 25_000, priceId: "price_1UEgbQRoquiH1GTZlAlmQkG0" },
-  lending_pro: { name: "Lending Pro", quota: 20_000, priceId: "" },
+  lending_pro: { name: "Lending Pro", quota: 20_000, priceId: "price_1URAofRoquiH1GTZCgWWeul3" },
 };
 
 export function isPlanId(v: unknown): v is PlanId {
