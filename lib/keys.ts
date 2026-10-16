@@ -110,6 +110,11 @@ export async function keyForCustomer(customerId: string): Promise<MintedKey | nu
   return { api_key: r.key, plan: r.plan, quota_limit: r.quota_limit, period_end: r.period_end };
 }
 
+/** XRPLHub Pro, including keys minted under its old id "lending_pro". */
+export function isXrplhubPro(plan: string | null | undefined): boolean {
+  return plan === "xrplhub_pro" || plan === "lending_pro";
+}
+
 /** Read-only: the plan behind an active key, or null. Never counts toward quota. */
 export async function planForKey(rawKey: string): Promise<PlanId | null> {
   const rows = (await sql`
@@ -118,7 +123,7 @@ export async function planForKey(rawKey: string): Promise<PlanId | null> {
   return rows[0]?.plan ?? null;
 }
 
-/** Read-only entitlement for another service (xrplhub.io's Lending Pro routes). Never counts toward quota. */
+/** Read-only entitlement for another service (xrplhub.io's XRPLHub Pro routes). Never counts toward quota. */
 export async function entitlementForKey(rawKey: string): Promise<{ plan: PlanId; active: boolean; period_end: string } | null> {
   const rows = (await sql`
     SELECT plan, status, period_end FROM api_keys WHERE key = ${rawKey}

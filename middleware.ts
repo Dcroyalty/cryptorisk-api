@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { paymentMiddleware, Network } from "x402-next";
 import { facilitator } from "@coinbase/x402";
-import { guard, KEY_FORMAT, planForKey } from "@/lib/keys";
+import { guard, KEY_FORMAT, planForKey, isXrplhubPro } from "@/lib/keys";
 import { PAY_TO, CANONICAL_ORIGIN } from "@/lib/pay-to";
 import { lendingLive, lendingRpc, NOT_LIVE_BODY } from "@/lib/xrpl-lending/live";
+import { yieldOptionExists, YIELD_ID } from "@/lib/yield-desk";
 
 const LENDING_GRADE_PATH = "/api/lending/grade";
+const YIELD_GRADE_PATH = "/api/yield/grade";
 
 const N = "base" as Network;
 
@@ -171,6 +173,29 @@ const inner = paymentMiddleware(
           },
         },
       } },
+    // XRP Yield Desk risk grade (data from xrplhub.io/yield). Unknown ids are answered 404 before this paywall.
+    "/api/yield/grade": { price: "$0.02", network: N,
+      config: {
+        resource: `${CANONICAL_ORIGIN}/api/yield/grade`,
+        description: "A-F risk grade for one way to earn on XRP or RLUSD (XRPL AMM pools, Doppler vaults, Firelight stXRP and other Flare FXRP products, RLUSD and XRP DeFi pools, exchange earn): rate, size, lockup, withdrawal terms, who holds the keys, chain, age, audits and data source with timestamp, plus every rule that moved the grade. $0.02 USDC per call on Base, no API key. GET ?id=<option id from xrplhub.io/api/yield/options> (required). General information, not advice. Method: xrplhub.io/yield/method.",
+        inputSchema: {
+          queryParams: {
+            id: "Option id (slug), e.g. doppler-xrp-vault-xrpl. List: https://www.xrplhub.io/api/yield/options. Required.",
+          },
+        },
+        outputSchema: {
+          type: "json",
+          example: {
+            id: "doppler-xrp-vault-xrpl", name: "Doppler XRP Vault", asset: "XRP", chain: "XRP Ledger", grade: "C", score: 62,
+            rate: 0.03, rateKind: "paid in the week to 2026-10-09 (Doppler's published weekly rate)", tvlUsd: 101500000,
+            custody: "custodian", withdrawal: "Request a withdrawal; Doppler's standard redemption window is 7 days…",
+            adjustments: [{ rule: "CUSTODY_CUSTODIAN", points: -25, why: "A company holds the keys to deposited funds…" }],
+            source: { name: "Doppler Finance public API", url: "https://api.doppler.finance/v2/staking-info/token/XRP", at: "2026-10-16T17:00:00Z" },
+            methodVersion: "yield-grade-v1", method: "https://www.xrplhub.io/yield/method",
+            disclaimer: "General information for everyone, not personal advice…",
+          },
+        },
+      } },
     "/api/search":   { price: "$0.01", network: N,
       config: {
         resource: `${CANONICAL_ORIGIN}/api/search`,
@@ -291,25 +316,40 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   // XRPL Lending grade: everything that would make a paid call useless is answered BEFORE the paywall, so
   // nobody is charged for it (x402-next settles before the route runs): lending not live yet, a malformed ID,
-  // or an ID that isn't a Vault or LoanBroker on mainnet. A Lending Pro key skips the payment.
-  if (pathname === LENDING_GRADE_PATH) {
-    if (!(await lendingLive())) {
-      return NextResponse.json(NOT_LIVE_BODY, { status: 503, headers: { "Retry-After": "3600", "Cache-Control": "no-store" } });
-    }
-    const id = (url.searchParams.get("id") ?? "").toUpperCase();
-    if (!/^[0-9A-F]{64}$/.test(id)) {
-      return NextResponse.json({ error: "bad_request", message: "id must be the 64-hex ledger ID of a Vault or LoanBroker. You were not charged." }, { status: 400 });
-    }
-    const entry = await lendingRpc("ledger_entry", { index: id, ledger_index: "validated" });
-    const kind = entry?.node?.LedgerEntryType;
-    if (entry && kind !== "Vault" && kind !== "LoanBroker") {
-      return NextResponse.json({ error: "not_found", message: "No Vault or LoanBroker with that ID on the XRP Ledger mainnet. You were not charged." }, { status: 404 });
+  // or an ID that isn't a Vault or LoanBroker on mainnet. An XRPLHub Pro key skips the payment.
+  // XRP Yield Desk grade: same idea — a malformed or unknown option id is answered before the paywall.
+  if (pathname === LENDING_GRADE_PATH || pathname === YIELD_GRADE_PATH) {
+    if (pathname === LENDING_GRADE_PATH) {
+      if (!(await lendingLive())) {
+        return NextResponse.json(NOT_LIVE_BODY, { status: 503, headers: { "Retry-After": "3600", "Cache-Control": "no-store" } });
+      }
+      const id = (url.searchParams.get("id") ?? "").toUpperCase();
+      if (!/^[0-9A-F]{64}$/.test(id)) {
+        return NextResponse.json({ error: "bad_request", message: "id must be the 64-hex ledger ID of a Vault or LoanBroker. You were not charged." }, { status: 400 });
+      }
+      const entry = await lendingRpc("ledger_entry", { index: id, ledger_index: "validated" });
+      const kind = entry?.node?.LedgerEntryType;
+      if (entry && kind !== "Vault" && kind !== "LoanBroker") {
+        return NextResponse.json({ error: "not_found", message: "No Vault or LoanBroker with that ID on the XRP Ledger mainnet. You were not charged." }, { status: 404 });
+      }
+    } else {
+      const id = url.searchParams.get("id") ?? "";
+      if (!YIELD_ID.test(id)) {
+        return NextResponse.json({ error: "bad_request", message: "id must be an option id from https://www.xrplhub.io/api/yield/options. You were not charged." }, { status: 400 });
+      }
+      const exists = await yieldOptionExists(id);
+      if (exists === false) {
+        return NextResponse.json({ error: "not_found", message: "No Yield Desk option with that id (list: https://www.xrplhub.io/api/yield/options). You were not charged." }, { status: 404 });
+      }
+      if (exists === null) {
+        return NextResponse.json({ error: "source_unavailable", message: "The Yield Desk data can't be reached right now. You were not charged; try again in a minute." }, { status: 503, headers: { "Retry-After": "60" } });
+      }
     }
     const auth = req.headers.get("authorization") || "";
     const m = auth.match(/^Bearer\s+(\S+)$/);
     if (m && KEY_FORMAT.test(m[1])) {
-      if ((await planForKey(m[1])) !== "lending_pro") {
-        return NextResponse.json({ error: "wrong_plan", message: "This key isn't a Lending Pro key. Pay per call with x402 instead (send no Authorization header)." }, { status: 402 });
+      if (!isXrplhubPro(await planForKey(m[1]))) {
+        return NextResponse.json({ error: "wrong_plan", message: "This key isn't an XRPLHub Pro key. Pay per call with x402 instead (send no Authorization header)." }, { status: 402 });
       }
       const result = await guard(m[1]);
       if (result.ok) {

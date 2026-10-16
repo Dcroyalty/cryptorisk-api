@@ -20,22 +20,27 @@ export function stripe(): Stripe {
   return _stripe;
 }
 
-export type PlanId = "starter" | "pro" | "lending_pro";
+export type PlanId = "starter" | "pro" | "xrplhub_pro";
 
 // quota = "screens"/month, matches the /pricing page copy exactly.
 // Price IDs are real Stripe price identifiers, not secrets — hardcoding them
 // is fine (this is how Stripe's own docs embed them in client code) and
 // means going live needs no extra env vars beyond the two above.
-// lending_pro: XRPL Lending Pro ($49/mo) — grade API calls with the key, full grade history and grade-change
-// webhooks on xrplhub.io. Sold only once XRPL lending is enabled on mainnet (checkout route checks).
+// xrplhub_pro: XRPLHub Pro ($49/mo, formerly "Lending Pro") — 20,000 yield_grade / lending_grade calls a month
+// with the key, and grade-change webhooks for the XRP Yield Desk and XRPL lending on xrplhub.io. On sale now.
 export const PLANS: Record<PlanId, { name: string; quota: number; priceId: string }> = {
   starter: { name: "Starter", quota: 5_000, priceId: "price_1UEgZXRoquiH1GTZH8j0yJfE" },
   pro: { name: "Pro", quota: 25_000, priceId: "price_1UEgbQRoquiH1GTZlAlmQkG0" },
-  lending_pro: { name: "Lending Pro", quota: 20_000, priceId: "price_1URAofRoquiH1GTZCgWWeul3" },
+  xrplhub_pro: { name: "XRPLHub Pro", quota: 20_000, priceId: "" },
+};
+
+// Archived prices that still map to a plan (a subscription started on one keeps working).
+const LEGACY_PRICES: Record<string, PlanId> = {
+  price_1URAofRoquiH1GTZCgWWeul3: "xrplhub_pro", // "UXUS Lending Pro", archived when Lending Pro became XRPLHub Pro
 };
 
 export function isPlanId(v: unknown): v is PlanId {
-  return v === "starter" || v === "pro" || v === "lending_pro";
+  return v === "starter" || v === "pro" || v === "xrplhub_pro";
 }
 
 export function priceIdFor(plan: PlanId): string {
@@ -48,5 +53,5 @@ export function planFromPriceId(priceId: string | undefined | null): PlanId | nu
   for (const p of Object.keys(PLANS) as PlanId[]) {
     if (PLANS[p].priceId === priceId) return p;
   }
-  return null;
+  return LEGACY_PRICES[priceId] ?? null;
 }

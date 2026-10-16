@@ -7,9 +7,9 @@ export const BASE = "https://uxus.finance";
 export const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
 export const SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 export const LATEST_PROTOCOL = "2025-06-18";
-export const SERVER_INFO = { name: "uxus-agent-services", title: "UXUS Agent Services", version: "1.3.0" };
+export const SERVER_INFO = { name: "uxus-agent-services", title: "UXUS Agent Services", version: "1.4.0" };
 export const SERVER_DESCRIPTION =
-  "Wallet and address tools for AI agents, no API key or account. Free: universal wallet lookup (EVM and XRPL) with a first-pass risk verdict, ENS and Basename resolution, entity labels, and a wallet caller-ID check (ANSWER, SCREEN or BLOCK). Paid: search_web and scrape_url cost $0.01 USDC on Base via x402, and lending_grade (A-F risk grade for an XRP Ledger lending vault or broker) costs $0.02 and goes live when XRPL lending is enabled on mainnet (until then its endpoint returns 503 with no charge); each returns the payment resource to call.";
+  "Wallet and address tools for AI agents, no API key or account. Free: universal wallet lookup (EVM and XRPL) with a first-pass risk verdict, ENS and Basename resolution, entity labels, and a wallet caller-ID check (ANSWER, SCREEN or BLOCK). Paid: search_web and scrape_url cost $0.01 USDC on Base via x402, yield_grade (A-F risk grade for one way to earn on XRP or RLUSD, from the XRP Yield Desk) costs $0.02, and lending_grade (A-F risk grade for an XRP Ledger lending vault or broker) costs $0.02 and goes live when XRPL lending is enabled on mainnet (until then its endpoint returns 503 with no charge); each returns the payment resource to call.";
 
 // ---- upgrade pointer (funnel) ----
 const RISK_UPGRADE = {
@@ -107,6 +107,29 @@ export const TOOLS: ToolDef[] = [
         "/api/scrape",
         { url: target, format: str(a.format), max_chars: str(a.max_chars) },
         "{ url, status, title, description, format, content, truncated, chars, latency_ms }",
+      );
+    },
+  },
+  {
+    name: "yield_grade",
+    description:
+      "A-F risk grade for one way to earn on XRP or RLUSD, from the XRP Yield Desk (xrplhub.io/yield): XRPL AMM pools, Doppler vaults, Firelight stXRP and other Flare FXRP products, RLUSD and XRP DeFi pools, and exchange earn programs. Returns the rate, size, lockup and withdrawal terms, who holds the keys, chain, age, audits, the data source with its timestamp, and every rule that moved the grade. General information, not advice; the products graded pay nothing. This is a PAID x402 call: $0.02 USDC on Base at GET /api/yield/grade. This tool returns the payment resource to call; it does not compute the grade. Find ids for free at https://www.xrplhub.io/api/yield/options. Params: id (option id, required).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", pattern: "^[a-z0-9-]{3,90}$", description: "Option id (slug) from https://www.xrplhub.io/api/yield/options, e.g. doppler-xrp-vault-xrpl. Required." },
+      },
+      required: ["id"],
+      additionalProperties: false,
+    },
+    run: async (a) => {
+      const id = String(a.id ?? "").trim();
+      if (!/^[a-z0-9-]{3,90}$/.test(id)) return { error: "id must be an option id from https://www.xrplhub.io/api/yield/options. Nothing was charged." };
+      return paidResource(
+        "/api/yield/grade",
+        { id },
+        "{ id, name, provider, asset, chain, kind, rate, rateKind, tvlUsd, lockup, withdrawal, keys, custody, bridge, launchedAt, audits, auditLinks, source: { name, url, at }, grade (A|B|C|D|F), score, adjustments: [{ rule, points, why }], gradeHistory, methodVersion, method, disclaimer, checked_at }",
+        "0.02",
       );
     },
   },
@@ -217,4 +240,4 @@ export const TOOLS: ToolDef[] = [
   },
 ];
 
-export const PAID_TOOLS = ["search_web", "scrape_url", "lending_grade"];
+export const PAID_TOOLS = ["search_web", "scrape_url", "yield_grade", "lending_grade"];

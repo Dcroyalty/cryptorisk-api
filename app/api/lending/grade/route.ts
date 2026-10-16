@@ -1,5 +1,5 @@
 // app/api/lending/grade/route.ts — A–F risk grade for one XRPL lending vault or loan broker. $0.02 via x402
-// (middleware.ts), or free with a Lending Pro key. Read live from the ledger with the same code XRPLHub uses
+// (middleware.ts), or free with an XRPLHub Pro key. Read live from the ledger with the same code XRPLHub uses
 // (lib/xrpl-lending, copied from kreditkarma-backend), so the grade matches xrplhub.io/lending.
 //
 // Off until XRPL lending is enabled on mainnet: the middleware answers 503 before the paywall, and this route

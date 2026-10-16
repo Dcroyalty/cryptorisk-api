@@ -1,6 +1,6 @@
 // lib/xrpl-lending/live.ts — is XRPL lending enabled on mainnet? Read from the ledger, never a flag.
 //
-// The paid grade API (/api/lending/grade, MCP lending_grade, Lending Pro) switches itself on the first time
+// The paid grade API (/api/lending/grade, MCP lending_grade, XRPLHub Pro) switches itself on the first time
 // both LendingProtocol and SingleAssetVault appear in the ledger's Amendments object. Until then the
 // middleware answers 503 BEFORE the x402 paywall, so nobody can pay for a grade that can't exist yet.
 // "Enabled" is remembered for the life of the instance (an amendment can't be disabled); "not yet" is re-read

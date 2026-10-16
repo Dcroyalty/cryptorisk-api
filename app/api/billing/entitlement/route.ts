@@ -1,4 +1,4 @@
-// app/api/billing/entitlement/route.ts — read-only "what does this key pay for?" for xrplhub.io's Lending Pro
+// app/api/billing/entitlement/route.ts — read-only "what does this key pay for?" for xrplhub.io's XRPLHub Pro
 // routes (history, grade-change webhooks). The key is the secret: send it as `Authorization: Bearer uxus_...`.
 // Never counts toward quota and never returns the key itself.
 import { NextResponse } from "next/server";

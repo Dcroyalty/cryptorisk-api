@@ -3,7 +3,6 @@ import { BASE_SITE_CSS } from "../site-style";
 import SiteFooter from "../components/SiteFooter";
 import SubscribeButton from "./SubscribeButton";
 import { STRIPE_ENABLED, PLANS, type PlanId } from "@/lib/stripe";
-import { lendingLive } from "@/lib/xrpl-lending/live";
 import { BILLING_PORTAL_URL } from "@/lib/legal";
 
 export const metadata: Metadata = {
@@ -54,11 +53,10 @@ const TIERS: {
   },
 ];
 
-// Re-rendered every 10 minutes so the Lending Pro card opens by itself when XRPL lending is enabled on mainnet.
 export const revalidate = 600;
 
 export default async function Pricing() {
-  const lendingOpen = STRIPE_ENABLED && !!PLANS.lending_pro.priceId && (await lendingLive());
+  const proOpen = STRIPE_ENABLED && !!PLANS.xrplhub_pro.priceId;
   return (
     <>
       <style
@@ -147,19 +145,20 @@ export default async function Pricing() {
           </p>
         )}
 
-        <div className="lending" id="lending-pro">
-          <h3>XRPL Lending Pro</h3>
+        <div className="lending" id="xrplhub-pro">
+          <span id="lending-pro" />
+          <h3>XRPLHub Pro</h3>
           <div className="amt">$49<span>/mo</span></div>
           <ul>
-            <li>A–F risk grades for XRP Ledger lending vaults and loan brokers through the API: 20,000 grade calls/month with your key</li>
-            <li>Full grade history for every vault and broker</li>
-            <li>Webhook alerts the moment a watched vault&apos;s or broker&apos;s grade changes</li>
-            <li>Grades use on-ledger data only and are not credit ratings. Method: <a href="https://www.xrplhub.io/lending/method">xrplhub.io/lending/method</a></li>
+            <li>Webhook alerts the moment a risk grade changes on the <a href="https://www.xrplhub.io/yield">XRP Yield Desk</a> (every way to earn on XRP and RLUSD)</li>
+            <li>The same for XRP Ledger lending vaults and loan brokers once XRPL lending is live</li>
+            <li>20,000 <code>yield_grade</code> and <code>lending_grade</code> API calls a month with your key, full grade history included</li>
+            <li>Risk grades from public data, not advice and not credit ratings. We are never paid by the products we grade. Methods: <a href="https://www.xrplhub.io/yield/method">yield</a>, <a href="https://www.xrplhub.io/lending/method">lending</a></li>
           </ul>
-          {lendingOpen ? (
-            <SubscribeButton plan="lending_pro" />
+          {proOpen ? (
+            <SubscribeButton plan="xrplhub_pro" />
           ) : (
-            <span className="btn soon">Opens when XRPL lending goes live — <a href="https://www.xrplhub.io/lending">track the vote</a></span>
+            <span className="btn soon">Opening shortly</span>
           )}
         </div>
 
