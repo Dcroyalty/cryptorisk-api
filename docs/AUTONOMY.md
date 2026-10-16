@@ -42,6 +42,7 @@ Both require `CRON_SECRET` (set). Manual run: `curl -H "Authorization: Bearer $C
 | Jina embeddings quota | `/api/embed` errors after settlement | **Not watched** (no balance API). Check the Jina dashboard monthly. |
 | Neon storage (512 MB) | Writes fail | Watchdog |
 | Blockscout keyless rate limit (10 req/window/IP) | Under a traffic burst, EVM lookups return `degraded` / CAUTION (never a false PROCEED) | Keyless instance first (every Vercel IP has its own allowance), then — once an IP is rate-limited — the **Blockscout PRO API** with `BLOCKSCOUT_API_KEY` (a `proapi_…` key from dev.blockscout.com; free plan 5 req/s, 100K credits/day, all chains). A non-`proapi_` value is treated as a base.blockscout.com instance key instead. Circuit breaker stops calls to a locked-out host. |
+| base.blockscout.com Cloudflare challenge (HTTP 403 to every call since at least 2026-10-13) | Every Base wallet verdict came back degraded CAUTION | A 403 is handled like a lockout; Base history then comes from archive RPC nodes (`mainnet.base.org`, Tenderly, dRPC — account nonce, dates to the day, `history_source: "chain"`). Watchdog `risk:wallet-history:<chain>` does a live read daily: **FAIL** if the read fails (paid verdicts degraded), **warn** while the RPC fallback is carrying Base. |
 
 ## Upstreams that can die
 

@@ -9,6 +9,8 @@
 //   • payment rails — live 402 challenge names our payTo on Base; the CDP
 //     facilitator answers /supported for base/exact; Stripe account can charge
 //     and the billing webhook is enabled
+//   • wallet history — a live Base and Ethereum history read succeeds, so paid
+//     risk calls get a full verdict instead of a degraded CAUTION
 //   • Apify actors — not deprecated / under maintenance, no failed runs
 //   • XRPL node ring — majority exists, no amendment-blocked nodes
 //   • things that run out/expire — Neon storage, the uxus.finance domain,
@@ -27,6 +29,7 @@ import { deadMansSwitchArmed } from "@/lib/notify";
 import { configuredMode, trippedState } from "@/lib/x402v2/flag";
 import { validateRails, solanaPayTo } from "@/lib/x402v2/server";
 import { facilitator } from "@coinbase/x402";
+import { getWalletSignals } from "@/lib/sources";
 
 export type Level = "ok" | "warn" | "fail";
 export interface Check {
@@ -437,6 +440,26 @@ function checkAlerting(): Check[] {
 
 // ── runner ─────────────────────────────────────────────────────────────────
 
+// The wallet-history read behind every wallet verdict. When it fails, a clean
+// address comes back as a degraded CAUTION instead of PROCEED — which happened
+// silently for every Base call until 2026-10-13 (the explorer started answering
+// with a Cloudflare challenge) while every other check here stayed green.
+async function checkWalletHistory(): Promise<Check[]> {
+  const out: Check[] = [];
+  for (const chain of ["base", "ethereum"] as const) {
+    const name = `risk:wallet-history:${chain}`;
+    const s = await getWalletSignals(PAY_TO, chain);
+    if (!s.signals_ok) {
+      out.push({ name, level: "fail", detail: `Wallet-history lookup failed on ${chain}: every ${chain} wallet verdict (free and paid /api/risk/pro) is coming back degraded CAUTION.` });
+    } else if (s.history_source === "chain") {
+      out.push({ name, level: "warn", detail: `Block explorer unavailable on ${chain}; history is coming from the public-RPC fallback (outgoing tx count only). A Blockscout PRO key in BLOCKSCOUT_API_KEY restores the explorer path.` });
+    } else {
+      out.push({ name, level: "ok", detail: `Explorer history read OK on ${chain} (${s.tx_count} txs).` });
+    }
+  }
+  return out;
+}
+
 async function guarded(name: string, fn: () => Promise<Check | Check[]>): Promise<Check[]> {
   try {
     const r = await Promise.race([
@@ -458,6 +481,7 @@ export async function runWatchdog(): Promise<{ level: Level; checks: Check[] }> 
     guarded("pay:x402-challenge", checkX402Challenge),
     guarded("pay:cdp-facilitator", checkCdpFacilitator),
     guarded("pay:stripe", checkStripe),
+    guarded("risk:wallet-history", checkWalletHistory),
     guarded("apify", checkApify),
     guarded("xrpl:nodes", checkXrpl),
     guarded("neon:size", checkNeonSize),
