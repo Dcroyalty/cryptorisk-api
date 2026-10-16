@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { BASE_SITE_CSS } from "../site-style";
 import SiteFooter from "../components/SiteFooter";
 import SubscribeButton from "./SubscribeButton";
-import { STRIPE_ENABLED, type PlanId } from "@/lib/stripe";
+import { STRIPE_ENABLED, PLANS, type PlanId } from "@/lib/stripe";
+import { lendingLive } from "@/lib/xrpl-lending/live";
 import { BILLING_PORTAL_URL } from "@/lib/legal";
 
 export const metadata: Metadata = {
@@ -53,7 +54,11 @@ const TIERS: {
   },
 ];
 
-export default function Pricing() {
+// Re-rendered every 10 minutes so the Lending Pro card opens by itself when XRPL lending is enabled on mainnet.
+export const revalidate = 600;
+
+export default async function Pricing() {
+  const lendingOpen = STRIPE_ENABLED && !!PLANS.lending_pro.priceId && (await lendingLive());
   return (
     <>
       <style
@@ -79,6 +84,14 @@ export default function Pricing() {
           font-size:13.5px;color:var(--muted)}
         .x402note b{color:var(--ink)}
         .manage{font-size:13.5px;color:var(--muted);margin:-20px 0 28px}
+        .lending{background:var(--card);border:1px solid var(--rule);border-radius:3px;padding:22px;margin:0 0 28px}
+        .lending h3{font-size:15px;font-weight:600;margin:0 0 4px}
+        .lending .amt{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;margin:6px 0 10px}
+        .lending .amt span{font-size:13px;font-weight:500;color:var(--muted)}
+        .lending ul{margin:0 0 16px;padding-left:18px;font-size:13.5px;line-height:1.7}
+        .lending .btn{display:inline-block;padding:11px 18px;border-radius:2px;font-size:14px;font-weight:600;text-decoration:none}
+        .lending .btn.on{background:var(--petrol);color:#fff}
+        .lending .btn.soon{background:#F0F3F4;color:var(--muted);border:1px dashed var(--rule)}
       `,
         }}
       />
@@ -133,6 +146,22 @@ export default function Pricing() {
             your billing email and Stripe sends you a sign-in link.
           </p>
         )}
+
+        <div className="lending" id="lending-pro">
+          <h3>XRPL Lending Pro</h3>
+          <div className="amt">$49<span>/mo</span></div>
+          <ul>
+            <li>A–F risk grades for XRP Ledger lending vaults and loan brokers through the API: 20,000 grade calls/month with your key</li>
+            <li>Full grade history for every vault and broker</li>
+            <li>Webhook alerts the moment a watched vault&apos;s or broker&apos;s grade changes</li>
+            <li>Grades use on-ledger data only and are not credit ratings. Method: <a href="https://www.xrplhub.io/lending/method">xrplhub.io/lending/method</a></li>
+          </ul>
+          {lendingOpen ? (
+            <SubscribeButton plan="lending_pro" />
+          ) : (
+            <span className="btn soon">Opens when XRPL lending goes live — <a href="https://www.xrplhub.io/lending">track the vote</a></span>
+          )}
+        </div>
 
         <div className="x402note">
           <b>Prefer pay-per-call?</b> That is not going away. <code>/api/risk/pro</code> is $0.02/call via the

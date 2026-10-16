@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { paymentMiddleware, Network } from "x402-next";
 import { facilitator } from "@coinbase/x402";
-import { guard, KEY_FORMAT } from "@/lib/keys";
+import { guard, KEY_FORMAT, planForKey } from "@/lib/keys";
 import { PAY_TO, CANONICAL_ORIGIN } from "@/lib/pay-to";
+import { lendingLive, lendingRpc, NOT_LIVE_BODY } from "@/lib/xrpl-lending/live";
+
+const LENDING_GRADE_PATH = "/api/lending/grade";
 
 const N = "base" as Network;
 
@@ -146,6 +149,28 @@ const inner = paymentMiddleware(
           },
         },
       } },
+    // XRPL Lending risk grade. Answers 503 (before this paywall, below) until XRPL lending is enabled on mainnet.
+    "/api/lending/grade": { price: "$0.02", network: N,
+      config: {
+        resource: `${CANONICAL_ORIGIN}/api/lending/grade`,
+        description: "A-F risk grade for one XRP Ledger lending vault or loan broker, from on-ledger data only: size, utilization, first-loss cover ratio, late, impaired and defaulted loans, unrealized loss and realized yield, with every rule that moved the grade. $0.02 USDC per call on Base, no API key. GET ?id=<64-hex Vault or LoanBroker ID> (required), type=vault|broker (optional). Not a credit rating. Method: xrplhub.io/lending/method. Live once XRPL lending is enabled on mainnet.",
+        inputSchema: {
+          queryParams: {
+            id: "64-hex ledger ID of an XRPL Vault or LoanBroker. Required.",
+            type: "vault | broker. Optional; detected when omitted.",
+          },
+        },
+        outputSchema: {
+          type: "json",
+          example: {
+            type: "broker", id: "57CDE6AF…", grade: "B", score: 78, capped: null,
+            adjustments: [{ rule: "B-COVER", points: -5, why: "First-loss cover is 6.2% of what the broker has lent." }],
+            metrics: { debtTotal: 50000, coverAvailable: 3100, coverRatio: 1.24, lateLoans: 0, impairedLoans: 0, defaultedLoans: 0 },
+            methodVersion: "lending-grade-v1", method: "https://www.xrplhub.io/lending/method",
+            disclaimer: "Risk grade computed only from public XRP Ledger data. Not a credit rating, not investment advice.",
+          },
+        },
+      } },
     "/api/search":   { price: "$0.01", network: N,
       config: {
         resource: `${CANONICAL_ORIGIN}/api/search`,
@@ -262,6 +287,39 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   if (req.method === "GET" && DOC_GET_PATHS.has(pathname)) {
     return NextResponse.next();
+  }
+
+  // XRPL Lending grade: everything that would make a paid call useless is answered BEFORE the paywall, so
+  // nobody is charged for it (x402-next settles before the route runs): lending not live yet, a malformed ID,
+  // or an ID that isn't a Vault or LoanBroker on mainnet. A Lending Pro key skips the payment.
+  if (pathname === LENDING_GRADE_PATH) {
+    if (!(await lendingLive())) {
+      return NextResponse.json(NOT_LIVE_BODY, { status: 503, headers: { "Retry-After": "3600", "Cache-Control": "no-store" } });
+    }
+    const id = (url.searchParams.get("id") ?? "").toUpperCase();
+    if (!/^[0-9A-F]{64}$/.test(id)) {
+      return NextResponse.json({ error: "bad_request", message: "id must be the 64-hex ledger ID of a Vault or LoanBroker. You were not charged." }, { status: 400 });
+    }
+    const entry = await lendingRpc("ledger_entry", { index: id, ledger_index: "validated" });
+    const kind = entry?.node?.LedgerEntryType;
+    if (entry && kind !== "Vault" && kind !== "LoanBroker") {
+      return NextResponse.json({ error: "not_found", message: "No Vault or LoanBroker with that ID on the XRP Ledger mainnet. You were not charged." }, { status: 404 });
+    }
+    const auth = req.headers.get("authorization") || "";
+    const m = auth.match(/^Bearer\s+(\S+)$/);
+    if (m && KEY_FORMAT.test(m[1])) {
+      if ((await planForKey(m[1])) !== "lending_pro") {
+        return NextResponse.json({ error: "wrong_plan", message: "This key isn't a Lending Pro key. Pay per call with x402 instead (send no Authorization header)." }, { status: 402 });
+      }
+      const result = await guard(m[1]);
+      if (result.ok) {
+        const res = NextResponse.next();
+        res.headers.set("x-uxus-plan", result.plan);
+        res.headers.set("x-uxus-quota-remaining", String(result.remaining));
+        return res;
+      }
+      return NextResponse.json({ error: result.reason, message: result.message }, { status: result.reason === "quota_exceeded" ? 429 : 402 });
+    }
   }
 
   if (QUOTA_GATED_PATHS.has(pathname)) {

@@ -3,7 +3,7 @@
   "name": "io.github.Dcroyalty/uxus",
   "title": "UXUS Agent Services: wallet lookup, entity labels, caller ID",
   "description": "Free wallet lookup, ENS resolve, entity labels, caller ID. Paid x402 web search and scrape.",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "repository": {
     "url": "https://github.com/Dcroyalty/cryptorisk-api",
     "source": "github"

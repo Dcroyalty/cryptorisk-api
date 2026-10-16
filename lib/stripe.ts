@@ -20,19 +20,22 @@ export function stripe(): Stripe {
   return _stripe;
 }
 
-export type PlanId = "starter" | "pro";
+export type PlanId = "starter" | "pro" | "lending_pro";
 
 // quota = "screens"/month, matches the /pricing page copy exactly.
 // Price IDs are real Stripe price identifiers, not secrets — hardcoding them
 // is fine (this is how Stripe's own docs embed them in client code) and
 // means going live needs no extra env vars beyond the two above.
+// lending_pro: XRPL Lending Pro ($49/mo) — grade API calls with the key, full grade history and grade-change
+// webhooks on xrplhub.io. Sold only once XRPL lending is enabled on mainnet (checkout route checks).
 export const PLANS: Record<PlanId, { name: string; quota: number; priceId: string }> = {
   starter: { name: "Starter", quota: 5_000, priceId: "price_1UEgZXRoquiH1GTZH8j0yJfE" },
   pro: { name: "Pro", quota: 25_000, priceId: "price_1UEgbQRoquiH1GTZlAlmQkG0" },
+  lending_pro: { name: "Lending Pro", quota: 20_000, priceId: "" },
 };
 
 export function isPlanId(v: unknown): v is PlanId {
-  return v === "starter" || v === "pro";
+  return v === "starter" || v === "pro" || v === "lending_pro";
 }
 
 export function priceIdFor(plan: PlanId): string {

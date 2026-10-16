@@ -1,13 +1,15 @@
 // lib/mcp-tools.ts — the MCP tool catalogue, shared by the JSON-RPC endpoint (app/api/mcp/route.ts) and the
 // server card (app/.well-known/mcp/server-card.json/route.ts), so the card can never drift from the live tools.
 
+import { lendingLive, NOT_LIVE_BODY } from "./xrpl-lending/live";
+
 export const BASE = "https://uxus.finance";
 export const PAY_TO = "0xe0ed7a30589fec49e98f2085c7162b90fdbb83de";
 export const SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 export const LATEST_PROTOCOL = "2025-06-18";
-export const SERVER_INFO = { name: "uxus-agent-services", title: "UXUS Agent Services", version: "1.2.0" };
+export const SERVER_INFO = { name: "uxus-agent-services", title: "UXUS Agent Services", version: "1.3.0" };
 export const SERVER_DESCRIPTION =
-  "Wallet and address tools for AI agents, no API key or account. Free: universal wallet lookup (EVM and XRPL) with a first-pass risk verdict, ENS and Basename resolution, entity labels, and a wallet caller-ID check (ANSWER, SCREEN or BLOCK). Paid: search_web and scrape_url cost $0.01 USDC on Base via x402 and return the payment resource to call.";
+  "Wallet and address tools for AI agents, no API key or account. Free: universal wallet lookup (EVM and XRPL) with a first-pass risk verdict, ENS and Basename resolution, entity labels, and a wallet caller-ID check (ANSWER, SCREEN or BLOCK). Paid: search_web and scrape_url cost $0.01 USDC on Base via x402, and lending_grade (A-F risk grade for an XRP Ledger lending vault or broker, live once XRPL lending is enabled) costs $0.02; each returns the payment resource to call.";
 
 // ---- upgrade pointer (funnel) ----
 const RISK_UPGRADE = {
@@ -21,14 +23,14 @@ const RISK_UPGRADE = {
 // ---- paid tools: the payment resource, never the result ----
 const PAID_HOW =
   "GET the resource with no payment header to receive the 402 challenge, pay it with your own wallet (x402 v1, exact scheme, X-PAYMENT header), and repeat the GET with the header. No API key or account.";
-function paidResource(path: string, query: Record<string, string | undefined>, returns: string) {
+function paidResource(path: string, query: Record<string, string | undefined>, returns: string, priceUsdc = "0.01") {
   const url = new URL(`${BASE}${path}`);
   for (const [k, v] of Object.entries(query)) if (v) url.searchParams.set(k, v);
   return {
     paid: true,
     resource: url.toString(),
     method: "GET",
-    price: "0.01 USDC on Base (x402 v1, X-PAYMENT header)",
+    price: `${priceUsdc} USDC on Base (x402 v1, X-PAYMENT header)`,
     pay_to: PAY_TO,
     how: PAID_HOW,
     returns,
@@ -105,6 +107,31 @@ export const TOOLS: ToolDef[] = [
         "/api/scrape",
         { url: target, format: str(a.format), max_chars: str(a.max_chars) },
         "{ url, status, title, description, format, content, truncated, chars, latency_ms }",
+      );
+    },
+  },
+  {
+    name: "lending_grade",
+    description:
+      "A-F risk grade for one XRP Ledger lending vault or loan broker, from on-ledger data only (size, utilization, first-loss cover ratio, late/impaired/defaulted loans, unrealized loss, realized yield), with every rule that moved the grade. Not a credit rating. This is a PAID x402 call: $0.02 USDC on Base at GET /api/lending/grade. This tool returns the payment resource to call; it does not compute the grade. Until XRPL lending is enabled on mainnet it says so instead. Params: id (64-hex Vault or LoanBroker ID, required); type (vault | broker, optional).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", pattern: "^[0-9A-Fa-f]{64}$", description: "64-hex ledger ID of an XRPL Vault or LoanBroker. Required." },
+        type: { type: "string", enum: ["vault", "broker"], description: "Optional; detected when omitted." },
+      },
+      required: ["id"],
+      additionalProperties: false,
+    },
+    run: async (a) => {
+      if (!(await lendingLive())) return { available: false, ...NOT_LIVE_BODY };
+      const id = String(a.id ?? "").trim();
+      if (!/^[0-9A-Fa-f]{64}$/.test(id)) return { error: "id must be a 64-hex Vault or LoanBroker ID. Nothing was charged." };
+      return paidResource(
+        "/api/lending/grade",
+        { id: id.toUpperCase(), type: str(a.type) },
+        "{ type, id, grade (A|B|C|D|F|N/A), score, capped, adjustments: [{ rule, points, why }], metrics, methodVersion, method, page, disclaimer, checked_at }",
+        "0.02",
       );
     },
   },
@@ -190,4 +217,4 @@ export const TOOLS: ToolDef[] = [
   },
 ];
 
-export const PAID_TOOLS = ["search_web", "scrape_url"];
+export const PAID_TOOLS = ["search_web", "scrape_url", "lending_grade"];

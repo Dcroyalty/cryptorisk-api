@@ -110,6 +110,24 @@ export async function keyForCustomer(customerId: string): Promise<MintedKey | nu
   return { api_key: r.key, plan: r.plan, quota_limit: r.quota_limit, period_end: r.period_end };
 }
 
+/** Read-only: the plan behind an active key, or null. Never counts toward quota. */
+export async function planForKey(rawKey: string): Promise<PlanId | null> {
+  const rows = (await sql`
+    SELECT plan FROM api_keys WHERE key = ${rawKey} AND status = 'active' AND period_end > now()
+  `) as { plan: PlanId }[];
+  return rows[0]?.plan ?? null;
+}
+
+/** Read-only entitlement for another service (xrplhub.io's Lending Pro routes). Never counts toward quota. */
+export async function entitlementForKey(rawKey: string): Promise<{ plan: PlanId; active: boolean; period_end: string } | null> {
+  const rows = (await sql`
+    SELECT plan, status, period_end FROM api_keys WHERE key = ${rawKey}
+  `) as { plan: PlanId; status: string; period_end: string }[];
+  if (!rows.length) return null;
+  const r = rows[0];
+  return { plan: r.plan, active: r.status === "active" && new Date(r.period_end) > new Date(), period_end: new Date(r.period_end).toISOString() };
+}
+
 export type GuardResult =
   | { ok: true; plan: PlanId; remaining: number }
   | { ok: false; reason: "invalid_key" | "inactive" | "quota_exceeded"; message: string };

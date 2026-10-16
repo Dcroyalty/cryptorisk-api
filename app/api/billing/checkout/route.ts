@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { stripe, STRIPE_ENABLED, priceIdFor, isPlanId } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/legal";
+import { lendingLive } from "@/lib/xrpl-lending/live";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,14 @@ export async function POST(req: Request) {
   const plan = body.plan;
   if (!isPlanId(plan)) {
     return NextResponse.json({ error: "bad_request", message: "plan must be 'starter' or 'pro'." }, { status: 400 });
+  }
+
+  // Lending Pro is sold only once XRPL lending is enabled on mainnet (read from the ledger).
+  if (plan === "lending_pro" && (!priceIdFor(plan) || !(await lendingLive()))) {
+    return NextResponse.json(
+      { error: "not_available_yet", message: "Lending Pro opens when XRPL lending goes live on mainnet. Track it at https://www.xrplhub.io/lending." },
+      { status: 409 },
+    );
   }
 
   const priceId = priceIdFor(plan);
